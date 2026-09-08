@@ -41,8 +41,13 @@ And it refuses, by design, to:
 
 ### From the DMG (most people)
 
-Download `Reclaim-1.0.0.dmg` from Releases, drag Reclaim to Applications, then
-**right-click it and choose Open** the first time.
+**[Download the latest release](https://github.com/kapil303196/reclaim/releases/latest)**
+— a single universal build that runs natively on both Apple Silicon and Intel
+Macs. Drag Reclaim to Applications, then **right-click it and choose Open** the
+first time.
+
+After that, Reclaim checks for new versions itself and can install them from
+inside the app.
 
 That right-click is necessary because this build is **not notarised by Apple**.
 Notarisation requires a paid Apple Developer ID, and without one Gatekeeper will
@@ -80,12 +85,32 @@ Reclaim asks for this on first run and explains why. Two things worth knowing:
 - If you rebuild the app with a different signature, you must remove Reclaim
   from the Full Disk Access list and re-add it.
 
+## Updating
+
+Reclaim checks GitHub Releases on launch. When a newer build exists it offers
+**Update now**, which downloads the DMG, mounts it, replaces the installed app
+and restarts. **Check for Updates…** in the Reclaim menu does the same on
+demand, and the running version is shown at the bottom of the Overview.
+
+Every push to `main` builds a universal DMG in CI and publishes it as a release,
+so there is always something to update to.
+
 ## What it looks at
 
-Caches, build output, dependency folders, package-manager stores, Docker,
-local LLM models, Xcode leftovers, the Trash, old Node runtimes, WhatsApp
-media, and oversized git repositories — plus advisory items it will show you
-but deliberately never runs itself.
+**Every installed app, discovered dynamically** — no hardcoded list. Reclaim
+measures each app's data, resolves folder names to real app names, and separates
+an app's actual content from its disposable caches, so whatever happens to be
+hoarding space on *your* Mac shows up on its own.
+
+Alongside that: the Trash, old downloads, leftovers from uninstalled apps,
+forgotten screen recordings, video-editing scratch caches, virtual machine
+images, device backups, mail attachments, browser caches, offline media, and
+Messages attachments — plus the developer set (node_modules, build output,
+package stores, Docker, local LLM models, Xcode leftovers, Node runtimes and
+oversized git repositories), which only appears when such things are found.
+
+Scans are cached between launches, so opening Reclaim is instant and a full
+rescan only happens when you ask or once results are genuinely stale.
 
 ## Contributing / continuing this work
 
