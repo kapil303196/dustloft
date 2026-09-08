@@ -63,14 +63,29 @@ jobs:
         with:
           tag_name: v${{ steps.v.outputs.version }}
           name: Reclaim ${{ steps.v.outputs.version }}
-          files: dist/*.dmg
+          files: |
+            dist/*.dmg
+            dist/*.dmg.sha256
           generate_release_notes: true
           body: |
             Universal build for Apple Silicon and Intel Macs.
 
-            **Installing:** open the DMG and drag Reclaim to Applications. This
-            build is not notarised by Apple, so the first launch needs a
-            right-click on Reclaim then Open. You only do this once.
+            ### Easiest install
+
+            ```
+            curl -fsSL https://raw.githubusercontent.com/kapil303196/reclaim/main/install-online.sh | bash
+            ```
+
+            This avoids the macOS security warning, because quarantine is applied
+            by browsers and not by curl.
+
+            ### From the DMG
+
+            Drag Reclaim to Applications. macOS will say it cannot verify the app
+            is free from malware — this build is not notarised, which needs a paid
+            Apple Developer account. On macOS 15 and later, Control-click then Open
+            no longer works; go to **System Settings → Privacy & Security** and use
+            the **Open Anyway** button that appears after the first blocked launch.
 
             **Updating:** Reclaim checks this page itself and can install a new
             version from inside the app.

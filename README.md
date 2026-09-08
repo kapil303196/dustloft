@@ -39,42 +39,63 @@ And it refuses, by design, to:
 
 ## Install
 
-### From the DMG (most people)
+### One command (recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kapil303196/reclaim/main/install-online.sh | bash
+```
+
+This downloads the latest release, installs it, and opens it. Use this if you
+want it to just work.
+
+### From the DMG
 
 **[Download the latest release](https://github.com/kapil303196/reclaim/releases/latest)**
-— a single universal build that runs natively on both Apple Silicon and Intel
-Macs. Drag Reclaim to Applications, then **right-click it and choose Open** the
-first time.
+— one universal build that runs natively on Apple Silicon and Intel. Drag
+Reclaim to Applications.
 
-After that, Reclaim checks for new versions itself and can install them from
-inside the app.
+macOS will then say it **"could not verify this app is free from malware"**.
+That is expected and is not a claim that anything was found. It means the build
+is not *notarised* by Apple, which requires a paid Apple Developer Program
+membership ($99/year). There is no free tier that grants a Developer ID
+certificate or access to notarisation.
 
-That right-click is necessary because this build is **not notarised by Apple**.
-Notarisation requires a paid Apple Developer ID, and without one Gatekeeper will
-refuse a normal double-click on a downloaded app. Nothing about the app is
-unusual; it simply has no Apple-issued certificate. You do this once.
+To open it anyway on **macOS 15 or later** — note that Control-click → Open no
+longer works, Apple removed that:
+
+1. Try to open Reclaim once and let it be blocked.
+2. Go to **System Settings → Privacy & Security**, scroll down, and click
+   **Open Anyway** next to the message about Reclaim.
+
+Or in Terminal:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Reclaim.app
+```
+
+The one-command installer above avoids all of this, because macOS applies the
+quarantine flag to browser downloads, not to `curl`.
+
+Each release also publishes a `.sha256` file if you want to verify the download.
 
 ### From source
 
 ```bash
-git clone <this repo>
+git clone https://github.com/kapil303196/reclaim.git
 cd reclaim
-./tools/setup_signing.sh    # optional but recommended, see below
+./tools/setup_signing.sh    # optional, see below
 ./build.sh && ./install.sh
-open -a Reclaim
 ```
 
 Needs only the Xcode Command Line Tools — no full Xcode install.
-Built and tested on macOS 26.5 with Swift 6.2.
 
 ### Why `setup_signing.sh` exists
 
 macOS ties Full Disk Access to an app's **code signature**. An ad-hoc signature
-(`codesign -s -`) changes on every single build, so each rebuild silently revokes
-the permission you granted — and macOS quietly falls back to nagging you for
-Desktop and Downloads access instead. `setup_signing.sh` creates a stable,
-self-signed local identity so the grant survives rebuilds. It is only needed if
-you build from source.
+changes on every build, so each rebuild silently revokes the permission you
+granted — and macOS quietly falls back to nagging you for Desktop and Downloads
+access instead. This creates a stable local identity so the grant survives
+rebuilds. Only needed when building from source.
 
 ### Full Disk Access
 

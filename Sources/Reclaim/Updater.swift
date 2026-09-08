@@ -135,6 +135,10 @@ final class Updater: ObservableObject {
                 message = "Could not replace the installed app: \(res.err)"
                 return
             }
+            // The download never passed through a browser, but strip the
+            // quarantine flag defensively so Gatekeeper cannot block the
+            // relaunch of an app the user already trusted.
+            _ = Shell.run("/usr/bin/xattr", ["-dr", "com.apple.quarantine", target], timeout: 60)
 
             installStep = "Restarting…"
             Permissions.relaunch()
