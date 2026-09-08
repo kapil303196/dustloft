@@ -7,7 +7,7 @@
 
 ## 1. Why this project exists
 
-On 2026-09-07 a 512 GB MacBook Pro was at **96% full** — 404 GB used, 20 GB free,
+A 512 GB MacBook Pro was at **96% full** — 404 GB used, 20 GB free,
 with macOS reporting most of it as opaque "System Data". A manual investigation
 over one session brought it down to **210 GB used / 215 GB free**. This app
 automates that exact investigation so it never has to be done by hand again.
@@ -17,26 +17,26 @@ automates that exact investigation so it never has to be done by hand again.
 | Finding | Size | Lesson encoded in the app |
 |---|---|---|
 | WhatsApp media in `~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/Message/Media` | 92 GB | Biggest single win, but **irreversible** — WhatsApp does not re-serve old media. Became the `permanent` tier. |
-| 217 `node_modules` folders under `~/Desktop/projects` | 46 GB | Project-scoped sweeps, never a global filesystem walk. |
+| 217 `node_modules` folders under one project root | 46 GB | Project-scoped sweeps, never a global filesystem walk. |
 | `.next` build caches (42 folders) | 20 GB | Build output is the most under-appreciated hog. |
 | Docker `Docker.raw` | 23 GB → 8.8 GB | Prune reclaims, and the raw file compacts afterwards. **Never `--volumes`.** |
 | Ollama models | 16 GB | Trivially re-pullable. |
 | `~/.cache` (huggingface, uv, puppeteer) | 10 GB | — |
 | Orphaned Xcode simulator runtimes | 13 GB | Root-owned, needs admin; orphaned because Xcode was uninstalled. |
 | Trash | 9.3 GB | Partly root-owned → needs admin. |
-| `cameron/search-by-name/.csv_tmp` | 9.3 GB | Stale scratch data. |
+| A stale scratch folder of split CSV files | 9.3 GB | Left-behind intermediate data. |
 
 ### The two mistakes that shaped the safety model
 
-**1. The glob that hid 55 GB.** The first pass used `du -shx /Users/apple/*`,
+**1. The glob that hid 55 GB.** The first pass used `du -shx $HOME/*`,
 which silently skips dotfolders. `~/.ollama` (16 GB), `~/.cache` (10 GB) and
 `~/.Trash` (9.3 GB) were invisible. **The app therefore enumerates with
 `FileManager.contentsOfDirectory`, which includes hidden entries.** Never
 reintroduce a `*` glob for enumeration.
 
-**2. The repo that was nearly destroyed.** The user asked to "remove car-viewer
-data". Its `.git` was 2.2 GB and it had a GitHub remote configured, so deleting
-it looked safe. Running `git ls-remote origin` showed the remote
+**2. The repo that was nearly destroyed.** A request came in to remove a
+project's data. Its `.git` was 2.2 GB and it had a GitHub remote configured, so
+deleting it looked safe. Running `git ls-remote origin` showed the remote
 **authenticated successfully but returned zero refs** — nothing had ever been
 pushed. That local `.git` was the only copy of the project's history.
 
