@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-APP="Attic"
+APP="Dustloft"
 BUNDLE="dist/${APP}.app"
 TARGET="/Applications/${APP}.app"
 

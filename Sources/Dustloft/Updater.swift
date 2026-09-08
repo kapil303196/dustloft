@@ -9,7 +9,7 @@ import SwiftUI
 @MainActor
 final class Updater: ObservableObject {
 
-    static let repo = "kapil303196/attic"
+    static let repo = "kapil303196/dustloft"
 
     @Published var latest: String?
     @Published var checking = false
@@ -79,7 +79,7 @@ final class Updater: ObservableObject {
                 }
             }
             if !silent && !updateAvailable {
-                message = "Attic \(current) is the latest version."
+                message = "Dustloft \(current) is the latest version."
             }
         } catch {
             if !silent { message = "Could not reach GitHub: \(error.localizedDescription)" }
@@ -106,26 +106,26 @@ final class Updater: ObservableObject {
             }
 
             let dmg = FileManager.default.temporaryDirectory
-                .appendingPathComponent("Attic-update.dmg")
+                .appendingPathComponent("Dustloft-update.dmg")
             try? FileManager.default.removeItem(at: dmg)
             try FileManager.default.moveItem(at: tmp, to: dmg)
 
             installStep = "Mounting…"
-            let mountPoint = "/Volumes/Attic"
+            let mountPoint = "/Volumes/Dustloft"
             _ = Shell.run("/usr/bin/hdiutil",
                           ["attach", dmg.path, "-nobrowse", "-quiet"], timeout: 180)
-            guard FileManager.default.fileExists(atPath: mountPoint + "/Attic.app") else {
+            guard FileManager.default.fileExists(atPath: mountPoint + "/Dustloft.app") else {
                 message = "Could not read the downloaded disk image."
                 return
             }
 
             installStep = "Installing…"
             // ditto preserves the signature and extended attributes; cp does not.
-            let target = "/Applications/Attic.app"
+            let target = "/Applications/Dustloft.app"
             let staged = FileManager.default.temporaryDirectory
-                .appendingPathComponent("Attic-new.app").path
+                .appendingPathComponent("Dustloft-new.app").path
             try? FileManager.default.removeItem(atPath: staged)
-            _ = Shell.run("/usr/bin/ditto", [mountPoint + "/Attic.app", staged], timeout: 300)
+            _ = Shell.run("/usr/bin/ditto", [mountPoint + "/Dustloft.app", staged], timeout: 300)
             _ = Shell.run("/usr/bin/hdiutil", ["detach", mountPoint, "-quiet"], timeout: 120)
 
             let script = "/bin/rm -rf '\(target)' && /usr/bin/ditto '\(staged)' '\(target)'"
@@ -165,7 +165,7 @@ struct UpdateBanner: View {
                 Image(systemName: "arrow.down.circle.fill")
                     .font(.system(size: 16)).foregroundStyle(DS.accent)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("Attic \(updater.latest ?? "") is available")
+                    Text("Dustloft \(updater.latest ?? "") is available")
                         .font(DS.body().weight(.semibold)).foregroundStyle(DS.text)
                     Text("You are running \(updater.current).")
                         .font(DS.caption()).foregroundStyle(DS.textDim)

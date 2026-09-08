@@ -3,26 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Attic — you already own the storage macOS is hiding from you</title>
-<meta name="description" content="Macs routinely hide 50–200 GB behind a label called “System Data”. Attic shows you exactly what it is and hands the space back, without ever deleting something you can’t get back. Free, open source, no subscription.">
-<link rel="canonical" href="https://atticmac.com/">
+<title>Dustloft — you already own the storage macOS is hiding from you</title>
+<meta name="description" content="Macs routinely hide 50–200 GB behind a label called “System Data”. Dustloft shows you exactly what it is and hands the space back, without ever deleting something you can’t get back. Free, open source, no subscription.">
+<link rel="canonical" href="https://getdustloft.com/">
 <meta property="og:title" content="You already own the storage macOS is hiding from you">
-<meta property="og:description" content="One Mac was 96% full. 195 GB of it was invisible. Attic finds it in about two minutes.">
-<meta property="og:image" content="https://atticmac.com/img/overview.png">
+<meta property="og:description" content="One Mac was 96% full. 195 GB of it was invisible. Dustloft finds it in about two minutes.">
+<meta property="og:image" content="https://getdustloft.com/img/overview.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="/img/mark-v2.png">
+<link rel="icon" href="/img/mark-v3.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,800&display=swap" rel="stylesheet">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Attic","applicationCategory":"UtilitiesApplication","operatingSystem":"macOS 13.0 or later","description":"Shows what macOS hides as System Data and reclaims it safely.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://atticmac.com/","downloadUrl":"https://github.com/kapil303196/attic/releases/latest"}
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Dustloft","applicationCategory":"UtilitiesApplication","operatingSystem":"macOS 13.0 or later","description":"Shows what macOS hides as System Data and reclaims it safely.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://getdustloft.com/","downloadUrl":"https://github.com/kapil303196/dustloft/releases/latest"}
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
 {"@type":"Question","name":"Why is my System Data so large on Mac?","acceptedAnswer":{"@type":"Answer","text":"macOS files everything it cannot categorise under System Data — caches, app containers, virtual machine disks, downloaded models, old device backups and local snapshots. It grows quietly and there is no built-in way to look inside it."}},
-{"@type":"Question","name":"How do I clear System Data on a Mac?","acceptedAnswer":{"@type":"Answer","text":"Find out what is inside it before deleting anything. Attic measures every real consumer of space, sorts it by how recoverable it is, and shows each item with its full path and size before anything is removed."}},
-{"@type":"Question","name":"Is Attic safe?","acceptedAnswer":{"@type":"Answer","text":"The source is public and the safety rules are enforced in code and covered by tests. It never deletes a .git directory, never touches Dropbox or iCloud Drive, and never removes Docker volumes."}},
-{"@type":"Question","name":"Does Attic work on Intel Macs?","acceptedAnswer":{"@type":"Answer","text":"Yes. Every release is a universal binary verified to contain both Apple Silicon and Intel architectures."}},
-{"@type":"Question","name":"How much does Attic cost?","acceptedAnswer":{"@type":"Answer","text":"Nothing. MIT licensed, no telemetry, no account, no subscription."}}]}
+{"@type":"Question","name":"How do I clear System Data on a Mac?","acceptedAnswer":{"@type":"Answer","text":"Find out what is inside it before deleting anything. Dustloft measures every real consumer of space, sorts it by how recoverable it is, and shows each item with its full path and size before anything is removed."}},
+{"@type":"Question","name":"Is Dustloft safe?","acceptedAnswer":{"@type":"Answer","text":"The source is public and the safety rules are enforced in code and covered by tests. It never deletes a .git directory, never touches Dropbox or iCloud Drive, and never removes Docker volumes."}},
+{"@type":"Question","name":"Does Dustloft work on Intel Macs?","acceptedAnswer":{"@type":"Answer","text":"Yes. Every release is a universal binary verified to contain both Apple Silicon and Intel architectures."}},
+{"@type":"Question","name":"How much does Dustloft cost?","acceptedAnswer":{"@type":"Answer","text":"Nothing. MIT licensed, no telemetry, no account, no subscription."}}]}
 </script>
 <style>
 :root{
@@ -300,10 +300,10 @@ footer a{color:var(--ink2)}
 <div class="lamp" aria-hidden="true"></div>
 
 <header><div class="wrap bar">
-  <a class="brand" href="/"><img src="/img/mark-v2.png" alt="">Attic</a>
+  <a class="brand" href="/"><img src="/img/mark-v3.png" alt="">Dustloft</a>
   <nav>
     <a href="#inside">What's hiding</a><a href="#safety">Safety</a><a href="#install">Install</a>
-    <a class="stars" href="https://github.com/kapil303196/attic" id="ghstars">
+    <a class="stars" href="https://github.com/kapil303196/dustloft" id="ghstars">
       <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
       <span id="ghcount">GitHub</span></a>
   </nav>
@@ -314,7 +314,7 @@ footer a{color:var(--ink2)}
   <div class="hero">
     <span class="warn">⚠ Your Mac is not telling you the whole story</span>
     <h1>You’re about to pay for storage <span class="hide">you already own.</span></h1>
-    <p class="lede">Macs routinely hide 50–200&nbsp;GB behind one unhelpful label: <em>System Data</em>. Buy a bigger Mac and you pay hundreds for space that was already sitting on your disk. Attic finds it in about two minutes.</p>
+    <p class="lede">Macs routinely hide 50–200&nbsp;GB behind one unhelpful label: <em>System Data</em>. Buy a bigger Mac and you pay hundreds for space that was already sitting on your disk. Dustloft finds it in about two minutes.</p>
     <div class="cta">
       <a class="btn btn-primary" href="#install">Find my hidden space</a>
       <a class="btn btn-ghost" href="#inside">Show me what’s in there</a>
@@ -353,7 +353,7 @@ footer a{color:var(--ink2)}
 <section id="inside">
   <div class="wrap">
     <h2 class="reveal">What is “System Data” actually made of?</h2>
-    <p class="sec-lede reveal">It isn’t one thing. macOS files anything it can’t categorise under that label, then gives you no way to look inside. These are the things that quietly fill a drive — every one a category Attic scans.</p>
+    <p class="sec-lede reveal">It isn’t one thing. macOS files anything it can’t categorise under that label, then gives you no way to look inside. These are the things that quietly fill a drive — every one a category Dustloft scans.</p>
 
     <div class="chart reveal" id="chart">
       <div class="scale" aria-hidden="true"><span>0</span><span>125&nbsp;GB</span><span>250&nbsp;GB</span><span>375&nbsp;GB</span><span>500&nbsp;GB</span></div>
@@ -399,7 +399,7 @@ footer a{color:var(--ink2)}
         <span class="rcap">node_modules, venvs, package stores</span>
       </li>
       </ol>
-      <p class="chartnote">Each bar spans the range commonly reported for that category in public macOS support threads. Attic reports what is actually on <em>your</em> disk — measured, never estimated.</p>
+      <p class="chartnote">Each bar spans the range commonly reported for that category in public macOS support threads. Dustloft reports what is actually on <em>your</em> disk — measured, never estimated.</p>
     </div>
   </div>
 </section>
@@ -426,7 +426,7 @@ footer a{color:var(--ink2)}
 <section id="safety">
   <div class="wrap">
     <h2 class="reveal">Fast is easy. Not destroying anything is the hard part.</h2>
-    <p class="sec-lede reveal">Everything Attic finds is sorted into three tiers, and the tier decides how much friction sits between you and the delete button.</p>
+    <p class="sec-lede reveal">Everything Dustloft finds is sorted into three tiers, and the tier decides how much friction sits between you and the delete button.</p>
     <div class="tiers reveal" id="tiers">
       <div class="tier"><h3><span class="dot" style="background:var(--safe)"></span>Regenerable</h3>
         <p>Caches, build output, dependencies, Docker images. Comes back on its own. This is all Quick Clean will ever touch.</p></div>
@@ -453,7 +453,7 @@ footer a{color:var(--ink2)}
       <p>One project’s <code>.git</code> folder was 2.2&nbsp;GB. It had a GitHub remote configured, so deleting it looked obviously safe.</p>
       <p>Running <code>git ls-remote</code> first told a different story. The remote <strong>authenticated successfully and returned zero refs.</strong> Nothing had ever been pushed. That local <code>.git</code> was the only copy of the project’s history in existence.</p>
       <p>A repository with a remote configured <em>looks</em> backed up. It isn’t, until something has actually been pushed.</p>
-      <span class="verdict">Attic runs that check for you, and never offers to delete a <code>.git</code> folder at all.</span>
+      <span class="verdict">Dustloft runs that check for you, and never offers to delete a <code>.git</code> folder at all.</span>
     </blockquote>
   </div>
 </section>
@@ -462,7 +462,7 @@ footer a{color:var(--ink2)}
   <div class="wrap">
     <h2 class="reveal">Nothing goes until you’ve seen it</h2>
     <p class="sec-lede reveal">Every item, with its full path and real size. Untick anything you want to keep — the total follows along.</p>
-    <figure class="reveal"><img src="/img/review.png" loading="lazy" decoding="async" width="1600" height="941" alt="Attic’s review screen listing 66 items totalling 26.36 GB, each with a checkbox, full path and size">
+    <figure class="reveal"><img src="/img/review.png" loading="lazy" decoding="async" width="1600" height="941" alt="Dustloft’s review screen listing 66 items totalling 26.36 GB, each with a checkbox, full path and size">
       <figcaption>Real disk usage, not apparent size — a sparse Docker image reporting 494 GB is shown at the 9.3 GB it actually occupies.</figcaption></figure>
   </div>
 </section>
@@ -472,16 +472,16 @@ footer a{color:var(--ink2)}
     <div>
       <h2 class="reveal">Two minutes from now you’ll know</h2>
       <p class="sec-lede reveal">One command. It fetches the latest release, installs it and opens it.</p>
-      <div class="cmd reveal"><code id="cmd">curl -fsSL https://raw.githubusercontent.com/kapil303196/attic/main/install-online.sh | bash</code>
+      <div class="cmd reveal"><code id="cmd">curl -fsSL https://raw.githubusercontent.com/kapil303196/dustloft/main/install-online.sh | bash</code>
         <button type="button" id="copy" aria-label="Copy install command">Copy</button></div>
-      <p class="trust reveal" style="margin-top:1rem">Universal build — Apple Silicon and Intel. Prefer a disk image? <a href="https://github.com/kapil303196/attic/releases/latest">Download the DMG</a>.</p>
+      <p class="trust reveal" style="margin-top:1rem">Universal build — Apple Silicon and Intel. Prefer a disk image? <a href="https://github.com/kapil303196/dustloft/releases/latest">Download the DMG</a>.</p>
     </div>
     <div class="faq reveal" id="faq">
       <details><summary>Will it delete something I need?</summary><p>Not without showing you first. Everything is listed with its full path and real size, and you untick anything you want to keep. Items that cannot be recovered are never bulk-selected and need a separate confirmation. Quick Clean only touches things that rebuild themselves.</p></details>
-      <details><summary>Why is my System Data so large?</summary><p>macOS files everything it cannot categorise under that one label — caches, app containers, virtual machine disks, downloaded models, old device backups, local snapshots. It grows quietly and there is no built-in way to look inside. That is the exact problem Attic was built for.</p></details>
-      <details><summary>Why does it need Full Disk Access?</summary><p>Without it macOS hides the Trash, app containers and device backups, so sizes come out far lower than reality — and it asks separately for Desktop, Downloads and Documents. Attic asks once, up front, and explains why. macOS applies the permission only to a freshly launched app, so it restarts itself once.</p></details>
+      <details><summary>Why is my System Data so large?</summary><p>macOS files everything it cannot categorise under that one label — caches, app containers, virtual machine disks, downloaded models, old device backups, local snapshots. It grows quietly and there is no built-in way to look inside. That is the exact problem Dustloft was built for.</p></details>
+      <details><summary>Why does it need Full Disk Access?</summary><p>Without it macOS hides the Trash, app containers and device backups, so sizes come out far lower than reality — and it asks separately for Desktop, Downloads and Documents. Dustloft asks once, up front, and explains why. macOS applies the permission only to a freshly launched app, so it restarts itself once.</p></details>
       <details><summary>Why the “unidentified developer” warning?</summary><p>Notarisation requires a paid Apple Developer membership. The build is signed but not notarised. The one-line installer avoids the warning legitimately, because quarantine is applied to browser downloads and not to <code>curl</code>.</p></details>
-      <details><summary>Does emptying the Trash actually free the space?</summary><p>Usually, but not always. Root-owned items left by uninstalled apps often refuse to delete and sit there indefinitely. Attic spots those and removes them under a single administrator prompt.</p></details>
+      <details><summary>Does emptying the Trash actually free the space?</summary><p>Usually, but not always. Root-owned items left by uninstalled apps often refuse to delete and sit there indefinitely. Dustloft spots those and removes them under a single administrator prompt.</p></details>
       <details><summary>How is it different from CleanMyMac?</summary><p>Free, open source, no subscription. It also declines to do several things commercial cleaners advertise: it will not claim to reclaim purgeable space, will not delete a <code>.git</code> directory, and will not touch a cloud-synced folder. Fewer promises, no surprises.</p></details>
       <details><summary>Does it work on Intel Macs?</summary><p>Yes. Every release is a universal binary built in CI and verified with <code>lipo</code> to contain both architectures.</p></details>
       <details><summary>Does anything leave my Mac?</summary><p>No. There is no telemetry, no account and no server. The only network request it ever makes is checking GitHub for a newer version.</p></details>
@@ -491,10 +491,10 @@ footer a{color:var(--ink2)}
 </main>
 
 <footer><div class="wrap foot">
-  <span>Attic — MIT licensed. No telemetry.</span>
-  <nav><a href="https://github.com/kapil303196/attic">Source</a>
-    <a href="https://github.com/kapil303196/attic/releases/latest">Releases</a>
-    <a href="https://github.com/kapil303196/attic/blob/main/DOCFILES.md">Docs</a></nav>
+  <span>Dustloft — MIT licensed. No telemetry.</span>
+  <nav><a href="https://github.com/kapil303196/dustloft">Source</a>
+    <a href="https://github.com/kapil303196/dustloft/releases/latest">Releases</a>
+    <a href="https://github.com/kapil303196/dustloft/blob/main/DOCFILES.md">Docs</a></nav>
   <p class="made">Made with <span class="heart" aria-hidden="true">♥</span><span class="sr-only">love</span> in India by <a href="https://logicspark.io" target="_blank" rel="noopener">Logicspark</a></p>
 </div></footer>
 
@@ -540,7 +540,7 @@ function countUp(el) {
 const co = io((es) => es.forEach(e => { if (e.isIntersecting) { countUp(e.target); co.unobserve(e.target); } }), { threshold: .6 });
 document.querySelectorAll("[data-count]").forEach(el => co ? co.observe(el) : countUp(el));
 
-fetch("https://api.github.com/repos/kapil303196/attic").then(r => r.ok ? r.json() : null)
+fetch("https://api.github.com/repos/kapil303196/dustloft").then(r => r.ok ? r.json() : null)
   .then(d => { if (d && typeof d.stargazers_count === "number")
     document.getElementById("ghcount").textContent = d.stargazers_count.toLocaleString() + " on GitHub"; })
   .catch(() => {});

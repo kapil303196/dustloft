@@ -38,7 +38,7 @@ final class ScanEngine: ObservableObject {
 
     private static var cacheURL: URL {
         let dir = URL(fileURLWithPath: NSHomeDirectory())
-            .appendingPathComponent("Library/Application Support/Attic", isDirectory: true)
+            .appendingPathComponent("Library/Application Support/Dustloft", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir.appendingPathComponent("lastScan.json")
     }
@@ -750,7 +750,7 @@ enum Scanners {
         }
 
         // Time Machine local snapshots. These are a well known cause of space
-        // vanishing into "System Data", so Attic thins them for you rather
+        // vanishing into "System Data", so Dustloft thins them for you rather
         // than printing a command to copy.
         let snaps = Shell.run("/usr/bin/tmutil", ["listlocalsnapshots", "/"], timeout: 30)
         let names = snaps.out.split(separator: "\n").filter { $0.contains("com.apple") }

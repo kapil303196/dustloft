@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://atticmac.com/sitemap.xml
+Sitemap: https://getdustloft.com/sitemap.xml

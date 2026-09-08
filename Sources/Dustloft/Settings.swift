@@ -30,7 +30,7 @@ final class Settings: ObservableObject {
 
     private var file: URL {
         let dir = URL(fileURLWithPath: Settings.home)
-            .appendingPathComponent("Library/Application Support/Attic", isDirectory: true)
+            .appendingPathComponent("Library/Application Support/Dustloft", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir.appendingPathComponent("settings.json")
     }
@@ -47,10 +47,14 @@ final class Settings: ObservableObject {
     private static func migrateFromPreviousName() {
         let fm = FileManager.default
         let base = URL(fileURLWithPath: home).appendingPathComponent("Library/Application Support")
-        let old = base.appendingPathComponent("Reclaim")
-        let new = base.appendingPathComponent("Attic")
-        guard fm.fileExists(atPath: old.path), !fm.fileExists(atPath: new.path) else { return }
-        try? fm.moveItem(at: old, to: new)
+        let new = base.appendingPathComponent("Dustloft")
+        guard !fm.fileExists(atPath: new.path) else { return }
+        for previous in ["Attic", "Reclaim"] {
+            let old = base.appendingPathComponent(previous)
+            if fm.fileExists(atPath: old.path) {
+                try? fm.moveItem(at: old, to: new); return
+            }
+        }
     }
 
     init() {
@@ -59,7 +63,7 @@ final class Settings: ObservableObject {
             .filter { FileManager.default.fileExists(atPath: $0) }
 
         let url = URL(fileURLWithPath: Settings.home)
-            .appendingPathComponent("Library/Application Support/Attic/settings.json")
+            .appendingPathComponent("Library/Application Support/Dustloft/settings.json")
 
         if let d = try? Data(contentsOf: url),
            let b = try? JSONDecoder().decode(Blob.self, from: d) {

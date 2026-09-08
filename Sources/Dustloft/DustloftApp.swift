@@ -1,15 +1,15 @@
 import SwiftUI
 
 extension Notification.Name {
-    static let atticCheckUpdates = Notification.Name("atticCheckUpdates")
+    static let dustloftCheckUpdates = Notification.Name("dustloftCheckUpdates")
 }
 
 @main
-struct AtticApp: App {
+struct DustloftApp: App {
     @StateObject private var settings = Settings()
 
     var body: some Scene {
-        WindowGroup("Attic") {
+        WindowGroup("Dustloft") {
             RootView(settings: settings)
                 .frame(minWidth: 940, minHeight: 620)
         }
@@ -18,7 +18,7 @@ struct AtticApp: App {
             CommandGroup(replacing: .newItem) { }
             CommandGroup(after: .appInfo) {
                 Button("Check for Updates…") {
-                    NotificationCenter.default.post(name: .atticCheckUpdates, object: nil)
+                    NotificationCenter.default.post(name: .dustloftCheckUpdates, object: nil)
                 }
             }
         }

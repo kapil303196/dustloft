@@ -2,17 +2,17 @@
 import PackageDescription
 
 let package = Package(
-    name: "Attic",
+    name: "Dustloft",
     platforms: [.macOS(.v13)],
     targets: [
         .executableTarget(
-            name: "Attic",
-            path: "Sources/Attic"
+            name: "Dustloft",
+            path: "Sources/Dustloft"
         ),
         .testTarget(
-            name: "AtticTests",
-            dependencies: ["Attic"],
-            path: "Tests/AtticTests"
+            name: "DustloftTests",
+            dependencies: ["Dustloft"],
+            path: "Tests/DustloftTests"
         )
     ]
 )

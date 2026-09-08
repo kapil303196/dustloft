@@ -247,7 +247,7 @@ struct ReviewSheet: View {
                     .font(.system(size: 44)).foregroundStyle(DS.safe)
                 Text(Bytes.fmt(cleaner.freedBytes))
                     .font(DS.mono(34, .bold)).foregroundStyle(DS.text)
-                Text("atticed").font(DS.body()).foregroundStyle(DS.textDim)
+                Text("dustlofted").font(DS.body()).foregroundStyle(DS.textDim)
             }
             .padding(.top, DS.s7).padding(.bottom, DS.s5)
 

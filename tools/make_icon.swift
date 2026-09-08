@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
 
-// The Attic mark: a pitched roof with a lit window. Warm amber, matching the
+// The Dustloft mark: a pitched roof with a lit window. Warm amber, matching the
 // site palette, and legible down to 16px where a detailed scene would mush.
 
 func draw(size S: CGFloat) -> NSBitmapImageRep {
@@ -66,7 +66,7 @@ func draw(size S: CGFloat) -> NSBitmapImageRep {
     return rep
 }
 
-let outDir = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "Resources/Attic.iconset"
+let outDir = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "Resources/Dustloft.iconset"
 try? FileManager.default.createDirectory(atPath: outDir, withIntermediateDirectories: true)
 let variants: [(String, CGFloat)] = [
     ("icon_16x16", 16), ("icon_16x16@2x", 32),
