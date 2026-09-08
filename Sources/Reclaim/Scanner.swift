@@ -74,11 +74,11 @@ final class ScanEngine: ObservableObject {
     }
 
     /// Anything smaller than this is noise in a disk-cleanup UI.
-    static let floor: Int64 = 8 * 1024 * 1024
+    nonisolated static let floor: Int64 = 8 * 1024 * 1024
 
     /// Most specific first. When two scanners claim overlapping paths, the more
     /// specific category keeps the path and the broader one gives it up.
-    static let categoryPrecedence: [String] = [
+    nonisolated static let categoryPrecedence: [String] = [
         "whatsapp", "messages", "iosbackups", "recordings", "vms",
         "browsers", "creative", "offlinemedia", "mail", "inappjunk",
         "leftovers", "pkgcache", "logs", "nvm", "ollama", "docker",
@@ -87,7 +87,7 @@ final class ScanEngine: ObservableObject {
         "devcache", "appcache", "appdata", "advisory"
     ]
 
-    private static func rank(_ category: String) -> Int {
+    nonisolated private static func rank(_ category: String) -> Int {
         categoryPrecedence.firstIndex(of: category) ?? categoryPrecedence.count
     }
 
@@ -103,7 +103,7 @@ final class ScanEngine: ObservableObject {
     /// Exact duplicates collapse to the more specific category. A broader row
     /// that contains more specific rows keeps only the bytes those rows do not
     /// already account for, and disappears when nothing is left.
-    static func deduplicate(_ input: [String: [ScanItem]]) -> [String: [ScanItem]] {
+    nonisolated static func deduplicate(_ input: [String: [ScanItem]]) -> [String: [ScanItem]] {
         struct Entry { var category: String; var item: ScanItem }
         var entries: [Entry] = []
         for (cat, list) in input {
