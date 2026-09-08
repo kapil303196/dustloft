@@ -134,6 +134,31 @@ struct Category: Identifiable, Hashable {
                  restoreHint: "Already discarded by you.",
                  hue: Color.adaptive(light: 0x64748B, dark: 0x94A3B8)),
 
+        Category(id: "recordings", title: "Screen recordings", symbol: "record.circle.fill", tier: .permanent,
+                 blurb: "Video files over 500 MB. Forgotten screen recordings are the single most common cause of a full Mac.",
+                 restoreHint: "Not recoverable — play each one before selecting it.",
+                 hue: Color.adaptive(light: 0xE11D48, dark: 0xFB7185)),
+
+        Category(id: "creative", title: "Editing caches", symbol: "wand.and.stars", tier: .regenerable,
+                 blurb: "After Effects, Premiere, Final Cut and Resolve scratch files.",
+                 restoreHint: "Rebuilt when you reopen the project.",
+                 hue: Color.adaptive(light: 0x9333EA, dark: 0xC084FC)),
+
+        Category(id: "vms", title: "Virtual machines", symbol: "macwindow.on.rectangle", tier: .permanent,
+                 blurb: "Parallels, UTM, CrossOver, Whisky and Android emulator images.",
+                 restoreHint: "Contains real data — reinstall and reconfigure to restore.",
+                 hue: Color.adaptive(light: 0x0369A1, dark: 0x38BDF8)),
+
+        Category(id: "offlinemedia", title: "Offline media", symbol: "music.note.list", tier: .regenerable,
+                 blurb: "Downloaded music, podcasts and video kept for offline playback.",
+                 restoreHint: "Downloaded again when you play it.",
+                 hue: Color.adaptive(light: 0x059669, dark: 0x34D399)),
+
+        Category(id: "messages", title: "Messages attachments", symbol: "message.fill", tier: .permanent,
+                 blurb: "Photos and video people sent you in Messages.",
+                 restoreHint: "Not recoverable from this Mac.",
+                 hue: Color.adaptive(light: 0x16A34A, dark: 0x4ADE80)),
+
         Category(id: "largeold", title: "Large & old files", symbol: "doc.viewfinder.fill", tier: .permanent,
                  blurb: "Files over 200 MB you have not opened in more than a year.",
                  restoreHint: "Not recoverable — check each one before selecting.",

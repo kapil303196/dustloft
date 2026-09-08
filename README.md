@@ -39,9 +39,22 @@ And it refuses, by design, to:
 
 ## Install
 
+### From the DMG (most people)
+
+Download `Reclaim-1.0.0.dmg` from Releases, drag Reclaim to Applications, then
+**right-click it and choose Open** the first time.
+
+That right-click is necessary because this build is **not notarised by Apple**.
+Notarisation requires a paid Apple Developer ID, and without one Gatekeeper will
+refuse a normal double-click on a downloaded app. Nothing about the app is
+unusual; it simply has no Apple-issued certificate. You do this once.
+
+### From source
+
 ```bash
 git clone <this repo>
 cd reclaim
+./tools/setup_signing.sh    # optional but recommended, see below
 ./build.sh && ./install.sh
 open -a Reclaim
 ```
@@ -49,8 +62,23 @@ open -a Reclaim
 Needs only the Xcode Command Line Tools — no full Xcode install.
 Built and tested on macOS 26.5 with Swift 6.2.
 
-For accurate sizes, grant Full Disk Access:
-**System Settings → Privacy & Security → Full Disk Access → add Reclaim**.
+### Why `setup_signing.sh` exists
+
+macOS ties Full Disk Access to an app's **code signature**. An ad-hoc signature
+(`codesign -s -`) changes on every single build, so each rebuild silently revokes
+the permission you granted — and macOS quietly falls back to nagging you for
+Desktop and Downloads access instead. `setup_signing.sh` creates a stable,
+self-signed local identity so the grant survives rebuilds. It is only needed if
+you build from source.
+
+### Full Disk Access
+
+Reclaim asks for this on first run and explains why. Two things worth knowing:
+
+- macOS applies the permission **only to a freshly launched process**, so
+  Reclaim has to relaunch once after you grant it. It offers a button to do so.
+- If you rebuild the app with a different signature, you must remove Reclaim
+  from the Full Disk Access list and re-add it.
 
 ## What it looks at
 

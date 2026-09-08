@@ -146,6 +146,23 @@ runs `./build.sh` locally.
 package caches (6.71 GB), Python venvs (3.21 GB), app caches (2.46 GB),
 developer caches (2.21 GB), node_modules (2.02 GB) and build output (169.5 MB).
 
+### Distribution
+
+`tools/make_dmg.sh` produces a drag-to-install DMG. It is **not notarised** — that
+needs a paid Apple Developer ID. Until then, users must right-click → Open once.
+If a Developer ID becomes available, the path is: sign with
+`Developer ID Application`, `xcrun notarytool submit --wait`, then
+`xcrun stapler staple`. A GitHub Actions macOS runner can do all of this on tag.
+
+### The Full Disk Access trap (important)
+
+macOS keys TCC permissions to the code signature. Ad-hoc signatures change every
+build, so Full Disk Access was being revoked on each rebuild and macOS fell back
+to per-folder Desktop/Downloads prompts — which looked like the app ignoring a
+granted permission. `tools/setup_signing.sh` fixes this with a stable self-signed
+identity; `build.sh` uses it automatically when present. Also note macOS applies
+a new grant only to a freshly launched process, hence the relaunch button.
+
 ### Known gaps / next steps
 1. **No app icon** — ships with the generic macOS placeholder. Needs an `.icns`
    at `Resources/Reclaim.icns` (build.sh already copies it if present).

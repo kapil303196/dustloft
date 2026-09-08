@@ -65,17 +65,16 @@ struct RootView: View {
         }
         .sheet(isPresented: $showWelcome) {
             WelcomeSheet(isPresented: $showWelcome) {
-                hasSeenWelcome = true
                 Task { await engine.scan() }
             }
         }
         .task {
-            // Ask once, up front, for the one permission that matters.
-            if !hasSeenWelcome || !Permissions.hasFullDiskAccess() {
-                if !Permissions.hasFullDiskAccess() || !hasSeenWelcome {
-                    showWelcome = true
-                    return
-                }
+            // Ask once, on first run only. After that a dismissible banner
+            // carries the message — never a sheet on every launch.
+            if !hasSeenWelcome {
+                hasSeenWelcome = true
+                showWelcome = true
+                return
             }
             if engine.lastScan == nil { await engine.scan() }
         }

@@ -67,6 +67,11 @@ final class ScanEngine: ObservableObject {
             ("mail",         "Mail attachments",   { Scanners.mail(s) }),
             ("logs",         "logs",               { Scanners.logs(s) }),
             ("iosbackups",   "device backups",     { Scanners.iosBackups(s) }),
+            ("recordings",   "screen recordings",  { Scanners.screenRecordings(s) }),
+            ("creative",     "editing caches",     { Scanners.creativeCaches(s) }),
+            ("vms",          "virtual machines",   { Scanners.virtualMachines(s) }),
+            ("offlinemedia", "offline media",      { Scanners.offlineMedia(s) }),
+            ("messages",     "Messages attachments",{ Scanners.messagesAttachments(s) }),
             ("largeold",     "large and old files",{ Scanners.largeOld(s) }),
             ("unusedapps",   "unused apps",        { Scanners.unusedApps(s) }),
             ("node_modules", "node_modules",       { Scanners.projectDirs(roots, ["node_modules"], "node_modules", s) }),
@@ -81,7 +86,7 @@ final class ScanEngine: ObservableObject {
             ("nvm",          "Node versions",      { Scanners.nvm(s) }),
             ("whatsapp",     "WhatsApp media",     { Scanners.whatsapp(s) }),
             ("git",          "Git repositories",   { Scanners.gitRepos(roots, s) }),
-            ("advisory",     "system items",       { Scanners.advisories() })
+            ("advisory",     "system items",       { Scanners.advisories() + Scanners.systemAdvisories() })
         ]
 
         let total = Double(jobs.count)
