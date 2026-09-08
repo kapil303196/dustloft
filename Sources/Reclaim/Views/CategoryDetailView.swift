@@ -3,9 +3,14 @@ import SwiftUI
 struct CategoryDetailView: View {
     let category: Category
     @ObservedObject var engine: ScanEngine
+    /// Opens the review sheet scoped to this section only.
+    var reviewSection: () -> Void = {}
 
     private var items: [ScanItem] { engine.items[category.id] ?? [] }
     private var selectable: [ScanItem] { items.filter { !$0.isAdvisory } }
+    private var pickedHere: [ScanItem] { items.filter { $0.selected } }
+    private var pickedBytes: Int64 { pickedHere.reduce(0) { $0 + $1.bytes } }
+
     private var allPicked: Bool {
         !selectable.isEmpty && selectable.allSatisfy { $0.selected }
     }
@@ -72,15 +77,14 @@ struct CategoryDetailView: View {
                     Text(category.tier.blurb).font(DS.caption()).foregroundStyle(DS.textDim)
                     Spacer()
                     if !selectable.isEmpty {
-                        Button(allPicked ? "Deselect all" : "Select all") {
+                        Button(allPicked ? "Deselect all" : "Select all \(selectable.count)") {
                             withAnimation(DS.quick) {
                                 engine.selectAll(in: category.id, !allPicked)
                             }
                         }
                         .buttonStyle(SecondaryButton())
-                        .disabled(category.tier == .permanent && !allPicked)
                         .help(category.tier == .permanent
-                              ? "Permanent items must be selected one at a time"
+                              ? "Selects all \(selectable.count) items. You still have to confirm the permanent deletion before anything is removed."
                               : "Toggle every item in this category")
                     }
                 }
@@ -90,6 +94,14 @@ struct CategoryDetailView: View {
                         .font(.system(size: 10)).foregroundStyle(DS.textFaint)
                     Text("Restore by: \(category.restoreHint)")
                         .font(DS.caption()).foregroundStyle(DS.textDim)
+                    Spacer()
+                    if !pickedHere.isEmpty {
+                        Button("Clean this section · \(Bytes.fmt(pickedBytes))") {
+                            reviewSection()
+                        }
+                        .buttonStyle(PrimaryButton(tint: category.tier == .permanent ? DS.danger : DS.accent))
+                        .help("Review and clean only the \(pickedHere.count) selected item(s) in \(category.title)")
+                    }
                 }
             }
         }

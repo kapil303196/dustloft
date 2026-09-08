@@ -37,14 +37,43 @@ final class ScanEngine: ObservableObject {
         }
     }
 
+    /// Explicit per-category "Select all". Because the user asked for this
+    /// specific category by name, it selects everything in it — including
+    /// permanent rows. The guardrail is the review sheet, which still demands a
+    /// separate acknowledgement before anything permanent is removed.
     func selectAll(in category: String, _ on: Bool) {
         guard var list = items[category] else { return }
         for i in list.indices where !list[i].isAdvisory {
-            // Permanent and hand-pick-only rows are never bulk-selected.
-            if on && (list[i].tier == .permanent || !list[i].autoSelectable) { continue }
             list[i].selected = on
         }
         items[category] = list
+    }
+
+    /// The conservative bulk action offered on the Overview: only things that
+    /// rebuild themselves, never anything needing judgement.
+    func selectEverythingSafe() {
+        for (key, var list) in items {
+            for i in list.indices where !list[i].isAdvisory {
+                if list[i].tier == .regenerable && list[i].autoSelectable {
+                    list[i].selected = true
+                }
+            }
+            items[key] = list
+        }
+    }
+
+    func deselectEverything() {
+        for (key, var list) in items {
+            for i in list.indices { list[i].selected = false }
+            items[key] = list
+        }
+    }
+
+    /// Total of everything that rebuilds itself — the safe one-click number.
+    var totalSafe: Int64 {
+        items.values.flatMap { $0 }
+            .filter { !$0.isAdvisory && $0.tier == .regenerable && $0.autoSelectable }
+            .reduce(0) { $0 + $1.bytes }
     }
 
     // MARK: - Scan
@@ -426,16 +455,18 @@ enum Scanners {
             }
         }
 
-        // Time Machine local snapshots
+        // Time Machine local snapshots. These are a well known cause of space
+        // vanishing into "System Data", so Reclaim thins them for you rather
+        // than printing a command to copy.
         let snaps = Shell.run("/usr/bin/tmutil", ["listlocalsnapshots", "/"], timeout: 30)
-        let names = snaps.out.split(separator: "\n")
-            .filter { $0.contains("com.apple") }
+        let names = snaps.out.split(separator: "\n").filter { $0.contains("com.apple") }
         if names.count > 0 {
             out.append(ScanItem(
                 name: "\(names.count) local Time Machine snapshot\(names.count == 1 ? "" : "s")",
                 path: "/", bytes: 0,
-                detail: "These are usually small and macOS reclaims them automatically under pressure.",
-                action: .advisory("tmutil deletelocalsnapshots <date>"), tier: .admin))
+                detail: "Point-in-time copies macOS keeps on this disk. Thinning them frees whatever they were pinning; your Time Machine backups on external drives are untouched.",
+                action: .adminShell("/usr/bin/tmutil thinlocalsnapshots / 9999999999999 4"),
+                tier: .admin))
         }
         return out
     }

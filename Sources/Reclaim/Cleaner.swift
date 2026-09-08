@@ -31,8 +31,20 @@ final class Cleaner: ObservableObject {
 
         let before = VolumeInfo.current().free
 
-        let adminItems = items.filter { if case .removePathAdmin = $0.action { return true }; return false }
-        let normal = items.filter { if case .removePathAdmin = $0.action { return false }; return true }
+        // Everything needing elevation is gathered so macOS asks for the
+        // password once, not once per item.
+        let adminItems = items.filter {
+            switch $0.action {
+            case .removePathAdmin, .adminShell: return true
+            default: return false
+            }
+        }
+        let normal = items.filter {
+            switch $0.action {
+            case .removePathAdmin, .adminShell: return false
+            default: return true
+            }
+        }
 
         let total = Double(normal.count + (adminItems.isEmpty ? 0 : 1))
         var done = 0.0
@@ -53,14 +65,21 @@ final class Cleaner: ObservableObject {
 
         if !adminItems.isEmpty {
             currentStep = "Waiting for administrator authorisation…"
+            var parts: [String] = []
             let paths = adminItems.compactMap { item -> String? in
                 if case .removePathAdmin(let p) = item.action { return p }
                 return nil
             }
-            let quoted = paths.map { "'\($0)'" }.joined(separator: " ")
+            if !paths.isEmpty {
+                parts.append("/bin/rm -rf " + paths.map { "'\($0)'" }.joined(separator: " "))
+            }
+            for item in adminItems {
+                if case .adminShell(let cmd) = item.action { parts.append(cmd) }
+            }
+            let script = parts.joined(separator: " ; ")
             let res: Shell.Result = await withCheckedContinuation { cont in
                 DispatchQueue.global(qos: .userInitiated).async {
-                    cont.resume(returning: Shell.runAsAdmin("/bin/rm -rf " + quoted))
+                    cont.resume(returning: Shell.runAsAdmin(script))
                 }
             }
             for item in adminItems {
@@ -100,7 +119,7 @@ final class Cleaner: ObservableObject {
                 return r.ok ? (true, nil) : (false, r.err.isEmpty ? "could not remove" : r.err)
             }
 
-        case .removePathAdmin:
+        case .removePathAdmin, .adminShell:
             return (false, "handled in the batched admin step")
 
         case .ollamaModel(let name):

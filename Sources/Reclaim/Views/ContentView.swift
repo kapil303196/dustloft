@@ -7,6 +7,8 @@ struct RootView: View {
     // Overview therefore gets a real id rather than nil.
     @State private var selection: String = "overview"
     @State private var showReview = false
+    /// nil = review everything selected; a category id = review just that section.
+    @State private var reviewScope: String? = nil
     @State private var showWelcome = false
     @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
 
@@ -49,7 +51,10 @@ struct RootView: View {
                 if selection == "overview" {
                     overview
                 } else if let cat = Category.all.first(where: { $0.id == selection }) {
-                    CategoryDetailView(category: cat, engine: engine)
+                    CategoryDetailView(category: cat, engine: engine) {
+                        reviewScope = cat.id
+                        showReview = true
+                    }
                 } else {
                     overview
                 }
@@ -61,7 +66,7 @@ struct RootView: View {
         .toolbar { toolbarContent }
         .safeAreaInset(edge: .bottom) { actionBar }
         .sheet(isPresented: $showReview) {
-            ReviewSheet(engine: engine, isPresented: $showReview)
+            ReviewSheet(engine: engine, isPresented: $showReview, scope: reviewScope)
         }
         .sheet(isPresented: $showWelcome) {
             WelcomeSheet(isPresented: $showWelcome) {
@@ -191,6 +196,52 @@ struct RootView: View {
                          reclaimable: engine.totalFound,
                          selected: engine.totalSelected)
 
+            // The one-click path for anyone who does not want to read a list.
+            // It still routes through review — Reclaim never deletes unasked —
+            // but everything is pre-selected and one confirmation away.
+            if engine.totalSafe > 0 {
+                VStack(alignment: .leading, spacing: DS.s2) {
+                    HStack(spacing: DS.s2) {
+                        Button {
+                            engine.deselectEverything()
+                            engine.selectEverythingSafe()
+                            reviewScope = nil
+                            showReview = true
+                        } label: {
+                            HStack(spacing: DS.s2) {
+                                Image(systemName: "wand.and.sparkles")
+                                Text("Quick clean")
+                                Text(Bytes.fmt(engine.totalSafe))
+                                    .font(DS.mono(12, .bold)).opacity(0.85)
+                            }
+                        }
+                        .buttonStyle(PrimaryButton())
+                        .help("Reviews and removes only items that rebuild themselves. Nothing permanent is included.")
+
+                        Button("Select without cleaning") {
+                            withAnimation(DS.quick) { engine.selectEverythingSafe() }
+                        }
+                        .buttonStyle(SecondaryButton())
+
+                        if engine.totalSelected > 0 {
+                            Button("Clear") {
+                                withAnimation(DS.quick) { engine.deselectEverything() }
+                            }
+                            .buttonStyle(SecondaryButton())
+                        }
+                        Spacer()
+                    }
+                    HStack(spacing: DS.s1 + 2) {
+                        Image(systemName: "checkmark.shield.fill")
+                            .font(.system(size: 9)).foregroundStyle(DS.safe)
+                        Text("Quick clean only touches caches and build output that come back on their own. Nothing permanent, nothing needing your judgement.")
+                            .font(DS.caption()).foregroundStyle(DS.textDim)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .padding(.top, DS.s1)
+            }
+
             HStack(spacing: DS.s2) {
                 StatChip(symbol: "internaldrive", label: "In use",
                          value: Bytes.fmt(engine.volume.used), tint: DS.textDim)
@@ -270,7 +321,7 @@ struct RootView: View {
 
             Spacer()
 
-            Button("Review and clean…") { showReview = true }
+            Button("Review and clean…") { reviewScope = nil; showReview = true }
                 .buttonStyle(PrimaryButton())
                 .disabled(engine.totalSelected == 0 || engine.isScanning)
                 .keyboardShortcut(.return, modifiers: .command)

@@ -132,8 +132,8 @@ extension Scanners {
             if size > ScanEngine.advisoryFloor {
                 out.append(ScanItem(
                     name: "Spotlight search index", path: spot, bytes: size,
-                    detail: "Rebuilds itself automatically. Reclaim will not touch the system volume.",
-                    action: .advisory("sudo mdutil -E /"), tier: .admin))
+                    detail: "Rebuilt automatically afterwards. Search results are briefly incomplete while it reindexes.",
+                    action: .adminShell("/usr/bin/mdutil -E / >/dev/null"), tier: .admin))
             }
         }
         return out

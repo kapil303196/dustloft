@@ -58,7 +58,8 @@ enum CleanAction: Hashable {
     case ollamaModel(String)         // ollama rm <name>
     case dockerPrune                 // docker system prune -a  (never --volumes)
     case gitGC(String)               // git gc --prune=now
-    case advisory(String)            // we only ever show the command; app never runs it
+    case adminShell(String)          // a vetted command, run under one admin prompt
+    case advisory(String)            // shown only; the app will not run it
 }
 
 // MARK: - Git safety, learned the hard way
