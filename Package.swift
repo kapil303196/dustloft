@@ -8,6 +8,11 @@ let package = Package(
         .executableTarget(
             name: "Reclaim",
             path: "Sources/Reclaim"
+        ),
+        .testTarget(
+            name: "ReclaimTests",
+            dependencies: ["Reclaim"],
+            path: "Tests/ReclaimTests"
         )
     ]
 )

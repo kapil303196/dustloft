@@ -388,26 +388,37 @@ enum Scanners {
 
     // MARK: Ollama
 
-    static func ollama() -> [ScanItem] {
-        let r = Shell.tool("ollama", ["list"], timeout: 30)
-        guard r.ok else { return [] }
-        var out: [ScanItem] = []
-        for line in r.out.split(separator: "\n").dropFirst() {
+    struct OllamaModel: Equatable {
+        var name: String
+        var bytes: Int64
+        var modified: String?
+    }
+
+    /// Pure parser for `ollama list` output, kept separate so it can be tested
+    /// without ollama installed.
+    static func parseOllamaList(_ text: String) -> [OllamaModel] {
+        var out: [OllamaModel] = []
+        for line in text.split(separator: "\n").dropFirst() {
             let cols = line.split(whereSeparator: { $0 == " " || $0 == "\t" }).map(String.init)
             guard cols.count >= 4 else { continue }
-            let name = cols[0]
-            // "4.9 GB" -> bytes
             guard let val = Double(cols[2]) else { continue }
             let unit = cols[3].uppercased()
             let mult: Double = unit.hasPrefix("TB") ? 1e12 : unit.hasPrefix("GB") ? 1e9
                              : unit.hasPrefix("MB") ? 1e6 : 1e3
             let modified = cols.count > 4 ? cols[4...].joined(separator: " ") : nil
-            out.append(ScanItem(name: name, path: "ollama:" + name,
-                                bytes: Int64(val * mult),
-                                detail: modified.map { "last used \($0)" },
-                                action: .ollamaModel(name), tier: .regenerable))
+            out.append(OllamaModel(name: cols[0], bytes: Int64(val * mult), modified: modified))
         }
         return out
+    }
+
+    static func ollama() -> [ScanItem] {
+        let r = Shell.tool("ollama", ["list"], timeout: 30)
+        guard r.ok else { return [] }
+        return parseOllamaList(r.out).map { m in
+            ScanItem(name: m.name, path: "ollama:" + m.name, bytes: m.bytes,
+                     detail: m.modified.map { "last used \($0)" },
+                     action: .ollamaModel(m.name), tier: .regenerable)
+        }
     }
 
     // MARK: Docker — volumes are never in scope
@@ -419,6 +430,15 @@ enum Scanners {
             return [ScanItem(name: "Docker daemon is not running", path: "docker",
                              bytes: 0, detail: "Start Docker Desktop, then scan again to see reclaimable space",
                              action: .advisory("open -a Docker"), tier: .regenerable)]
+        }
+        // Structured output first; the human-readable table is a fallback
+        // because its column layout is not a stable interface.
+        let js = Shell.tool("docker", ["system", "df", "--format", "{{json .}}"], timeout: 60)
+        if js.ok, let bytes = parseDockerJSON(js.out), bytes > 0 {
+            return [ScanItem(name: "Unused images, stopped containers, build cache",
+                             path: "docker://prune", bytes: bytes,
+                             detail: "Named volumes are never removed",
+                             action: .dockerPrune, tier: .regenerable)]
         }
         let df = Shell.tool("docker", ["system", "df"], timeout: 60)
         guard df.ok else { return [] }
@@ -442,7 +462,24 @@ enum Scanners {
                          action: .dockerPrune, tier: .regenerable)]
     }
 
-    private static func parseDockerSize(_ cols: [String]) -> Int64? {
+    /// Sums the Reclaimable field from `docker system df --format "{{json .}}"`,
+    /// which emits one JSON object per row.
+    static func parseDockerJSON(_ text: String) -> Int64? {
+        var total: Int64 = 0
+        var sawRow = false
+        for line in text.split(separator: "\n") {
+            guard let d = line.data(using: .utf8),
+                  let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
+                  let type = o["Type"] as? String,
+                  let rec = o["Reclaimable"] as? String else { continue }
+            guard type == "Images" || type == "Containers" || type == "Build Cache" else { continue }
+            sawRow = true
+            if let b = parseDockerSize(rec.split(separator: " ").map(String.init)) { total += b }
+        }
+        return sawRow ? total : nil
+    }
+
+    static func parseDockerSize(_ cols: [String]) -> Int64? {
         // The reclaimable figure is the last size-looking token on the row.
         for tok in cols.reversed() {
             let t = tok.replacingOccurrences(of: "(", with: "")

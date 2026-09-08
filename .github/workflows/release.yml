@@ -22,6 +22,11 @@ jobs:
 
       # The release tag and the app's own version must agree, otherwise the
       # in-app update check compares against the wrong number.
+      # Tests run here rather than locally: XCTest ships with full Xcode, which
+      # the runner has and a Command Line Tools machine does not.
+      - name: Run tests
+        run: swift test
+
       - name: Stamp version
         id: v
         run: |
