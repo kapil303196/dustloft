@@ -12,6 +12,7 @@ struct RootView: View {
     @State private var showWelcome = false
     @State private var showSummary = false
     @StateObject private var updater = Updater()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
 
     init(settings: Settings) {
@@ -167,6 +168,7 @@ struct RootView: View {
                     sectionHeader("Where your space is going", nil)
                     CompositionBar(slices: slices)
                         .padding(.bottom, DS.s7)
+                        .animation(DS.motion(DS.spring, reduce: reduceMotion), value: engine.totalFound)
 
                     sectionHeader("Choose what to clean", "Nothing is removed until you review it")
                     VStack(spacing: 0) {
@@ -180,6 +182,10 @@ struct RootView: View {
                                             picked: (engine.items[cat.id] ?? []).filter { $0.selected }.count)
                             }
                             .buttonStyle(.plain)
+                            .transition(.asymmetric(
+                                insertion: .opacity.combined(with: .offset(y: 8)),
+                                removal: .opacity.combined(with: .scale(scale: 0.98))))
+                            .animation(DS.staggered(idx, reduce: reduceMotion), value: cat.id)
                             if idx < slices.count - 1 {
                                 Divider().opacity(0.5).padding(.leading, 46)
                             }

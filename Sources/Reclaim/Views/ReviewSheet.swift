@@ -52,10 +52,12 @@ struct ReviewSheet: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if cleaner.finished      { results }
-            else if cleaner.isRunning { running }
-            else                      { review }
+            if cleaner.finished       { results.transition(.opacity) }
+            else if cleaner.isRunning { running.transition(.opacity) }
+            else                      { review.transition(.opacity) }
         }
+        .animation(DS.quick, value: cleaner.isRunning)
+        .animation(DS.quick, value: cleaner.finished)
         // A progress bar does not need a 620x560 window.
         .onAppear { if frozen.isEmpty { freeze() } }
         .frame(width: cleaner.isRunning && !cleaner.finished ? 400 : 620,

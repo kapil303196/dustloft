@@ -5,6 +5,7 @@ struct CategoryDetailView: View {
     @ObservedObject var engine: ScanEngine
     /// Opens the review sheet scoped to this section only.
     var reviewSection: () -> Void = {}
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var items: [ScanItem] { engine.items[category.id] ?? [] }
     private var selectable: [ScanItem] { items.filter { !$0.isAdvisory } }
@@ -30,10 +31,14 @@ struct CategoryDetailView: View {
                 } else {
                     Card(padding: DS.s3) {
                         VStack(spacing: 0) {
-                            ForEach(items) { item in
+                            ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
                                 ItemRow(item: item, category: category) { on in
                                     withAnimation(DS.quick) { engine.setSelection(item.id, on) }
                                 }
+                                .transition(.asymmetric(
+                                    insertion: .opacity.combined(with: .offset(y: 6)),
+                                    removal: .opacity.combined(with: .scale(scale: 0.97))))
+                                .animation(DS.staggered(idx, reduce: reduceMotion), value: item.id)
                                 if item.id != items.last?.id {
                                     Divider().padding(.leading, DS.s6)
                                 }

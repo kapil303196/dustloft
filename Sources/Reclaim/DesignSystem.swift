@@ -68,10 +68,26 @@ enum DS {
     static let rMd: CGFloat = 10
     static let rLg: CGFloat = 16
 
-    // MARK: Motion — 150-300ms, spring for anything spatial
+    // MARK: Motion — 150-300ms, spring for anything spatial.
+    // Every animation here reports a state change: something arrived, left,
+    // was selected, or changed value. None of it is decorative.
     static let quick  = Animation.easeOut(duration: 0.18)
     static let exit   = Animation.easeIn(duration: 0.12)   // exits ~65% of enter
     static let spring = Animation.spring(response: 0.34, dampingFraction: 0.84)
+    /// Rows arriving from a scan: gentle, and staggered by index.
+    static let arrive = Animation.spring(response: 0.42, dampingFraction: 0.86)
+    static let stagger: Double = 0.035
+    static let staggerCap = 10          // never delay past ~350ms
+
+    /// Honours the system Reduce Motion setting.
+    static func motion(_ base: Animation, reduce: Bool) -> Animation? {
+        reduce ? nil : base
+    }
+
+    static func staggered(_ index: Int, reduce: Bool) -> Animation? {
+        guard !reduce else { return nil }
+        return arrive.delay(Double(min(index, staggerCap)) * stagger)
+    }
 
     // MARK: Type scale
     static func title()   -> Font { .system(size: 22, weight: .semibold) }

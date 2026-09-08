@@ -74,7 +74,81 @@ final class ScanEngine: ObservableObject {
     }
 
     /// Anything smaller than this is noise in a disk-cleanup UI.
-    private static let floor: Int64 = 8 * 1024 * 1024
+    static let floor: Int64 = 8 * 1024 * 1024
+
+    /// Most specific first. When two scanners claim overlapping paths, the more
+    /// specific category keeps the path and the broader one gives it up.
+    static let categoryPrecedence: [String] = [
+        "whatsapp", "messages", "iosbackups", "recordings", "vms",
+        "browsers", "creative", "offlinemedia", "mail", "inappjunk",
+        "leftovers", "pkgcache", "logs", "nvm", "ollama", "docker",
+        "xcode", "node_modules", "build", "venv", "git",
+        "trash", "downloads", "largeold", "unusedapps",
+        "devcache", "appcache", "appdata", "advisory"
+    ]
+
+    private static func rank(_ category: String) -> Int {
+        categoryPrecedence.firstIndex(of: category) ?? categoryPrecedence.count
+    }
+
+    /// Removes double counting between scanners.
+    ///
+    /// Two scanners legitimately reach the same bytes: the browser scanner
+    /// claims `~/Library/Caches/Google/Chrome` while the generic app-cache
+    /// scanner claims its parent `~/Library/Caches/Google`, and App data claims
+    /// a whole app folder whose bulk is the cache In-app caches already listed.
+    /// Left alone the same gigabytes are offered twice and the reclaimable
+    /// total is inflated.
+    ///
+    /// Exact duplicates collapse to the more specific category. A broader row
+    /// that contains more specific rows keeps only the bytes those rows do not
+    /// already account for, and disappears when nothing is left.
+    static func deduplicate(_ input: [String: [ScanItem]]) -> [String: [ScanItem]] {
+        struct Entry { var category: String; var item: ScanItem }
+        var entries: [Entry] = []
+        for (cat, list) in input {
+            for i in list { entries.append(Entry(category: cat, item: i)) }
+        }
+
+        // 1. Exact same path claimed twice: the more specific category wins.
+        var byPath: [String: Entry] = [:]
+        var passthrough: [Entry] = []          // advisories and non-path actions
+        for e in entries {
+            guard !e.item.isAdvisory, e.item.path.hasPrefix("/") else {
+                passthrough.append(e); continue
+            }
+            if let existing = byPath[e.item.path] {
+                if rank(e.category) < rank(existing.category) { byPath[e.item.path] = e }
+            } else {
+                byPath[e.item.path] = e
+            }
+        }
+
+        // 2. When one row sits inside another, only the more specific category
+        // survives. Reducing the outer row's size instead would leave a row
+        // whose deletion silently removes another row the user did not tick —
+        // rm -rf on a parent takes its children with it.
+        let all = Array(byPath.values)
+        var dropped = Set<String>()
+        for outer in all {
+            let prefix = outer.item.path.hasSuffix("/") ? outer.item.path : outer.item.path + "/"
+            for inner in all where inner.item.path.hasPrefix(prefix) {
+                if rank(inner.category) <= rank(outer.category) {
+                    dropped.insert(outer.item.path)     // the container is broader
+                } else {
+                    dropped.insert(inner.item.path)     // the container is more specific
+                }
+            }
+        }
+        let result = all.filter { !dropped.contains($0.item.path) }
+
+        var out: [String: [ScanItem]] = [:]
+        for e in result + passthrough {
+            out[e.category, default: []].append(e.item)
+        }
+        for (k, v) in out { out[k] = v.sorted { $0.bytes > $1.bytes } }
+        return out
+    }
 
     var totalSelected: Int64 {
         items.values.flatMap { $0 }.filter { $0.selected }.reduce(0) { $0 + $1.bytes }
@@ -96,8 +170,10 @@ final class ScanEngine: ObservableObject {
             let remaining = list.filter { !gone.contains($0.id) }
             if !remaining.isEmpty { next[key] = remaining }
         }
-        items = next
-        volume = VolumeInfo.current()
+        withAnimation(DS.spring) {
+            items = next
+            volume = VolumeInfo.current()
+        }
         saveCache()
     }
 
@@ -237,7 +313,7 @@ final class ScanEngine: ObservableObject {
                     .filter { $0.isAdvisory || $0.bytes >= ScanEngine.floor }
                     .sorted { $0.bytes > $1.bytes }
                 if !kept.isEmpty { collected[key] = kept }
-                items = collected
+                withAnimation(DS.arrive) { items = collected }
 
                 completed += 1
                 progress = completed / total
@@ -252,6 +328,10 @@ final class ScanEngine: ObservableObject {
                     : "Scanning " + running.sorted().prefix(2).joined(separator: ", ") + "…"
             }
         }
+
+        // Overlap can only be resolved once every scanner has reported.
+        collected = ScanEngine.deduplicate(collected)
+        withAnimation(DS.arrive) { items = collected }
 
         if Scanners.sawPermissionError { permissionDenied = true }
         volume = VolumeInfo.current()
@@ -320,6 +400,13 @@ enum Scanners {
             let r = Shell.run("/usr/bin/find", args, timeout: 300)
             for line in r.out.split(separator: "\n").map(String.init) {
                 guard !s.isExcluded(line) else { continue }
+                // A "dist" or "build" inside a dependency is the published
+                // package, not build output. Removing it breaks the library.
+                if names != ["node_modules"],
+                   line.contains("/node_modules/") || line.contains("/.venv/")
+                    || line.contains("/site-packages/") || line.contains("/vendor/") {
+                    continue
+                }
                 let size = Shell.diskUsage(line)
                 guard size > 0 else { continue }
                 out.append(ScanItem(
