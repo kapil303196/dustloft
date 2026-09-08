@@ -7,7 +7,7 @@
 # prompts. A stable identity makes the grant survive rebuilds.
 set -euo pipefail
 
-CN="Reclaim Local Signing"
+CN="Attic Local Signing"
 KEYCHAIN="$HOME/Library/Keychains/login.keychain-db"
 
 if security find-identity -v -p codesigning 2>/dev/null | grep -q "$CN"; then
@@ -38,11 +38,11 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 3650 \
 # macOS's security tool cannot read OpenSSL 3 defaults (AES + SHA-256 MAC),
 # so the archive must be written with legacy PBE algorithms.
 openssl pkcs12 -export -inkey "$TMP/key.pem" -in "$TMP/cert.pem" \
-  -out "$TMP/id.p12" -passout pass:reclaim -name "$CN" \
+  -out "$TMP/id.p12" -passout pass:attic -name "$CN" \
   -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -macalg sha1 2>/dev/null
 
 echo "==> Importing into your login keychain"
-security import "$TMP/id.p12" -k "$KEYCHAIN" -P reclaim -T /usr/bin/codesign -A >/dev/null
+security import "$TMP/id.p12" -k "$KEYCHAIN" -P attic -T /usr/bin/codesign -A >/dev/null
 
 echo "==> Trusting it for code signing (user-level, no sudo needed)"
 security add-trusted-cert -r trustRoot -p codeSign -k "$KEYCHAIN" "$TMP/cert.pem" 2>/dev/null \

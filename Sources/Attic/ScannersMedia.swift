@@ -125,7 +125,7 @@ extension Scanners {
         var out: [ScanItem] = []
 
         // Spotlight's index can balloon. It rebuilds itself, but it lives on the
-        // system volume, so Reclaim reports it rather than touching it.
+        // system volume, so Attic reports it rather than touching it.
         let spot = "/System/Volumes/Data/.Spotlight-V100"
         if FileManager.default.fileExists(atPath: spot) {
             let size = Shell.diskUsage(spot)

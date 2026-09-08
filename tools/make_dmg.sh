@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Packages Reclaim.app into a drag-to-install DMG.
+# Packages Attic.app into a drag-to-install DMG.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-APP="Reclaim"
+APP="Attic"
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Resources/Info.plist)"
 BUNDLE="dist/${APP}.app"
 STAGE="dist/dmg"
@@ -17,13 +17,13 @@ cp -R "${BUNDLE}" "${STAGE}/"
 ln -s /Applications "${STAGE}/Applications"
 
 cat > "${STAGE}/Read me first.txt" <<'TXT'
-Reclaim
+Attic
 
 EASIEST INSTALL (skips the macOS security warning entirely)
 -----------------------------------------------------------
 Open Terminal and paste this one line:
 
-  curl -fsSL https://raw.githubusercontent.com/kapil303196/reclaim/main/install-online.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/kapil303196/attic/main/install-online.sh | bash
 
 That downloads and installs the same app you are looking at now. It avoids the
 warning because macOS only quarantines files downloaded by a browser, not by
@@ -32,7 +32,7 @@ curl.
 
 INSTALLING FROM THIS DISK IMAGE
 -------------------------------
-1. Drag Reclaim onto the Applications folder.
+1. Drag Attic onto the Applications folder.
 
 2. Open it. macOS will say it "could not verify this app is free from malware".
    That is expected: this build is not notarised by Apple, which requires a paid
@@ -43,20 +43,20 @@ INSTALLING FROM THIS DISK IMAGE
 
      System Settings > Privacy & Security
 
-   Scroll down. There will be a line saying Reclaim was blocked, with an
-   "Open Anyway" button. Click it, then open Reclaim again.
+   Scroll down. There will be a line saying Attic was blocked, with an
+   "Open Anyway" button. Click it, then open Attic again.
 
    Or, in Terminal:
 
-     xattr -dr com.apple.quarantine /Applications/Reclaim.app
+     xattr -dr com.apple.quarantine /Applications/Attic.app
 
 
 AFTER INSTALLING
 ----------------
-Reclaim asks for Full Disk Access and explains why. macOS applies that
-permission only to a freshly launched app, so Reclaim restarts itself once.
+Attic asks for Full Disk Access and explains why. macOS applies that
+permission only to a freshly launched app, so Attic restarts itself once.
 
-Reclaim never deletes anything without showing it to you first.
+Attic never deletes anything without showing it to you first.
 TXT
 
 echo "==> Building ${DMG}"

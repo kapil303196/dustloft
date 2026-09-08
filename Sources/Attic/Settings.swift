@@ -30,7 +30,7 @@ final class Settings: ObservableObject {
 
     private var file: URL {
         let dir = URL(fileURLWithPath: Settings.home)
-            .appendingPathComponent("Library/Application Support/Reclaim", isDirectory: true)
+            .appendingPathComponent("Library/Application Support/Attic", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir.appendingPathComponent("settings.json")
     }
@@ -42,12 +42,24 @@ final class Settings: ObservableObject {
         var largeFileMinDays: Int?
     }
 
+    /// Moves settings and cache from the app's former name so an update does
+    /// not silently reset a person's exclusions and thresholds.
+    private static func migrateFromPreviousName() {
+        let fm = FileManager.default
+        let base = URL(fileURLWithPath: home).appendingPathComponent("Library/Application Support")
+        let old = base.appendingPathComponent("Reclaim")
+        let new = base.appendingPathComponent("Attic")
+        guard fm.fileExists(atPath: old.path), !fm.fileExists(atPath: new.path) else { return }
+        try? fm.moveItem(at: old, to: new)
+    }
+
     init() {
+        Settings.migrateFromPreviousName()
         let defaultRoots = [Settings.home + "/Desktop/projects"]
             .filter { FileManager.default.fileExists(atPath: $0) }
 
         let url = URL(fileURLWithPath: Settings.home)
-            .appendingPathComponent("Library/Application Support/Reclaim/settings.json")
+            .appendingPathComponent("Library/Application Support/Attic/settings.json")
 
         if let d = try? Data(contentsOf: url),
            let b = try? JSONDecoder().decode(Blob.self, from: d) {

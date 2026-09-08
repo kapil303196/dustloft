@@ -43,9 +43,9 @@ jobs:
 
       - name: Verify the binary really is universal
         run: |
-          lipo -info dist/Reclaim.app/Contents/MacOS/Reclaim
-          lipo -info dist/Reclaim.app/Contents/MacOS/Reclaim | grep -q "x86_64" \
-            && lipo -info dist/Reclaim.app/Contents/MacOS/Reclaim | grep -q "arm64" \
+          lipo -info dist/Attic.app/Contents/MacOS/Attic
+          lipo -info dist/Attic.app/Contents/MacOS/Attic | grep -q "x86_64" \
+            && lipo -info dist/Attic.app/Contents/MacOS/Attic | grep -q "arm64" \
             || { echo "::error::not a universal binary"; exit 1; }
 
       - name: Package DMG
@@ -54,7 +54,7 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Reclaim-${{ steps.v.outputs.version }}
+          name: Attic-${{ steps.v.outputs.version }}
           path: dist/*.dmg
           if-no-files-found: error
 
@@ -62,7 +62,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.v.outputs.version }}
-          name: Reclaim ${{ steps.v.outputs.version }}
+          name: Attic ${{ steps.v.outputs.version }}
           files: |
             dist/*.dmg
             dist/*.dmg.sha256
@@ -73,7 +73,7 @@ jobs:
             ### Easiest install
 
             ```
-            curl -fsSL https://raw.githubusercontent.com/kapil303196/reclaim/main/install-online.sh | bash
+            curl -fsSL https://raw.githubusercontent.com/kapil303196/attic/main/install-online.sh | bash
             ```
 
             This avoids the macOS security warning, because quarantine is applied
@@ -81,11 +81,11 @@ jobs:
 
             ### From the DMG
 
-            Drag Reclaim to Applications. macOS will say it cannot verify the app
+            Drag Attic to Applications. macOS will say it cannot verify the app
             is free from malware — this build is not notarised, which needs a paid
             Apple Developer account. On macOS 15 and later, Control-click then Open
             no longer works; go to **System Settings → Privacy & Security** and use
             the **Open Anyway** button that appears after the first blocked launch.
 
-            **Updating:** Reclaim checks this page itself and can install a new
+            **Updating:** Attic checks this page itself and can install a new
             version from inside the app.

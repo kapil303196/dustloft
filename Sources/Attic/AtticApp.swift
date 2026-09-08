@@ -1,15 +1,15 @@
 import SwiftUI
 
 extension Notification.Name {
-    static let reclaimCheckUpdates = Notification.Name("reclaimCheckUpdates")
+    static let atticCheckUpdates = Notification.Name("atticCheckUpdates")
 }
 
 @main
-struct ReclaimApp: App {
+struct AtticApp: App {
     @StateObject private var settings = Settings()
 
     var body: some Scene {
-        WindowGroup("Reclaim") {
+        WindowGroup("Attic") {
             RootView(settings: settings)
                 .frame(minWidth: 940, minHeight: 620)
         }
@@ -18,7 +18,7 @@ struct ReclaimApp: App {
             CommandGroup(replacing: .newItem) { }
             CommandGroup(after: .appInfo) {
                 Button("Check for Updates…") {
-                    NotificationCenter.default.post(name: .reclaimCheckUpdates, object: nil)
+                    NotificationCenter.default.post(name: .atticCheckUpdates, object: nil)
                 }
             }
         }

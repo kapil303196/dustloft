@@ -270,12 +270,12 @@ struct Category: Identifiable, Hashable {
                  hue: Color.adaptive(light: 0xDC2626, dark: 0xF87171)),
 
         Category(id: "git", title: "Git repositories", symbol: "arrow.triangle.branch", tier: .regenerable,
-                 blurb: "Repack loose objects. Reclaim never deletes a .git folder.",
+                 blurb: "Repack loose objects. Attic never deletes a .git folder.",
                  restoreHint: "Nothing is lost — gc only repacks.",
                  hue: Color.adaptive(light: 0x9333EA, dark: 0xC084FC), audience: .developer),
 
         Category(id: "advisory", title: "Worth a look", symbol: "info.circle.fill", tier: .admin,
-                 blurb: "Things worth reclaiming that Reclaim will not do for you.",
+                 blurb: "Things worth atticing that Attic will not do for you.",
                  restoreHint: "Run the shown command yourself.",
                  hue: Color.adaptive(light: 0x475569, dark: 0x94A3B8))
     ]

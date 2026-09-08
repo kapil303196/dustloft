@@ -2,17 +2,17 @@
 import PackageDescription
 
 let package = Package(
-    name: "Reclaim",
+    name: "Attic",
     platforms: [.macOS(.v13)],
     targets: [
         .executableTarget(
-            name: "Reclaim",
-            path: "Sources/Reclaim"
+            name: "Attic",
+            path: "Sources/Attic"
         ),
         .testTarget(
-            name: "ReclaimTests",
-            dependencies: ["Reclaim"],
-            path: "Tests/ReclaimTests"
+            name: "AtticTests",
+            dependencies: ["Attic"],
+            path: "Tests/AtticTests"
         )
     ]
 )

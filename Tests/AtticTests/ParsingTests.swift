@@ -1,11 +1,11 @@
 import XCTest
 import Foundation
-@testable import Reclaim
+@testable import Attic
 
 /// Covers the pure parsers and the safety predicates — the parts where a silent
 /// mistake would either hide reclaimable space or, far worse, offer to delete
 /// something protected.
-final class ReclaimTests: XCTestCase {
+final class AtticTests: XCTestCase {
 
     // MARK: docker system df
 
@@ -135,7 +135,7 @@ final class ReclaimTests: XCTestCase {
 
 // MARK: - De-duplication between overlapping scanners
 
-extension ReclaimTests {
+extension AtticTests {
 
     private func mk(_ path: String, _ bytes: Int64, _ tier: SafetyTier = .regenerable) -> ScanItem {
         ScanItem(name: (path as NSString).lastPathComponent, path: path, bytes: bytes,

@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-APP="Reclaim"
+APP="Attic"
 BUNDLE="dist/${APP}.app"
 TARGET="/Applications/${APP}.app"
 

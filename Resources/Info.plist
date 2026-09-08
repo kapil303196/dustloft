@@ -2,23 +2,23 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleName</key>                 <string>Reclaim</string>
-    <key>CFBundleDisplayName</key>          <string>Reclaim</string>
-    <key>CFBundleExecutable</key>           <string>Reclaim</string>
-    <key>CFBundleIdentifier</key>           <string>com.kapilupadhyay.reclaim</string>
+    <key>CFBundleName</key>                 <string>Attic</string>
+    <key>CFBundleDisplayName</key>          <string>Attic</string>
+    <key>CFBundleExecutable</key>           <string>Attic</string>
+    <key>CFBundleIdentifier</key>           <string>com.kapilupadhyay.attic</string>
     <key>CFBundledVersion</key>             <string>1</string>
     <key>CFBundleVersion</key>              <string>1</string>
     <key>CFBundleShortVersionString</key>   <string>1.0.0</string>
-    <key>CFBundleIconFile</key>            <string>Reclaim</string>
-    <key>CFBundleIconName</key>            <string>Reclaim</string>
+    <key>CFBundleIconFile</key>            <string>Attic</string>
+    <key>CFBundleIconName</key>            <string>Attic</string>
     <key>CFBundlePackageType</key>          <string>APPL</string>
     <key>LSMinimumSystemVersion</key>       <string>13.0</string>
     <key>NSHighResolutionCapable</key>      <true/>
     <key>NSPrincipalClass</key>             <string>NSApplication</string>
     <key>LSApplicationCategoryType</key>    <string>public.app-category.utilities</string>
     <key>NSAppleEventsUsageDescription</key>
-    <string>Reclaim needs to run an administrator command to remove system-owned caches you have selected.</string>
+    <string>Attic needs to run an administrator command to remove system-owned caches you have selected.</string>
     <key>NSDesktopFolderUsageDescription</key>
-    <string>Reclaim measures build output and dependency folders inside your project roots.</string>
+    <string>Attic measures build output and dependency folders inside your project roots.</string>
 </dict>
 </plist>

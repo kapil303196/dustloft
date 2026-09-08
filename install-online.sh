@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-command install of the latest Reclaim release.
+# One-command install of the latest Attic release.
 #
 # Why this exists: a DMG downloaded through a browser is tagged with
 # com.apple.quarantine, and macOS 15 removed the Control-click -> Open bypass
@@ -7,8 +7,8 @@
 # this way avoids the "cannot verify it is free from malware" dialog entirely.
 set -euo pipefail
 
-REPO="kapil303196/reclaim"
-APP="Reclaim"
+REPO="kapil303196/attic"
+APP="Attic"
 TARGET="/Applications/${APP}.app"
 
 say() { printf "==> %s\n" "$1"; }
@@ -22,11 +22,11 @@ say "Downloading $(basename "$URL")"
 
 TMP="$(mktemp -d)"
 trap 'hdiutil detach "$TMP/mnt" -quiet >/dev/null 2>&1 || true; rm -rf "$TMP"' EXIT
-curl -fsSL -o "$TMP/reclaim.dmg" "$URL"
+curl -fsSL -o "$TMP/attic.dmg" "$URL"
 
 say "Mounting"
 mkdir -p "$TMP/mnt"
-hdiutil attach "$TMP/reclaim.dmg" -nobrowse -quiet -mountpoint "$TMP/mnt"
+hdiutil attach "$TMP/attic.dmg" -nobrowse -quiet -mountpoint "$TMP/mnt"
 [ -d "$TMP/mnt/${APP}.app" ] || { echo "Disk image did not contain ${APP}.app"; exit 1; }
 
 if pgrep -f "${APP}.app" >/dev/null 2>&1; then
@@ -55,7 +55,7 @@ if ! codesign --verify --deep --strict "$TARGET" 2>/dev/null; then
 fi
 
 say "Opening ${APP}"
-if ! open "$TARGET" 2>/tmp/reclaim-open.err; then
+if ! open "$TARGET" 2>/tmp/attic-open.err; then
   echo
   echo "Could not open it automatically. The app is installed at:"
   echo "  $TARGET"
@@ -63,7 +63,7 @@ if ! open "$TARGET" 2>/tmp/reclaim-open.err; then
   echo "Open it from Finder, or run:"
   echo "  open '$TARGET'"
   echo
-  [ -s /tmp/reclaim-open.err ] && { echo "macOS said:"; sed 's/^/  /' /tmp/reclaim-open.err; }
+  [ -s /tmp/attic-open.err ] && { echo "macOS said:"; sed 's/^/  /' /tmp/attic-open.err; }
   exit 0
 fi
 
@@ -76,7 +76,7 @@ fi
 
 cat <<'NOTE'
 
-Reclaim will ask for Full Disk Access on first run and explain why.
-macOS applies that permission only to a freshly launched app, so Reclaim
+Attic will ask for Full Disk Access on first run and explain why.
+macOS applies that permission only to a freshly launched app, so Attic
 restarts itself once after you grant it.
 NOTE

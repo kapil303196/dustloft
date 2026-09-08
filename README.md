@@ -1,4 +1,4 @@
-<h1 align="center">Reclaim</h1>
+<h1 align="center">Attic</h1>
 
 <p align="center">
   <b>Find out what is actually eating your Mac's disk — and get it back safely.</b><br>
@@ -10,7 +10,7 @@
 ## Why
 
 macOS reports tens or hundreds of gigabytes as "System Data" and gives you no way
-to look inside it. Reclaim opens that box: it measures every real consumer of
+to look inside it. Attic opens that box: it measures every real consumer of
 space, sorts them by how recoverable they are, and makes you confirm before
 anything is removed.
 
@@ -21,7 +21,7 @@ the app's rules.
 
 ## Safety first
 
-Reclaim sorts everything it finds into three tiers:
+Attic sorts everything it finds into three tiers:
 
 | Tier | Meaning |
 |---|---|
@@ -35,14 +35,14 @@ And it refuses, by design, to:
 - touch Dropbox, iCloud Drive or any synced folder, where a local delete propagates everywhere
 - remove Docker volumes
 - touch your MySQL data directory
-- claim it can reclaim "purgeable" space, which no third-party app can reliably free
+- claim it can attic "purgeable" space, which no third-party app can reliably free
 
 ## Install
 
 ### One command (recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kapil303196/reclaim/main/install-online.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kapil303196/attic/main/install-online.sh | bash
 ```
 
 This downloads the latest release, installs it, and opens it. Use this if you
@@ -50,9 +50,9 @@ want it to just work.
 
 ### From the DMG
 
-**[Download the latest release](https://github.com/kapil303196/reclaim/releases/latest)**
+**[Download the latest release](https://github.com/kapil303196/attic/releases/latest)**
 — one universal build that runs natively on Apple Silicon and Intel. Drag
-Reclaim to Applications.
+Attic to Applications.
 
 macOS will then say it **"could not verify this app is free from malware"**.
 That is expected and is not a claim that anything was found. It means the build
@@ -63,14 +63,14 @@ certificate or access to notarisation.
 To open it anyway on **macOS 15 or later** — note that Control-click → Open no
 longer works, Apple removed that:
 
-1. Try to open Reclaim once and let it be blocked.
+1. Try to open Attic once and let it be blocked.
 2. Go to **System Settings → Privacy & Security**, scroll down, and click
-   **Open Anyway** next to the message about Reclaim.
+   **Open Anyway** next to the message about Attic.
 
 Or in Terminal:
 
 ```bash
-xattr -dr com.apple.quarantine /Applications/Reclaim.app
+xattr -dr com.apple.quarantine /Applications/Attic.app
 ```
 
 The one-command installer above avoids all of this, because macOS applies the
@@ -81,8 +81,8 @@ Each release also publishes a `.sha256` file if you want to verify the download.
 ### From source
 
 ```bash
-git clone https://github.com/kapil303196/reclaim.git
-cd reclaim
+git clone https://github.com/kapil303196/attic.git
+cd attic
 ./tools/setup_signing.sh    # optional, see below
 ./build.sh && ./install.sh
 ```
@@ -99,18 +99,18 @@ rebuilds. Only needed when building from source.
 
 ### Full Disk Access
 
-Reclaim asks for this on first run and explains why. Two things worth knowing:
+Attic asks for this on first run and explains why. Two things worth knowing:
 
 - macOS applies the permission **only to a freshly launched process**, so
-  Reclaim has to relaunch once after you grant it. It offers a button to do so.
-- If you rebuild the app with a different signature, you must remove Reclaim
+  Attic has to relaunch once after you grant it. It offers a button to do so.
+- If you rebuild the app with a different signature, you must remove Attic
   from the Full Disk Access list and re-add it.
 
 ## Updating
 
-Reclaim checks GitHub Releases on launch. When a newer build exists it offers
+Attic checks GitHub Releases on launch. When a newer build exists it offers
 **Update now**, which downloads the DMG, mounts it, replaces the installed app
-and restarts. **Check for Updates…** in the Reclaim menu does the same on
+and restarts. **Check for Updates…** in the Attic menu does the same on
 demand, and the running version is shown at the bottom of the Overview.
 
 Every push to `main` builds a universal DMG in CI and publishes it as a release,
@@ -118,7 +118,7 @@ so there is always something to update to.
 
 ## What it looks at
 
-**Every installed app, discovered dynamically** — no hardcoded list. Reclaim
+**Every installed app, discovered dynamically** — no hardcoded list. Attic
 measures each app's data, resolves folder names to real app names, and separates
 an app's actual content from its disposable caches, so whatever happens to be
 hoarding space on *your* Mac shows up on its own.
@@ -130,7 +130,7 @@ Messages attachments — plus the developer set (node_modules, build output,
 package stores, Docker, local LLM models, Xcode leftovers, Node runtimes and
 oversized git repositories), which only appears when such things are found.
 
-Scans are cached between launches, so opening Reclaim is instant and a full
+Scans are cached between launches, so opening Attic is instant and a full
 rescan only happens when you ask or once results are genuinely stale.
 
 ## Contributing / continuing this work

@@ -95,7 +95,7 @@ struct RootView: View {
             if engine.isStale { await engine.scan() }
             await updater.check(silent: true)
         }
-        .onReceive(NotificationCenter.default.publisher(for: .reclaimCheckUpdates)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .atticCheckUpdates)) { _ in
             Task { await updater.check() }
         }
         .alert("Updates", isPresented: Binding(
@@ -162,8 +162,8 @@ struct RootView: View {
                 } else if slices.isEmpty {
                     EmptyStateView(
                         symbol: "sparkles",
-                        title: "Nothing worth reclaiming",
-                        message: "Reclaim looked through caches, build output, leftovers and downloads and found nothing above 8 MB. Your Mac is in good shape.",
+                        title: "Nothing worth atticing",
+                        message: "Attic looked through caches, build output, leftovers and downloads and found nothing above 8 MB. Your Mac is in good shape.",
                         action: ("Scan again", { Task { await engine.scan() } })
                     )
                     .frame(height: 300)
@@ -200,7 +200,7 @@ struct RootView: View {
                 SafetyNote()
 
                 HStack(spacing: DS.s2) {
-                    Text("Reclaim \(updater.current)")
+                    Text("Attic \(updater.current)")
                         .font(DS.caption()).foregroundStyle(DS.textFaint)
                     if let l = updater.latest, !updater.updateAvailable {
                         Text("· latest release \(l)")
@@ -243,7 +243,7 @@ struct RootView: View {
                          selected: engine.totalSelected)
 
             // The one-click path for anyone who does not want to read a list.
-            // It still routes through review — Reclaim never deletes unasked —
+            // It still routes through review — Attic never deletes unasked —
             // but everything is pre-selected and one confirmation away.
             if engine.lastScan != nil {
                 VStack(alignment: .leading, spacing: DS.s2) {
@@ -552,9 +552,9 @@ struct PermissionBanner: View {
                 Image(systemName: "lock.shield.fill")
                     .font(.system(size: 16)).foregroundStyle(DS.warn)
                 VStack(alignment: .leading, spacing: DS.s1) {
-                    Text("Reclaim does not have Full Disk Access")
+                    Text("Attic does not have Full Disk Access")
                         .font(DS.body().weight(.semibold)).foregroundStyle(DS.text)
-                    Text("Without it macOS asks separately for Desktop, Downloads and Documents, and sizes come out lower than reality. Granting it once covers everything. Note that macOS applies the permission only to a freshly launched app, and a Reclaim update changes the app's signature, so it has to be granted again after updating.")
+                    Text("Without it macOS asks separately for Desktop, Downloads and Documents, and sizes come out lower than reality. Granting it once covers everything. Note that macOS applies the permission only to a freshly launched app, and a Attic update changes the app's signature, so it has to be granted again after updating.")
                         .font(DS.caption()).foregroundStyle(DS.textDim)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -571,7 +571,7 @@ struct SafetyNote: View {
         HStack(alignment: .top, spacing: DS.s2) {
             Image(systemName: "hand.raised.fill")
                 .font(.system(size: 11)).foregroundStyle(DS.textFaint)
-            Text("Reclaim never touches Dropbox, iCloud Drive or other synced folders, never deletes a .git directory, and never removes Docker volumes. Purgeable space is not listed, because no third-party app can reliably reclaim it.")
+            Text("Attic never touches Dropbox, iCloud Drive or other synced folders, never deletes a .git directory, and never removes Docker volumes. Purgeable space is not listed, because no third-party app can reliably attic it.")
                 .font(DS.caption()).foregroundStyle(DS.textDim)
                 .fixedSize(horizontal: false, vertical: true)
         }

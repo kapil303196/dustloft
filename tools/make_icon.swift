@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
 
-// Draws the Reclaim mark: a disk with a wedge reclaimed out of it, plus a
+// Draws the Attic mark: a disk with a wedge atticed out of it, plus a
 // sparkle. Rendered natively at every size so strokes stay crisp at 16px.
 
 func draw(size S: CGFloat) -> NSBitmapImageRep {
@@ -90,7 +90,7 @@ func draw(size S: CGFloat) -> NSBitmapImageRep {
     return rep
 }
 
-let outDir = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "Resources/Reclaim.iconset"
+let outDir = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "Resources/Attic.iconset"
 try? FileManager.default.createDirectory(atPath: outDir, withIntermediateDirectories: true)
 
 let variants: [(String, CGFloat)] = [

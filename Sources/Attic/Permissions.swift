@@ -11,7 +11,7 @@ enum Permissions {
     ///
     /// Important: macOS applies a newly granted Full Disk Access only to a
     /// *freshly launched* process. A running app keeps the permissions it
-    /// started with, so this correctly returns false until Reclaim relaunches.
+    /// started with, so this correctly returns false until Attic relaunches.
     static func hasFullDiskAccess() -> Bool {
         let tcc = NSHomeDirectory() + "/Library/Application Support/com.apple.TCC"
         if (try? FileManager.default.contentsOfDirectory(atPath: tcc)) != nil { return true }
@@ -65,10 +65,10 @@ struct WelcomeSheet: View {
                 Image(systemName: "externaldrive.badge.checkmark")
                     .font(.system(size: 30, weight: .light))
                     .foregroundStyle(DS.accent)
-                Text("Let Reclaim see your disk")
+                Text("Let Attic see your disk")
                     .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(DS.text)
-                Text("macOS hides most of your disk from apps. Without Full Disk Access, Reclaim cannot measure your Trash, app data or device backups — and it would quietly under-report how much space you could get back.")
+                Text("macOS hides most of your disk from apps. Without Full Disk Access, Attic cannot measure your Trash, app data or device backups — and it would quietly under-report how much space you could get back.")
                     .font(DS.body())
                     .foregroundStyle(DS.textDim)
                     .fixedSize(horizontal: false, vertical: true)
@@ -79,9 +79,9 @@ struct WelcomeSheet: View {
 
             VStack(alignment: .leading, spacing: DS.s4) {
                 step(1, "Open Privacy settings", "The Full Disk Access list opens directly.")
-                step(2, "Switch on Reclaim", "If it is not listed, use + and choose Reclaim, or drag it in from the Finder window.")
-                step(3, "Relaunch Reclaim",
-                     "macOS only applies Full Disk Access to a freshly launched app, so Reclaim has to restart once. This is a macOS rule, not a Reclaim one.")
+                step(2, "Switch on Attic", "If it is not listed, use + and choose Attic, or drag it in from the Finder window.")
+                step(3, "Relaunch Attic",
+                     "macOS only applies Full Disk Access to a freshly launched app, so Attic has to restart once. This is a macOS rule, not a Attic one.")
             }
             .padding(DS.s6)
 
@@ -96,14 +96,14 @@ struct WelcomeSheet: View {
                         .foregroundStyle(DS.safe)
                 } else if openedSettings {
                     // macOS will not apply the new grant to this running process.
-                    Button("Relaunch Reclaim") { Permissions.relaunch() }
+                    Button("Relaunch Attic") { Permissions.relaunch() }
                         .buttonStyle(PrimaryButton())
                     Button("Check again") {
                         withAnimation(DS.quick) { granted = Permissions.hasFullDiskAccess() }
                     }
                     .buttonStyle(SecondaryButton())
                 } else {
-                    Button("Show Reclaim in Finder") { Permissions.revealApp() }
+                    Button("Show Attic in Finder") { Permissions.revealApp() }
                         .buttonStyle(SecondaryButton())
                     Button("Open Privacy settings") {
                         openedSettings = true

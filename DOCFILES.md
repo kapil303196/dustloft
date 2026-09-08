@@ -1,7 +1,7 @@
 # DOCFILES — full context for any agent picking this up
 
 > Read this file first. It contains everything needed to continue work on
-> Reclaim without access to the original conversation.
+> Attic without access to the original conversation.
 
 ---
 
@@ -19,7 +19,7 @@ automates that exact investigation so it never has to be done by hand again.
 | WhatsApp media in `~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/Message/Media` | 92 GB | Biggest single win, but **irreversible** — WhatsApp does not re-serve old media. Became the `permanent` tier. |
 | 217 `node_modules` folders under one project root | 46 GB | Project-scoped sweeps, never a global filesystem walk. |
 | `.next` build caches (42 folders) | 20 GB | Build output is the most under-appreciated hog. |
-| Docker `Docker.raw` | 23 GB → 8.8 GB | Prune reclaims, and the raw file compacts afterwards. **Never `--volumes`.** |
+| Docker `Docker.raw` | 23 GB → 8.8 GB | Prune attics, and the raw file compacts afterwards. **Never `--volumes`.** |
 | Ollama models | 16 GB | Trivially re-pullable. |
 | `~/.cache` (huggingface, uv, puppeteer) | 10 GB | — |
 | Orphaned Xcode simulator runtimes | 13 GB | Root-owned, needs admin; orphaned because Xcode was uninstalled. |
@@ -40,7 +40,7 @@ deleting it looked safe. Running `git ls-remote origin` showed the remote
 **authenticated successfully but returned zero refs** — nothing had ever been
 pushed. That local `.git` was the only copy of the project's history.
 
-> **This is the app's headline feature.** Reclaim never offers to delete a
+> **This is the app's headline feature.** Attic never offers to delete a
 > `.git` directory. It offers `git gc --prune=now` only, and it shows a red
 > "Only copy — nothing pushed" badge when `ls-remote` returns zero refs.
 > See `Scanners.gitRepos` and `GitSafety` in the source.
@@ -73,8 +73,8 @@ overridable from the UI.
 ## 3. Architecture
 
 ```
-Sources/Reclaim/
-  ReclaimApp.swift        @main entry point, WindowGroup
+Sources/Attic/
+  AtticApp.swift        @main entry point, WindowGroup
   DesignSystem.swift      DS.* semantic tokens; light+dark defined together
   Models.swift            SafetyTier, CleanAction, ScanItem, Category, GitSafety
   Settings.swift          persisted roots + exclusions (JSON in App Support)
@@ -107,9 +107,9 @@ add a matching entry to the `jobs` array in `ScanEngine.scan()`, and write a
 ## 4. Build and install (macOS only)
 
 ```bash
-./build.sh     # swift build -c release, assemble dist/Reclaim.app, ad-hoc sign
+./build.sh     # swift build -c release, assemble dist/Attic.app, ad-hoc sign
 ./install.sh   # copy to /Applications
-open -a Reclaim
+open -a Attic
 ```
 
 Requires only **Xcode Command Line Tools** — no full Xcode. Verified on
@@ -190,7 +190,7 @@ and a Command Line Tools machine does not. Treat CI as the test environment.
    This is untested here because Xcode is not installed on the machine it was
    written on.
 5. **In-app update does not verify the download.** It checks the HTTP status and
-   that the mounted image contains `Reclaim.app`, but does not check a signature
+   that the mounted image contains `Attic.app`, but does not check a signature
    or checksum before replacing the installed bundle. Notarisation plus a
    published checksum would close this properly.
 6. **`describe()` cost** — naming the largest subfolder inside an app runs a

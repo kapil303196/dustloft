@@ -9,7 +9,7 @@ import SwiftUI
 @MainActor
 final class Updater: ObservableObject {
 
-    static let repo = "kapil303196/reclaim"
+    static let repo = "kapil303196/attic"
 
     @Published var latest: String?
     @Published var checking = false
@@ -79,7 +79,7 @@ final class Updater: ObservableObject {
                 }
             }
             if !silent && !updateAvailable {
-                message = "Reclaim \(current) is the latest version."
+                message = "Attic \(current) is the latest version."
             }
         } catch {
             if !silent { message = "Could not reach GitHub: \(error.localizedDescription)" }
@@ -106,26 +106,26 @@ final class Updater: ObservableObject {
             }
 
             let dmg = FileManager.default.temporaryDirectory
-                .appendingPathComponent("Reclaim-update.dmg")
+                .appendingPathComponent("Attic-update.dmg")
             try? FileManager.default.removeItem(at: dmg)
             try FileManager.default.moveItem(at: tmp, to: dmg)
 
             installStep = "Mounting…"
-            let mountPoint = "/Volumes/Reclaim"
+            let mountPoint = "/Volumes/Attic"
             _ = Shell.run("/usr/bin/hdiutil",
                           ["attach", dmg.path, "-nobrowse", "-quiet"], timeout: 180)
-            guard FileManager.default.fileExists(atPath: mountPoint + "/Reclaim.app") else {
+            guard FileManager.default.fileExists(atPath: mountPoint + "/Attic.app") else {
                 message = "Could not read the downloaded disk image."
                 return
             }
 
             installStep = "Installing…"
             // ditto preserves the signature and extended attributes; cp does not.
-            let target = "/Applications/Reclaim.app"
+            let target = "/Applications/Attic.app"
             let staged = FileManager.default.temporaryDirectory
-                .appendingPathComponent("Reclaim-new.app").path
+                .appendingPathComponent("Attic-new.app").path
             try? FileManager.default.removeItem(atPath: staged)
-            _ = Shell.run("/usr/bin/ditto", [mountPoint + "/Reclaim.app", staged], timeout: 300)
+            _ = Shell.run("/usr/bin/ditto", [mountPoint + "/Attic.app", staged], timeout: 300)
             _ = Shell.run("/usr/bin/hdiutil", ["detach", mountPoint, "-quiet"], timeout: 120)
 
             let script = "/bin/rm -rf '\(target)' && /usr/bin/ditto '\(staged)' '\(target)'"
@@ -165,7 +165,7 @@ struct UpdateBanner: View {
                 Image(systemName: "arrow.down.circle.fill")
                     .font(.system(size: 16)).foregroundStyle(DS.accent)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("Reclaim \(updater.latest ?? "") is available")
+                    Text("Attic \(updater.latest ?? "") is available")
                         .font(DS.body().weight(.semibold)).foregroundStyle(DS.text)
                     Text("You are running \(updater.current).")
                         .font(DS.caption()).foregroundStyle(DS.textDim)
