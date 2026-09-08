@@ -83,8 +83,11 @@ final class ScanEngine: ObservableObject {
         "browsers", "creative", "offlinemedia", "mail", "inappjunk",
         "leftovers", "pkgcache", "logs", "nvm", "ollama", "docker",
         "xcode", "node_modules", "build", "venv", "git",
-        "trash", "downloads", "largeold", "unusedapps",
-        "devcache", "appcache", "appdata", "advisory"
+        "trash", "downloads", "unusedapps",
+        "devcache", "appcache", "appdata",
+        // Deliberately last: a large file that already belongs to an app or a
+        // project should be reported there, not as an anonymous big file.
+        "largeold", "advisory"
     ]
 
     nonisolated private static func rank(_ category: String) -> Int {
@@ -177,6 +180,34 @@ final class ScanEngine: ObservableObject {
         saveCache()
     }
 
+    /// Re-runs one scanner, used when a filter that only affects it changes.
+    func rescan(category: String) async {
+        guard !isScanning else { return }
+        let s = settings
+        let job: (() -> [ScanItem])?
+        switch category {
+        case "largeold":   job = { Scanners.largeOld(s) }
+        case "downloads":  job = { Scanners.oldDownloads(s) }
+        case "unusedapps": job = { Scanners.unusedApps(s) }
+        default:           job = nil
+        }
+        guard let job else { return }
+
+        isScanning = true
+        progressText = "Rescanning…"
+        let found: [ScanItem] = await withCheckedContinuation { cont in
+            DispatchQueue.global(qos: .userInitiated).async { cont.resume(returning: job()) }
+        }
+        var next = items
+        let kept = found.filter { $0.isAdvisory || $0.bytes >= ScanEngine.floor }
+                        .sorted { $0.bytes > $1.bytes }
+        if kept.isEmpty { next.removeValue(forKey: category) } else { next[category] = kept }
+        withAnimation(DS.arrive) { items = ScanEngine.deduplicate(next) }
+        saveCache()
+        progressText = ""
+        isScanning = false
+    }
+
     /// Look up a row by id, so a sheet can render a frozen list while still
     /// reflecting live selection state.
     func item(_ id: UUID) -> ScanItem? {
@@ -241,7 +272,12 @@ final class ScanEngine: ObservableObject {
         isScanning = true
         progress = 0
         items = [:]
-        permissionDenied = false
+        Scanners.sawPermissionError = false
+        // Check once, before touching anything. Without this the first read of
+        // Desktop, Downloads or Documents makes macOS raise a separate prompt
+        // for each folder, which is a miserable way to learn the app needs
+        // Full Disk Access.
+        permissionDenied = !Permissions.hasFullDiskAccess()
 
         let s = settings
         let roots = settings.projectRoots

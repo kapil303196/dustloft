@@ -23,10 +23,14 @@ struct CategoryDetailView: View {
 
                 if items.isEmpty {
                     Card {
-                        EmptyStateView(symbol: "checkmark.circle",
-                                       title: "Nothing found here",
-                                       message: "This category is already clean.")
-                            .frame(height: 180)
+                        EmptyStateView(
+                            symbol: category.id == "largeold" ? "line.3.horizontal.decrease.circle" : "checkmark.circle",
+                            title: category.id == "largeold" ? "No files match these filters"
+                                                             : "Nothing found here",
+                            message: category.id == "largeold"
+                                ? "Nothing in your home folder is larger than \(engine.settings.largeFileMinMB) MB and untouched for \(engine.settings.largeFileMinDays) days. Files that belong to an app or a project are listed under their own category instead, so they do not appear twice. Try loosening the filters above."
+                                : "This category is already clean.")
+                            .frame(height: 200)
                     }
                 } else {
                     Card(padding: DS.s3) {
@@ -92,6 +96,10 @@ struct CategoryDetailView: View {
                               ? "Selects all \(selectable.count) items. You still have to confirm the permanent deletion before anything is removed."
                               : "Toggle every item in this category")
                     }
+                }
+
+                if category.id == "largeold" {
+                    LargeFileFilters(engine: engine)
                 }
 
                 HStack(spacing: DS.s1 + 2) {
@@ -207,5 +215,50 @@ struct ItemRow: View {
                 .fill(hovering ? DS.surfaceAlt.opacity(0.6) : Color.clear)
         )
         .onHover { h in withAnimation(DS.quick) { hovering = h } }
+    }
+}
+
+
+/// Lets a person decide what "big" and "old" mean for them, rather than
+/// baking one opinion into the app.
+struct LargeFileFilters: View {
+    @ObservedObject var engine: ScanEngine
+
+    private let sizes: [(String, Int)] = [
+        ("100 MB", 100), ("200 MB", 200), ("500 MB", 500),
+        ("1 GB", 1024), ("5 GB", 5120)
+    ]
+    private let ages: [(String, Int)] = [
+        ("30 days", 30), ("90 days", 90), ("6 months", 180),
+        ("1 year", 365), ("2 years", 730)
+    ]
+
+    var body: some View {
+        HStack(spacing: DS.s3) {
+            Picker("Larger than", selection: Binding(
+                get: { engine.settings.largeFileMinMB },
+                set: { engine.settings.largeFileMinMB = $0
+                       Task { await engine.rescan(category: "largeold") } })) {
+                ForEach(sizes, id: \.1) { Text($0.0).tag($0.1) }
+            }
+            .pickerStyle(.menu)
+            .frame(width: 168)
+
+            Picker("Untouched for", selection: Binding(
+                get: { engine.settings.largeFileMinDays },
+                set: { engine.settings.largeFileMinDays = $0
+                       Task { await engine.rescan(category: "largeold") } })) {
+                ForEach(ages, id: \.1) { Text($0.0).tag($0.1) }
+            }
+            .pickerStyle(.menu)
+            .frame(width: 190)
+
+            if engine.isScanning {
+                ProgressView().controlSize(.small)
+            }
+            Spacer()
+        }
+        .font(DS.caption())
+        .padding(.top, DS.s1)
     }
 }

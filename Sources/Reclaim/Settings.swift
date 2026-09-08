@@ -8,6 +8,9 @@ final class Settings: ObservableObject {
 
     @Published var projectRoots: [String] { didSet { save() } }
     @Published var exclusions: [String]   { didSet { save() } }
+    /// Thresholds for the large-and-old sweep, adjustable from that category.
+    @Published var largeFileMinMB: Int    { didSet { save() } }
+    @Published var largeFileMinDays: Int  { didSet { save() } }
 
     private static let home = NSHomeDirectory()
 
@@ -35,6 +38,8 @@ final class Settings: ObservableObject {
     private struct Blob: Codable {
         var projectRoots: [String]
         var exclusions: [String]
+        var largeFileMinMB: Int?
+        var largeFileMinDays: Int?
     }
 
     init() {
@@ -48,14 +53,19 @@ final class Settings: ObservableObject {
            let b = try? JSONDecoder().decode(Blob.self, from: d) {
             projectRoots = b.projectRoots
             exclusions = b.exclusions
+            largeFileMinMB = b.largeFileMinMB ?? 200
+            largeFileMinDays = b.largeFileMinDays ?? 180
         } else {
             projectRoots = defaultRoots.isEmpty ? [Settings.home + "/Desktop"] : defaultRoots
             exclusions = Settings.defaultExclusions
+            largeFileMinMB = 200
+            largeFileMinDays = 180
         }
     }
 
     private func save() {
-        let b = Blob(projectRoots: projectRoots, exclusions: exclusions)
+        let b = Blob(projectRoots: projectRoots, exclusions: exclusions,
+                     largeFileMinMB: largeFileMinMB, largeFileMinDays: largeFileMinDays)
         if let d = try? JSONEncoder().encode(b) { try? d.write(to: file) }
     }
 

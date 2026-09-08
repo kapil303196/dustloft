@@ -111,6 +111,40 @@ enum Shell {
         return (a?[.size] as? Int64) ?? 0
     }
 
+    /// Blocks actually allocated on disk, which is what freeing the file returns.
+    ///
+    /// Apparent size lies badly for sparse files: Docker.raw reports 460 GB
+    /// while occupying 8.8 GB. Reporting the apparent figure would promise
+    /// space that does not exist.
+    static func allocatedSize(_ path: String) -> Int64 {
+        var st = stat()
+        guard lstat(path, &st) == 0 else { return 0 }
+        return Int64(st.st_blocks) * 512
+    }
+
+    /// Modification time.
+    ///
+    /// Access time is deliberately ignored: macOS bumps it during Spotlight
+    /// indexing and backups, so a file nobody has opened in years still looks
+    /// freshly used. Spotlight's kMDItemLastUsedDate is the real "a person
+    /// opened this" signal and is preferred by the caller when present, but it
+    /// is absent for most files.
+    static func modifiedAt(_ path: String) -> Date? {
+        var st = stat()
+        guard lstat(path, &st) == 0 else { return nil }
+        return Date(timeIntervalSince1970: TimeInterval(st.st_mtimespec.tv_sec))
+    }
+
+    /// Spotlight's record of when a person last opened the file, if it has one.
+    static func spotlightLastUsed(_ path: String) -> Date? {
+        let r = run("/usr/bin/mdls", ["-name", "kMDItemLastUsedDate", "-raw", path], timeout: 15)
+        let raw = r.out.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard r.ok, raw != "(null)", !raw.isEmpty else { return nil }
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd HH:mm:ss Z"
+        return f.date(from: raw)
+    }
+
     // MARK: Privileged execution
 
     /// One authorisation prompt for the whole batch, via the native admin dialog.

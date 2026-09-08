@@ -21,7 +21,7 @@ struct RootView: View {
     }
 
     private var presentCategories: [Category] {
-        Category.all.filter { (engine.items[$0.id]?.isEmpty == false) }
+        Category.all.filter { engine.items[$0.id]?.isEmpty == false || $0.alwaysVisible }
     }
 
     private var currentTitle: String {
@@ -40,7 +40,7 @@ struct RootView: View {
     }
 
     private var slices: [(Category, Int64)] {
-        presentCategories.compactMap { cat in
+        Category.all.filter { engine.items[$0.id]?.isEmpty == false }.compactMap { cat in
             let b = (engine.items[cat.id] ?? []).filter { !$0.isAdvisory }.reduce(0) { $0 + $1.bytes }
             return b > 0 ? (cat, b) : nil
         }.sorted { $0.1 > $1.1 }
@@ -549,9 +549,9 @@ struct PermissionBanner: View {
                 Image(systemName: "lock.shield.fill")
                     .font(.system(size: 16)).foregroundStyle(DS.warn)
                 VStack(alignment: .leading, spacing: DS.s1) {
-                    Text("Some folders could not be read")
+                    Text("Reclaim does not have Full Disk Access")
                         .font(DS.body().weight(.semibold)).foregroundStyle(DS.text)
-                    Text("Grant Reclaim Full Disk Access so it can measure the Trash, container and app-data folders. Sizes shown may be lower than reality until you do.")
+                    Text("Without it macOS asks separately for Desktop, Downloads and Documents, and sizes come out lower than reality. Granting it once covers everything. Note that macOS applies the permission only to a freshly launched app, and a Reclaim update changes the app's signature, so it has to be granted again after updating.")
                         .font(DS.caption()).foregroundStyle(DS.textDim)
                         .fixedSize(horizontal: false, vertical: true)
                 }

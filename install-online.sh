@@ -43,8 +43,36 @@ ditto "$TMP/mnt/${APP}.app" "$TARGET"
 # Defensive: strip quarantine even though curl should not have set it.
 xattr -dr com.apple.quarantine "$TARGET" 2>/dev/null || true
 
-say "Installed. Opening ${APP}"
-open -a "$APP"
+# LaunchServices may not know about the bundle yet, and `open -a NAME` resolves
+# through its database — which is why opening by name can fail right after a
+# fresh copy. Register it, then open by full path.
+LSREG="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+[ -x "$LSREG" ] && "$LSREG" -f "$TARGET" >/dev/null 2>&1 || true
+
+say "Verifying the installed app"
+if ! codesign --verify --deep --strict "$TARGET" 2>/dev/null; then
+  echo "    note: signature check reported an issue; the app is ad-hoc signed, which is expected"
+fi
+
+say "Opening ${APP}"
+if ! open "$TARGET" 2>/tmp/reclaim-open.err; then
+  echo
+  echo "Could not open it automatically. The app is installed at:"
+  echo "  $TARGET"
+  echo
+  echo "Open it from Finder, or run:"
+  echo "  open '$TARGET'"
+  echo
+  [ -s /tmp/reclaim-open.err ] && { echo "macOS said:"; sed 's/^/  /' /tmp/reclaim-open.err; }
+  exit 0
+fi
+
+sleep 3
+if ! pgrep -f "${APP}.app" >/dev/null 2>&1; then
+  echo
+  echo "${APP} was installed but is not running yet. If macOS blocked it, open"
+  echo "System Settings > Privacy & Security, scroll down, and click Open Anyway."
+fi
 
 cat <<'NOTE'
 

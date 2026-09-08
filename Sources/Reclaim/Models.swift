@@ -128,6 +128,9 @@ struct Category: Identifiable, Hashable {
     /// Stable hue for the storage bar. Paired with an icon so colour is never the sole cue.
     let hue: Color
     var audience: Audience = .everyone
+    /// Categories that are tools rather than findings stay in the sidebar even
+    /// with no results, so their filters remain reachable.
+    var alwaysVisible: Bool = false
 
     static let all: [Category] = [
         Category(id: "trash", title: "Trash", symbol: "trash.fill", tier: .regenerable,
@@ -171,9 +174,10 @@ struct Category: Identifiable, Hashable {
                  hue: Color.adaptive(light: 0x16A34A, dark: 0x4ADE80)),
 
         Category(id: "largeold", title: "Large & old files", symbol: "doc.viewfinder.fill", tier: .permanent,
-                 blurb: "Files over 200 MB you have not opened in more than a year.",
+                 blurb: "Big files anywhere in your home folder that you have not touched in a long time. Adjust the two filters to widen or narrow the search.",
                  restoreHint: "Not recoverable — check each one before selecting.",
-                 hue: Color.adaptive(light: 0xB45309, dark: 0xFBBF24)),
+                 hue: Color.adaptive(light: 0xB45309, dark: 0xFBBF24),
+                 alwaysVisible: true),
 
         Category(id: "downloads", title: "Old downloads", symbol: "arrow.down.circle.fill", tier: .permanent,
                  blurb: "Anything in your Downloads folder older than 90 days.",

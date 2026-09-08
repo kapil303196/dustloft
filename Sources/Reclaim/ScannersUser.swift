@@ -15,24 +15,60 @@ extension Scanners {
 
     // MARK: Large and old files
 
+    /// Big files anywhere in the home folder that have not been touched in a
+    /// long time.
+    ///
+    /// Three things make this harder than it looks:
+    ///  * Apparent size lies for sparse files. Docker.raw reports 460 GB while
+    ///    occupying 8.8 GB, so allocated blocks are used instead.
+    ///  * `kMDItemLastUsedDate` is absent for most files, so it cannot be the
+    ///    only signal; the newest of access and modification time is used.
+    ///  * Spotlight finds candidates far faster than walking the disk, but it
+    ///    may be disabled, so there is a `find` fallback.
     static func largeOld(_ s: Settings) -> [ScanItem] {
-        // Deliberately skips ~/Library — system plumbing is covered by other
-        // categories and is not something a person should pick through here.
-        let r = Shell.run("/usr/bin/find", [
-            userHome, "-xdev", "-type", "f", "-size", "+200M",
-            "-not", "-path", userHome + "/Library/*",
-            "-mtime", "+365", "-print"
-        ], timeout: 300)
+        let minBytes = Int64(s.largeFileMinMB) * 1024 * 1024
+        let cutoff = Date().addingTimeInterval(-Double(s.largeFileMinDays) * 86_400)
 
-        return r.out.split(separator: "\n").map(String.init).compactMap { p in
-            guard !s.isExcluded(p) else { return nil }
-            let size = Shell.fileSize(p)
-            guard size > 0 else { return nil }
-            let months = daysOld(p) / 30
-            return ScanItem(name: (p as NSString).lastPathComponent, path: p, bytes: size,
-                            detail: "not opened in about \(months) months",
-                            action: .removePath(p), tier: .permanent, autoSelectable: false)
+        var candidates = spotlightCandidates(minBytes: minBytes)
+        if candidates.isEmpty { candidates = findCandidates(minBytes: minBytes) }
+
+        var out: [ScanItem] = []
+        for p in candidates {
+            guard !s.isExcluded(p) else { continue }
+            let size = Shell.allocatedSize(p)
+            guard size >= minBytes else { continue }          // sparse files fail here
+            // Prefer Spotlight's "a person opened this"; fall back to mtime.
+            let opened = Shell.spotlightLastUsed(p)
+            guard let used = opened ?? Shell.modifiedAt(p), used < cutoff else { continue }
+
+            let days = Calendar.current.dateComponents([.day], from: used, to: Date()).day ?? 0
+            let months = days / 30
+            let howLong = months >= 12
+                ? "about \(months / 12) year\(months / 12 == 1 ? "" : "s")"
+                : "about \(max(months, 1)) month\(months == 1 ? "" : "s")"
+            out.append(ScanItem(
+                name: (p as NSString).lastPathComponent,
+                path: p, bytes: size,
+                detail: opened != nil ? "last opened \(howLong) ago"
+                                      : "unchanged for \(howLong)",
+                action: .removePath(p), tier: .permanent, autoSelectable: false))
         }
+        return out
+    }
+
+    private static func spotlightCandidates(minBytes: Int64) -> [String] {
+        let q = "kMDItemFSSize > \(minBytes)"
+        let r = Shell.run("/usr/bin/mdfind", ["-onlyin", userHome, q], timeout: 120)
+        guard r.ok else { return [] }
+        return r.out.split(separator: "\n").map(String.init)
+    }
+
+    private static func findCandidates(minBytes: Int64) -> [String] {
+        let mb = max(1, minBytes / (1024 * 1024))
+        let r = Shell.run("/usr/bin/find", [
+            userHome, "-xdev", "-type", "f", "-size", "+\(mb)M", "-print"
+        ], timeout: 600)
+        return r.out.split(separator: "\n").map(String.init)
     }
 
     // MARK: Old downloads
@@ -200,9 +236,14 @@ extension Scanners {
         return out
     }
 
-    /// Directory listing that tolerates permission errors (used by user scanners).
+    /// Directory listing that tolerates a missing directory but still reports
+    /// permission failures, so the UI can explain why sizes look too small.
     static func entriesPublic(_ dir: String) -> [String] {
-        (try? FileManager.default.contentsOfDirectory(atPath: dir))?
-            .map { dir + "/" + $0 } ?? []
+        do {
+            return try FileManager.default.contentsOfDirectory(atPath: dir).map { dir + "/" + $0 }
+        } catch {
+            if (error as NSError).code == NSFileReadNoPermissionError { sawPermissionError = true }
+            return []
+        }
     }
 }
