@@ -117,13 +117,6 @@ rescan only happens when you ask or once results are genuinely stale.
 Read [`DOCFILES.md`](DOCFILES.md) first. It carries the full context: why each
 rule exists, the architecture, the threading model, and the known gaps.
 
-## Prior art
-
-[a third-party cleaner](https://example.com) is an excellent, mature,
-notarized open-source Mac cleaner. If you want a general-purpose cleaner with
-an app uninstaller and scheduling, use it. Reclaim exists for a narrower
-purpose and a stricter safety model.
-
 ## License
 
 MIT

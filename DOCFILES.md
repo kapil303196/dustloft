@@ -168,7 +168,7 @@ a new grant only to a freshly launched process, hence the relaunch button.
    at `Resources/Reclaim.icns` (build.sh already copies it if present).
 2. **Not notarized** — ad-hoc signed only. Fine for personal use; Gatekeeper
    will complain if distributed. Would need an Apple Developer ID.
-3. **No scheduling** — scheduled periodic auto-scan is not implemented.
+3. **No scheduling** — periodic auto-scan is not implemented.
 4. **No menu-bar mode.**
 5. **Simulator runtimes** are removed with `rm -rf`. When Xcode *is* installed,
    `xcrun simctl runtime delete` is the correct path.
@@ -178,10 +178,4 @@ a new grant only to a freshly launched process, hence the relaunch button.
 7. **No tests.** `parseDockerSize` and the ollama `list` parser are the two
    pure functions most worth covering.
 
-### Prior art
-`a third-party cleaner` (MIT, ~6.3k stars) is a mature general-purpose macOS
-cleaner — app uninstaller, orphan finder, scheduling, notarized. Reclaim
-deliberately does **not** compete with it. Reclaim's distinct value is
-project-scoped sweeps of `node_modules`/build output, the git-remote safety
-check, and the permanent-tier treatment of WhatsApp media. If a general cleaner
-is what is wanted, a third-party cleaner is the better tool.
+
