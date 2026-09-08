@@ -1,0 +1,87 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How to clear System Data on a Mac without breaking anything — Dustloft</title>
+<meta name="description" content="A step-by-step guide to safely reclaiming System Data on macOS, with the exact Terminal commands, what each one does, and which things you must never delete.">
+<link rel="canonical" href="https://dustloft.com/blog/how-to-clear-system-data-mac">
+<meta property="og:title" content="How to clear System Data on a Mac without breaking anything"><meta property="og:description" content="A step-by-step guide to safely reclaiming System Data on macOS, with the exact Terminal commands, what each one does, and which things you must never delete.">
+<meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/mark-v3.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/blog/_shared.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "How to clear System Data on a Mac without breaking anything", "description": "A step-by-step guide to safely reclaiming System Data on macOS, with the exact Terminal commands, what each one does, and which things you must never delete.", "url": "https://dustloft.com/blog/how-to-clear-system-data-mac", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.com"}, "datePublished": "2026-09-08", "dateModified": "2026-09-08"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I clear System Data on my Mac?", "acceptedAnswer": {"@type": "Answer", "text": "Measure first with du -kxd 1 to find what is actually inside it, then work from the largest item down. Caches, build output and unused Docker images are safe. App containers, device backups and .git directories are not."}}, {"@type": "Question", "name": "Does deleting System Data speed up a Mac?", "acceptedAnswer": {"@type": "Answer", "text": "Not directly. It frees disk space. macOS does slow down when a disk is nearly full, so reclaiming space on a drive above 90% full often helps indirectly."}}, {"@type": "Question", "name": "Why does du -sh miss folders on Mac?", "acceptedAnswer": {"@type": "Answer", "text": "The shell glob does not match names starting with a dot, so hidden folders such as ~/.cache and ~/.Trash are skipped entirely. Use du -kxd 1 ~ instead."}}]}</script>
+</head><body>
+<header><div class="wrap">
+<a class="brand" href="/"><img src="/img/mark-v3.png" alt="">Dustloft</a>
+<nav><a href="/blog/">Guides</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
+</div></header>
+<article><div class="wrap">
+<h1>How to clear System Data on a Mac without breaking anything</h1>
+<p class="meta">Guide · 8 min read · Updated September 2026</p>
+<div class="answer"><p><strong>Short answer:</strong> find out what is inside System Data before deleting anything. Use <code>du -kxd 1</code> to measure each folder, work from the largest item down, and never delete a <code>.git</code> directory, anything inside a cloud-synced folder, or a Docker volume.</p></div>
+
+<p>Every guide that tells you to empty <code>~/Library/Caches</code> is aiming at the wrong target. This one starts by measuring.</p>
+
+<h2>Step 1 — See where the space actually went</h2>
+<p>Open Terminal and run this. It measures every folder in your home directory in one pass:</p>
+<pre><code>du -kxd 1 ~ 2>/dev/null | sort -rn | head -20</code></pre>
+<p>The flags matter. <code>-x</code> stays on one filesystem so it does not wander into mounted volumes, <code>-d 1</code> stops at one level deep, and <code>-k</code> reports in kilobytes so <code>sort -rn</code> orders correctly.</p>
+<p>Repeat it one level down on whatever is largest:</p>
+<pre><code>du -kxd 1 ~/Library 2>/dev/null | sort -rn | head -20</code></pre>
+
+<h3>A warning about the obvious command</h3>
+<p>Almost every guide online suggests <code>du -sh ~/*</code>. That command <strong>silently skips every hidden folder</strong>, because the shell glob <code>*</code> does not match names beginning with a dot. On the machine used for this guide it hid 55 GB: <code>~/.ollama</code> at 16 GB, <code>~/.cache</code> at 10 GB and <code>~/.Trash</code> at 9.3 GB were all invisible. Use <code>du -kxd 1 ~</code> instead, which includes them.</p>
+
+<h2>Step 2 — Empty the Trash properly</h2>
+<p>Check what is in it first, because deleted applications often leave root-owned files that refuse to delete normally:</p>
+<pre><code>du -kxd 1 ~/.Trash | sort -rn | head</code></pre>
+<p>If normal emptying fails, the items are owned by root and need elevation.</p>
+
+<h2>Step 3 — Remove leftovers from apps you uninstalled</h2>
+<p>Uninstalling never removes these. Look for folders belonging to applications you no longer have:</p>
+<pre><code>du -kxd 1 ~/Library/Application\ Support ~/Library/Containers 2>/dev/null | sort -rn | head -20</code></pre>
+<p>Folder names are reverse-DNS bundle identifiers, so <code>com.microsoft.teams2</code> belongs to Teams. If the application is gone, its folder is dead weight. Leave anything starting <code>com.apple.</code> alone.</p>
+
+<h2>Step 4 — Reclaim developer space</h2>
+<p>If you write code, this is usually where the bulk is:</p>
+<pre><code># Dependency folders — restored by npm install
+find ~/Projects -type d -name node_modules -prune | wc -l
+
+# Docker: removes unused images, never volumes
+docker system prune -a
+
+# Local AI models
+ollama list</code></pre>
+<p>Docker deserves a note. <code>docker system prune -a</code> is safe because it never touches named volumes, which is where database data lives. Never add <code>--volumes</code> unless you know precisely what you are discarding.</p>
+
+<h2>Step 5 — Check for one enormous file</h2>
+<pre><code>mdfind -onlyin ~ "kMDItemFSSize > 1000000000" 2>/dev/null</code></pre>
+<p>Forgotten screen recordings, video editing scratch caches and virtual machine disks all show up here.</p>
+
+<h2>Things you must never delete</h2>
+<table><thead><tr><th>Do not touch</th><th>Why</th></tr></thead><tbody>
+<tr><td><code>.git</code> directories</td><td>May be the only copy of a project's history</td></tr>
+<tr><td>Anything in Dropbox, iCloud Drive, OneDrive</td><td>A local delete syncs to every device</td></tr>
+<tr><td>Docker volumes</td><td>Contain database data, not cache</td></tr>
+<tr><td><code>com.apple.*</code> containers</td><td>System components</td></tr>
+<tr><td>Your MySQL or Postgres data directory</td><td>Contains actual databases</td></tr>
+</tbody></table>
+
+<h3>The .git trap specifically</h3>
+<p>A repository with a remote configured <em>looks</em> backed up. It is not, until something has actually been pushed. Verify before assuming:</p>
+<pre><code>git -C /path/to/repo ls-remote origin | wc -l</code></pre>
+<p>If that returns <strong>0</strong>, the remote exists but is empty — nothing was ever pushed, and the local <code>.git</code> is the only copy in existence. Run <code>git gc --prune=now</code> to shrink it instead of deleting it.</p>
+
+<h2>The result</h2>
+<p>Working through this on one 512 GB MacBook Pro took it from 20 GB free to 215 GB free, without deleting a single irreplaceable file. If you would rather not do it by hand, <a href="/">Dustloft</a> automates exactly these steps and refuses, in code, to touch anything on the list above.</p><div class="cta">
+<h3>See exactly what is on your own disk</h3>
+<p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
+<a class="btn" href="/#install">Install Dustloft</a>
+</div>
+</div></article>
+<footer><div class="wrap">Dustloft — MIT licensed. No telemetry. ·
+<a href="/">Home</a> · <a href="/blog/">All guides</a> ·
+<a href="https://github.com/kapil303196/dustloft">Source</a><br><br>
+Made with ♥ in India by <a href="https://logicspark.io">Logicspark</a></div></footer>
+</body></html>

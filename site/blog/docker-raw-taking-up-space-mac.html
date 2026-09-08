@@ -1,0 +1,63 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Docker.raw is taking up hundreds of GB on your Mac — here is why — Dustloft</title>
+<meta name="description" content="Docker.raw can report 494 GB while occupying 9 GB, or quietly consume 300 GB of real disk. Sparse files explain both, and here is how to measure and reclaim it correctly.">
+<link rel="canonical" href="https://dustloft.com/blog/docker-raw-taking-up-space-mac">
+<meta property="og:title" content="Docker.raw is taking up hundreds of GB on your Mac — here is why"><meta property="og:description" content="Docker.raw can report 494 GB while occupying 9 GB, or quietly consume 300 GB of real disk. Sparse files explain both, and here is how to measure and reclaim it correctly.">
+<meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/mark-v3.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/blog/_shared.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Docker.raw is taking up hundreds of GB on your Mac \u2014 here is why", "description": "Docker.raw can report 494 GB while occupying 9 GB, or quietly consume 300 GB of real disk. Sparse files explain both, and here is how to measure and reclaim it correctly.", "url": "https://dustloft.com/blog/docker-raw-taking-up-space-mac", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.com"}, "datePublished": "2026-09-08", "dateModified": "2026-09-08"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Why is Docker.raw so large on my Mac?", "acceptedAnswer": {"@type": "Answer", "text": "Docker stores its Linux VM as a sparse file that grows as images and containers are written and does not automatically shrink when they are deleted. Run docker system prune -a to reclaim the space."}}, {"@type": "Question", "name": "Is it safe to delete Docker.raw?", "acceptedAnswer": {"@type": "Answer", "text": "It removes every image, container and volume on your machine. Prefer docker system prune -a, which reclaims unused data while leaving named volumes intact."}}, {"@type": "Question", "name": "Why do ls and du report different sizes for Docker.raw?", "acceptedAnswer": {"@type": "Answer", "text": "ls reports apparent size, which for a sparse file includes regions never written to disk. du reports blocks actually allocated. For sparse files only du is meaningful."}}]}</script>
+</head><body>
+<header><div class="wrap">
+<a class="brand" href="/"><img src="/img/mark-v3.png" alt="">Dustloft</a>
+<nav><a href="/blog/">Guides</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
+</div></header>
+<article><div class="wrap">
+<h1>Docker.raw is taking up hundreds of GB on your Mac — here is why</h1>
+<p class="meta">Technical · 5 min read · Updated September 2026</p>
+<div class="answer"><p><strong>Short answer:</strong> <code>Docker.raw</code> is a sparse file, so its apparent size and the space it actually occupies are different numbers. Use <code>du -h</code>, never <code>ls -lh</code>, to see the truth. Run <code>docker system prune -a</code> to reclaim, which never touches your volumes.</p></div>
+
+<p>On one Mac, <code>Docker.raw</code> reported <strong>494 GB</strong> — larger than the entire 494 GB drive. It was actually occupying <strong>9.3 GB</strong>.</p>
+
+<h2>Why the two numbers differ</h2>
+<p>Docker Desktop stores its Linux VM disk as a single sparse file. A sparse file has an <em>apparent size</em> — how large it claims to be — and an <em>allocated size</em>, the blocks genuinely written to disk. Unwritten regions cost nothing.</p>
+<p>The two commands disagree, and only one is useful:</p>
+<pre><code>P=~/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw
+
+ls -lh "$P"   # apparent size  — 494 GB, misleading
+du -h  "$P"   # allocated size — 9.3 GB, the truth</code></pre>
+<p>This is why disk tools disagree about Docker. Anything reading apparent size reports an absurd number; anything reading allocated blocks reports reality.</p>
+
+<h2>The opposite problem</h2>
+<p>Sparse files grow but do not automatically shrink. Delete 100 GB of images inside the VM and the file often stays the same size on your Mac, because the blocks were written once and never released. This is the more common complaint: Docker reports 20 GB of images while <code>Docker.raw</code> occupies 300 GB.</p>
+
+<h2>Reclaiming it properly</h2>
+<pre><code># What is actually reclaimable
+docker system df
+
+# Remove unused images, stopped containers and build cache
+docker system prune -a</code></pre>
+<p><code>prune -a</code> removes every image not used by a running container, plus stopped containers and build cache. <strong>It does not remove named volumes</strong>, which is where database data lives. Do not add <code>--volumes</code> unless you are certain.</p>
+<p>After pruning, Docker Desktop usually TRIMs the disk and the file shrinks on its own. On the machine above, <code>Docker.raw</code> went from 23 GB to 8.8 GB shortly after a prune.</p>
+
+<h2>If it does not shrink</h2>
+<p>Docker Desktop → Settings → Resources has a disk image size limit. Lowering it forces a rebuild of the file at the smaller size. The nuclear option — deleting <code>Docker.raw</code> — destroys every image, container and volume, so treat it as a last resort.</p>
+
+<h2>Preventing it</h2>
+<p>Docker's disk image defaults to a maximum near the free space available at install time, which on a large drive can be hundreds of gigabytes. Setting an explicit ceiling in Settings → Resources caps how far it can grow.</p>
+
+<p>If you would rather see this measured alongside everything else on your disk, <a href="/">Dustloft</a> reports allocated size rather than apparent size for exactly this reason, and offers a Docker prune that never touches volumes.</p><div class="cta">
+<h3>See exactly what is on your own disk</h3>
+<p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
+<a class="btn" href="/#install">Install Dustloft</a>
+</div>
+</div></article>
+<footer><div class="wrap">Dustloft — MIT licensed. No telemetry. ·
+<a href="/">Home</a> · <a href="/blog/">All guides</a> ·
+<a href="https://github.com/kapil303196/dustloft">Source</a><br><br>
+Made with ♥ in India by <a href="https://logicspark.io">Logicspark</a></div></footer>
+</body></html>

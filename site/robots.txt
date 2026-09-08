@@ -1,3 +1,18 @@
 User-agent: *
 Allow: /
-Sitemap: https://getdustloft.com/sitemap.xml
+
+# AI crawlers are explicitly welcome — the guides are written to be cited.
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: Claude-Web
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://dustloft.com/sitemap.xml

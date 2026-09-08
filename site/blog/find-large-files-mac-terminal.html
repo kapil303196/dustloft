@@ -1,0 +1,80 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How to find what is taking up space on your Mac using Terminal — Dustloft</title>
+<meta name="description" content="The du, df and mdfind commands that actually work on macOS, including the common mistake that silently hides tens of gigabytes of hidden folders.">
+<link rel="canonical" href="https://dustloft.com/blog/find-large-files-mac-terminal">
+<meta property="og:title" content="How to find what is taking up space on your Mac using Terminal"><meta property="og:description" content="The du, df and mdfind commands that actually work on macOS, including the common mistake that silently hides tens of gigabytes of hidden folders.">
+<meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/mark-v3.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/blog/_shared.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "How to find what is taking up space on your Mac using Terminal", "description": "The du, df and mdfind commands that actually work on macOS, including the common mistake that silently hides tens of gigabytes of hidden folders.", "url": "https://dustloft.com/blog/find-large-files-mac-terminal", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.com"}, "datePublished": "2026-09-08", "dateModified": "2026-09-08"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I find what is taking up space on my Mac using Terminal?", "acceptedAnswer": {"@type": "Answer", "text": "Run du -kxd 1 ~ | sort -rn | head -20 to rank folders by size, then repeat on whichever is largest. Use mdfind with a kMDItemFSSize filter to list individual files over 1 GB."}}, {"@type": "Question", "name": "Why does du -sh ~/* miss folders?", "acceptedAnswer": {"@type": "Answer", "text": "The shell glob does not match names beginning with a dot, so hidden folders such as ~/.cache, ~/.Trash and ~/.ollama are skipped silently. Use du -kxd 1 ~ instead."}}, {"@type": "Question", "name": "Which disk should I check with df on macOS?", "acceptedAnswer": {"@type": "Answer", "text": "Check /System/Volumes/Data. On modern macOS your files live on the Data volume; checking / reports the read-only system volume."}}]}</script>
+</head><body>
+<header><div class="wrap">
+<a class="brand" href="/"><img src="/img/mark-v3.png" alt="">Dustloft</a>
+<nav><a href="/blog/">Guides</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
+</div></header>
+<article><div class="wrap">
+<h1>How to find what is taking up space on your Mac using Terminal</h1>
+<p class="meta">Guide · 5 min read · Updated September 2026</p>
+<div class="answer"><p><strong>Short answer:</strong> use <code>du -kxd 1 ~ | sort -rn | head -20</code> to see which folders are largest, and <code>mdfind -onlyin ~ "kMDItemFSSize > 1000000000"</code> to find individual files over 1 GB. Avoid <code>du -sh ~/*</code>, which silently skips every hidden folder.</p></div>
+
+<h2>Start with the volume</h2>
+<pre><code>df -h /System/Volumes/Data</code></pre>
+<p>On modern macOS your files live on the Data volume, not <code>/</code>. Checking <code>/</code> shows the read-only system volume and tells you nothing useful.</p>
+
+<h2>Then measure folders</h2>
+<pre><code>du -kxd 1 ~ 2>/dev/null | sort -rn | head -20</code></pre>
+<p>Each flag earns its place:</p>
+<ul>
+<li><code>-k</code> reports kilobytes, so <code>sort -rn</code> orders numerically. Sorting <code>-h</code> output mixes MB and GB and produces nonsense.</li>
+<li><code>-x</code> stays on one filesystem, so it will not wander into mounted volumes or network shares.</li>
+<li><code>-d 1</code> stops one level deep. Without it, <code>du</code> prints every subfolder on the disk.</li>
+<li><code>2>/dev/null</code> hides permission errors for folders macOS protects.</li>
+</ul>
+<p>Then descend into whatever is largest by repeating with that path.</p>
+
+<h2>The mistake almost every guide makes</h2>
+<p>The commonly-shared command is:</p>
+<pre><code>du -sh ~/*     # wrong</code></pre>
+<p>The shell glob <code>*</code> does not match names beginning with a dot, so <strong>every hidden folder is silently skipped</strong>. On one machine this hid 55 GB — <code>~/.ollama</code> at 16 GB, <code>~/.cache</code> at 10 GB, <code>~/.Trash</code> at 9.3 GB and <code>~/.nvm</code> at 3.8 GB — with no error and no indication anything was missing.</p>
+<p>Use <code>du -kxd 1 ~</code>, which includes hidden folders and runs in a single pass rather than forking a process per entry.</p>
+
+<h2>Finding individual large files</h2>
+<p>Spotlight is far faster than walking the disk:</p>
+<pre><code>mdfind -onlyin ~ "kMDItemFSSize > 1000000000" 2>/dev/null</code></pre>
+<p>If Spotlight indexing is off, fall back to <code>find</code>:</p>
+<pre><code>find ~ -xdev -type f -size +1G 2>/dev/null</code></pre>
+
+<h2>Beware sparse files</h2>
+<p>Some files report a size they do not occupy. Disk images and virtual machine disks are the usual culprits — a Docker disk image can claim 494 GB while using 9 GB. <code>du</code> reports what is truly allocated; <code>ls -lh</code> does not. When the two disagree, trust <code>du</code>.</p>
+
+<h2>Checking Time Machine snapshots</h2>
+<pre><code>tmutil listlocalsnapshots /</code></pre>
+<p>Local snapshots are a well-known cause of space vanishing into System Data. They are usually reclaimed automatically under pressure, but can be thinned manually if needed.</p>
+
+<h2>A worked example</h2>
+<pre><code>$ df -h /System/Volumes/Data
+/dev/disk3s1  460Gi  404Gi   20Gi  96%
+
+$ du -kxd 1 ~ 2>/dev/null | sort -rn | head -5
+172000000  /Users/you/Library
+116000000  /Users/you/Desktop
+ 16800000  /Users/you/.ollama
+ 10500000  /Users/you/.cache
+  9700000  /Users/you/.Trash</code></pre>
+<p>Two of the top five are hidden folders that <code>du -sh ~/*</code> would never have shown.</p>
+
+<p>If you would rather not do this by hand, <a href="/">Dustloft</a> runs the same measurements, groups the results by how recoverable each item is, and shows every path and size before anything is deleted.</p><div class="cta">
+<h3>See exactly what is on your own disk</h3>
+<p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
+<a class="btn" href="/#install">Install Dustloft</a>
+</div>
+</div></article>
+<footer><div class="wrap">Dustloft — MIT licensed. No telemetry. ·
+<a href="/">Home</a> · <a href="/blog/">All guides</a> ·
+<a href="https://github.com/kapil303196/dustloft">Source</a><br><br>
+Made with ♥ in India by <a href="https://logicspark.io">Logicspark</a></div></footer>
+</body></html>

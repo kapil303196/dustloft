@@ -1,0 +1,69 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Why is System Data so large on your Mac? — Dustloft</title>
+<meta name="description" content="System Data is not one thing. It is every file macOS cannot file elsewhere. Here is what is actually inside it, with the real sizes found on a 512 GB MacBook Pro.">
+<link rel="canonical" href="https://dustloft.com/blog/why-is-system-data-so-large-on-mac">
+<meta property="og:title" content="Why is System Data so large on your Mac?"><meta property="og:description" content="System Data is not one thing. It is every file macOS cannot file elsewhere. Here is what is actually inside it, with the real sizes found on a 512 GB MacBook Pro.">
+<meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/mark-v3.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/blog/_shared.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Why is System Data so large on your Mac?", "description": "System Data is not one thing. It is every file macOS cannot file elsewhere. Here is what is actually inside it, with the real sizes found on a 512 GB MacBook Pro.", "url": "https://dustloft.com/blog/why-is-system-data-so-large-on-mac", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.com"}, "datePublished": "2026-09-08", "dateModified": "2026-09-08"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Why is System Data so large on my Mac?", "acceptedAnswer": {"@type": "Answer", "text": "macOS files everything it cannot categorise under System Data \u2014 caches, app containers, virtual machine disks, downloaded models, old device backups and local snapshots. Nothing prunes it automatically and there is no built-in way to inspect it."}}, {"@type": "Question", "name": "Is it safe to delete System Data on a Mac?", "acceptedAnswer": {"@type": "Answer", "text": "Parts of it are, parts are not. Caches and build output rebuild themselves. App containers and device backups contain real data that cannot be recovered. Identify each item before deleting anything."}}, {"@type": "Question", "name": "How much System Data is normal?", "acceptedAnswer": {"@type": "Answer", "text": "Between 10 and 30 GB is typical on a well-maintained Mac. Anything above 60 GB usually indicates a specific large cause such as a forgotten screen recording, a video editing cache or a container disk image."}}]}</script>
+</head><body>
+<header><div class="wrap">
+<a class="brand" href="/"><img src="/img/mark-v3.png" alt="">Dustloft</a>
+<nav><a href="/blog/">Guides</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
+</div></header>
+<article><div class="wrap">
+<h1>Why is System Data so large on your Mac?</h1>
+<p class="meta">Guide · 6 min read · Updated September 2026</p>
+<div class="answer"><p><strong>Short answer:</strong> “System Data” is not a category. It is the bucket macOS uses for every file it cannot file anywhere else — caches, app containers, virtual machine disks, downloaded AI models, old device backups and local snapshots. It grows quietly because nothing ever cleans it up, and macOS gives you no way to look inside it.</p></div>
+
+<p>If you open <strong>System Settings → General → Storage</strong> and see a grey block labelled <em>System Data</em> taking 100 GB or more, you are not looking at system files. You are looking at everything macOS declined to classify.</p>
+
+<h2>What is actually inside System Data</h2>
+<p>On a 512 GB MacBook Pro that reported 96% full, the breakdown looked like this. None of it was visible in Finder without deliberately hunting for it.</p>
+<table><thead><tr><th>What it was</th><th>Where it lived</th><th>Size</th></tr></thead><tbody>
+<tr><td>Messaging app media</td><td><code>~/Library/Group Containers/</code></td><td>92 GB</td></tr>
+<tr><td>Dependency folders</td><td><code>node_modules</code> across projects</td><td>46 GB</td></tr>
+<tr><td>Build output</td><td>42 stale <code>.next</code> caches</td><td>20 GB</td></tr>
+<tr><td>Local AI models</td><td><code>~/.ollama/models</code></td><td>16 GB</td></tr>
+<tr><td>Docker disk image</td><td><code>~/Library/Containers/com.docker.docker</code></td><td>14 GB</td></tr>
+<tr><td>Orphaned Xcode runtimes</td><td><code>/Library/Developer/CoreSimulator</code></td><td>13 GB</td></tr>
+<tr><td>Developer caches</td><td><code>~/.cache</code></td><td>10 GB</td></tr>
+<tr><td>Trash</td><td><code>~/.Trash</code></td><td>9.3 GB</td></tr>
+</tbody></table>
+<p>That is 220 GB of “System Data” that was, in reality, eight identifiable things.</p>
+
+<h2>Why it keeps growing</h2>
+<p>Three reasons, none of them a bug:</p>
+<ul>
+<li><strong>Nothing prunes caches.</strong> Applications write cache and scratch files freely. Very few ever delete them. Video editing applications are the worst offenders — After Effects and Premiere disk caches routinely reach hundreds of gigabytes.</li>
+<li><strong>Uninstalling an app leaves its data behind.</strong> Dragging an app to the Trash removes the bundle. Its container in <code>~/Library/Containers</code> and its support files in <code>~/Library/Application Support</code> stay exactly where they are, sometimes for years.</li>
+<li><strong>Some files are sparse.</strong> A Docker disk image can report 494 GB while occupying 9 GB, or the reverse — grow to hundreds of gigabytes while Docker itself reports a fraction of that.</li>
+</ul>
+
+<h2>The single biggest cause people miss</h2>
+<p>A forgotten screen recording. macOS will happily record for hours if the recording is never stopped, and the resulting file lands somewhere you never look. Cases of a single recording consuming 300–500 GB are reported regularly in Apple support threads. It is worth checking before anything else:</p>
+<pre><code>mdfind -onlyin ~ "kMDItemFSSize > 1000000000" 2>/dev/null</code></pre>
+<p>That lists every file over 1 GB in your home folder, using Spotlight rather than walking the disk.</p>
+
+<h2>What not to do</h2>
+<p>Two pieces of advice circulate widely and are both wrong:</p>
+<blockquote><p><strong>“Delete everything in ~/Library/Caches.”</strong> Most of it is small and it will be rebuilt within minutes. The gigabytes are almost never there — they are in <code>Application Support</code> and <code>Containers</code>, which are not caches and hold real data.</p></blockquote>
+<blockquote><p><strong>“Reclaim your purgeable space.”</strong> Purgeable space is managed by macOS itself. No third-party application can reliably free it, and any tool claiming otherwise is overpromising.</p></blockquote>
+
+<h2>How to find out what yours is</h2>
+<p>The numbers above are from one machine. Yours will differ. The next guide walks through <a href="/blog/how-to-clear-system-data-mac">clearing System Data safely</a>, and if you would rather not use Terminal, <a href="/">Dustloft</a> does the same measurement and shows you every item with its real size before anything is deleted.</p><div class="cta">
+<h3>See exactly what is on your own disk</h3>
+<p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
+<a class="btn" href="/#install">Install Dustloft</a>
+</div>
+</div></article>
+<footer><div class="wrap">Dustloft — MIT licensed. No telemetry. ·
+<a href="/">Home</a> · <a href="/blog/">All guides</a> ·
+<a href="https://github.com/kapil303196/dustloft">Source</a><br><br>
+Made with ♥ in India by <a href="https://logicspark.io">Logicspark</a></div></footer>
+</body></html>

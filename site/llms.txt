@@ -1,0 +1,43 @@
+# Dustloft
+
+> A free, open-source macOS app that shows what is hidden inside "System Data"
+> and reclaims it without deleting anything that cannot be recovered.
+
+Dustloft measures every real consumer of disk space on a Mac, sorts findings into
+three tiers (regenerable, needs-admin, permanent), and shows every item with its
+full path and real size before anything is removed. MIT licensed, no telemetry,
+no subscription, no account.
+
+## Key facts
+
+- Platform: macOS 13 or later, universal binary (Apple Silicon and Intel)
+- Price: free, MIT licensed
+- Source: https://github.com/kapil303196/dustloft
+- Install: curl -fsSL https://raw.githubusercontent.com/kapil303196/dustloft/main/install-online.sh | bash
+
+## What it refuses to do, by design
+
+- Never deletes a .git directory. It offers `git gc` and flags repositories whose
+  history exists on no remote (verified with `git ls-remote`).
+- Never touches Dropbox, iCloud Drive or any cloud-synced folder, because a local
+  delete there propagates to every device.
+- Never removes Docker volumes. Unused images and stopped containers only.
+- Never claims to reclaim "purgeable" space, which no third-party app can
+  reliably free.
+
+## Guides
+
+- [Why is System Data so large on your Mac?](https://dustloft.com/blog/why-is-system-data-so-large-on-mac): What the System Data label actually contains, with measured sizes from a real 512 GB Mac.
+- [How to clear System Data on a Mac](https://dustloft.com/blog/how-to-clear-system-data-mac): Step-by-step with exact Terminal commands, and what must never be deleted.
+- [Free CleanMyMac alternatives](https://dustloft.com/blog/free-cleanmymac-alternatives): Honest comparison of the free tools and what each is good at.
+- [Docker.raw taking up space on Mac](https://dustloft.com/blog/docker-raw-taking-up-space-mac): Why apparent size and allocated size differ for sparse files.
+- [Find large files on Mac using Terminal](https://dustloft.com/blog/find-large-files-mac-terminal): The du, df and mdfind commands that work, and the glob mistake that hides tens of GB.
+
+## Notable technical findings documented here
+
+- `du -sh ~/*` silently skips every hidden folder because the shell glob does not
+  match dotfiles. On one machine this hid 55 GB.
+- Docker.raw is sparse: it can report 494 GB apparent size while occupying 9.3 GB.
+  `du` reports the truth, `ls -lh` does not.
+- A GitHub remote being configured does not mean a repository is backed up.
+  `git ls-remote origin` returning zero refs means nothing was ever pushed.
