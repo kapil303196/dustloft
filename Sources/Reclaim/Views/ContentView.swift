@@ -199,7 +199,7 @@ struct RootView: View {
             // The one-click path for anyone who does not want to read a list.
             // It still routes through review — Reclaim never deletes unasked —
             // but everything is pre-selected and one confirmation away.
-            if engine.totalSafe > 0 {
+            if engine.lastScan != nil {
                 VStack(alignment: .leading, spacing: DS.s2) {
                     HStack(spacing: DS.s2) {
                         Button {
@@ -216,12 +216,17 @@ struct RootView: View {
                             }
                         }
                         .buttonStyle(PrimaryButton())
-                        .help("Reviews and removes only items that rebuild themselves. Nothing permanent is included.")
+                        .disabled(engine.totalSafe == 0)
+                        .help(engine.totalSafe == 0
+                              ? "Nothing safe to clean automatically right now"
+                              : "Reviews and removes only items that rebuild themselves. Nothing permanent is included.")
 
-                        Button("Select without cleaning") {
-                            withAnimation(DS.quick) { engine.selectEverythingSafe() }
+                        if engine.totalSafe > 0 {
+                            Button("Select without cleaning") {
+                                withAnimation(DS.quick) { engine.selectEverythingSafe() }
+                            }
+                            .buttonStyle(SecondaryButton())
                         }
-                        .buttonStyle(SecondaryButton())
 
                         if engine.totalSelected > 0 {
                             Button("Clear") {
@@ -234,7 +239,9 @@ struct RootView: View {
                     HStack(spacing: DS.s1 + 2) {
                         Image(systemName: "checkmark.shield.fill")
                             .font(.system(size: 9)).foregroundStyle(DS.safe)
-                        Text("Quick clean only touches caches and build output that come back on their own. Nothing permanent, nothing needing your judgement.")
+                        Text(engine.totalSafe == 0
+                             ? "Nothing to clean automatically — everything left needs you to look at it first."
+                             : "Quick clean only touches caches and build output that come back on their own. Nothing permanent, nothing needing your judgement.")
                             .font(DS.caption()).foregroundStyle(DS.textDim)
                             .fixedSize(horizontal: false, vertical: true)
                     }
