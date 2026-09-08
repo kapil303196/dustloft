@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>                 <string>Reclaim</string>
+    <key>CFBundleDisplayName</key>          <string>Reclaim</string>
+    <key>CFBundleExecutable</key>           <string>Reclaim</string>
+    <key>CFBundleIdentifier</key>           <string>com.kapilupadhyay.reclaim</string>
+    <key>CFBundledVersion</key>             <string>1</string>
+    <key>CFBundleVersion</key>              <string>1</string>
+    <key>CFBundleShortVersionString</key>   <string>1.0.0</string>
+    <key>CFBundlePackageType</key>          <string>APPL</string>
+    <key>LSMinimumSystemVersion</key>       <string>13.0</string>
+    <key>NSHighResolutionCapable</key>      <true/>
+    <key>NSPrincipalClass</key>             <string>NSApplication</string>
+    <key>LSApplicationCategoryType</key>    <string>public.app-category.utilities</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Reclaim needs to run an administrator command to remove system-owned caches you have selected.</string>
+    <key>NSDesktopFolderUsageDescription</key>
+    <string>Reclaim measures build output and dependency folders inside your project roots.</string>
+</dict>
+</plist>
