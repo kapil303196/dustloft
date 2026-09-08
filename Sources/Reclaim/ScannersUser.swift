@@ -30,16 +30,24 @@ extension Scanners {
         let cutoff = Date().addingTimeInterval(-Double(s.largeFileMinDays) * 86_400)
 
         var candidates = spotlightCandidates(minBytes: minBytes)
-        if candidates.isEmpty { candidates = findCandidates(minBytes: minBytes) }
+        if candidates.isEmpty {
+            candidates = findCandidates(minBytes: minBytes)
+        }
 
         var out: [ScanItem] = []
         for p in candidates {
             guard !s.isExcluded(p) else { continue }
             let size = Shell.allocatedSize(p)
             guard size >= minBytes else { continue }          // sparse files fail here
-            // Prefer Spotlight's "a person opened this"; fall back to mtime.
+
+            // Cheap filesystem check first. Only a file that already looks old
+            // is worth an mdls call, which spawns a process per file.
+            guard let modified = Shell.modifiedAt(p), modified < cutoff else { continue }
+            // Spotlight may know the person opened it more recently than it was
+            // last written, in which case it is not stale after all.
             let opened = Shell.spotlightLastUsed(p)
-            guard let used = opened ?? Shell.modifiedAt(p), used < cutoff else { continue }
+            if let opened, opened >= cutoff { continue }
+            let used = opened ?? modified
 
             let days = Calendar.current.dateComponents([.day], from: used, to: Date()).day ?? 0
             let months = days / 30

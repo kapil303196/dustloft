@@ -106,10 +106,18 @@ final class ScanEngine: ObservableObject {
     /// Exact duplicates collapse to the more specific category. A broader row
     /// that contains more specific rows keeps only the bytes those rows do not
     /// already account for, and disappears when nothing is left.
+    /// Categories that are a different view of bytes other categories already
+    /// cover, rather than a competing claim on them. They are exempt from
+    /// de-duplication and from the reclaimable total, so they can show a file
+    /// that also sits inside an app or project folder without double counting.
+    nonisolated static let lensCategories: Set<String> = ["largeold"]
+
     nonisolated static func deduplicate(_ input: [String: [ScanItem]]) -> [String: [ScanItem]] {
         struct Entry { var category: String; var item: ScanItem }
         var entries: [Entry] = []
+        var lenses: [String: [ScanItem]] = [:]
         for (cat, list) in input {
+            if lensCategories.contains(cat) { lenses[cat] = list; continue }
             for i in list { entries.append(Entry(category: cat, item: i)) }
         }
 
@@ -145,7 +153,7 @@ final class ScanEngine: ObservableObject {
         }
         let result = all.filter { !dropped.contains($0.item.path) }
 
-        var out: [String: [ScanItem]] = [:]
+        var out: [String: [ScanItem]] = lenses
         for e in result + passthrough {
             out[e.category, default: []].append(e.item)
         }
@@ -159,8 +167,12 @@ final class ScanEngine: ObservableObject {
     var selectedItems: [ScanItem] {
         items.values.flatMap { $0 }.filter { $0.selected }
     }
+    /// Excludes browse lenses, whose bytes are already counted elsewhere.
     var totalFound: Int64 {
-        items.values.flatMap { $0 }.filter { !$0.isAdvisory }.reduce(0) { $0 + $1.bytes }
+        items.filter { !ScanEngine.lensCategories.contains($0.key) }
+            .values.flatMap { $0 }
+            .filter { !$0.isAdvisory }
+            .reduce(0) { $0 + $1.bytes }
     }
 
     /// Removes rows that have just been cleaned, so the UI reflects reality

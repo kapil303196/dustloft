@@ -40,7 +40,10 @@ struct RootView: View {
     }
 
     private var slices: [(Category, Int64)] {
-        Category.all.filter { engine.items[$0.id]?.isEmpty == false }.compactMap { cat in
+        Category.all
+            .filter { engine.items[$0.id]?.isEmpty == false
+                      && !ScanEngine.lensCategories.contains($0.id) }
+            .compactMap { cat in
             let b = (engine.items[cat.id] ?? []).filter { !$0.isAdvisory }.reduce(0) { $0 + $1.bytes }
             return b > 0 ? (cat, b) : nil
         }.sorted { $0.1 > $1.1 }

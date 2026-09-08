@@ -174,7 +174,7 @@ struct Category: Identifiable, Hashable {
                  hue: Color.adaptive(light: 0x16A34A, dark: 0x4ADE80)),
 
         Category(id: "largeold", title: "Large & old files", symbol: "doc.viewfinder.fill", tier: .permanent,
-                 blurb: "Big files anywhere in your home folder that you have not touched in a long time. Adjust the two filters to widen or narrow the search.",
+                 blurb: "Big files anywhere in your home folder that you have not touched in a long time. These are shown for browsing and are not added to the reclaimable total, because some also sit inside an app or project listed above.",
                  restoreHint: "Not recoverable — check each one before selecting.",
                  hue: Color.adaptive(light: 0xB45309, dark: 0xFBBF24),
                  alwaysVisible: true),
