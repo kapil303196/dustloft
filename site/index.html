@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attic — find out what System Data is really doing to your Mac</title>
+<meta name="description" content="macOS hides tens of gigabytes as “System Data” and gives you no way to look inside. Attic opens it up, shows you exactly what is taking the space, and never deletes anything you cannot get back without asking first. Free and open source.">
+<link rel="canonical" href="https://atticmac.app/">
+<meta property="og:title" content="Attic — see what System Data is really doing to your Mac">
+<meta property="og:description" content="One Mac went from 20 GB free to 215 GB free. Attic shows you what is actually taking the space, sorted by how recoverable it is.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://atticmac.app/img/overview.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:oklch(0.155 0.012 62);
+  --bg2:oklch(0.205 0.014 62);
+  --line:oklch(0.30 0.016 62);
+  --ink:oklch(0.945 0.012 82);
+  --ink2:oklch(0.735 0.018 78);
+  --ink3:oklch(0.60 0.018 74);
+  --amber:oklch(0.80 0.145 72);
+  --amberdim:oklch(0.62 0.12 66);
+  --safe:oklch(0.78 0.125 158);
+  --warn:oklch(0.80 0.13 78);
+  --danger:oklch(0.70 0.16 27);
+  --maxw:1120px;
+  --step:clamp(1rem,0.6rem + 1.6vw,1.35rem);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Bricolage Grotesque",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  font-size:var(--step);line-height:1.65;-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:clamp(1.2rem,4vw,2.5rem)}
+a{color:inherit}
+h1,h2,h3{line-height:1.05;letter-spacing:-0.025em;text-wrap:balance;margin:0}
+h1{font-size:clamp(2.7rem,1.4rem + 5.6vw,5.6rem);font-weight:800}
+h2{font-size:clamp(1.9rem,1.2rem + 2.6vw,3.1rem);font-weight:600}
+h3{font-size:clamp(1.15rem,1rem + 0.7vw,1.5rem);font-weight:600}
+p{text-wrap:pretty}
+.lede{font-size:clamp(1.1rem,0.95rem + 0.8vw,1.5rem);color:var(--ink2);max-width:42ch;line-height:1.5}
+
+/* the single lamp in the attic */
+.lamp{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(60rem 40rem at 68% -10%, oklch(0.80 0.145 72 / 0.13), transparent 62%);}
+main,header,footer{position:relative;z-index:1}
+
+header{padding:1.6rem 0;border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:1rem}
+.brand{display:flex;align-items:center;gap:.65rem;font-weight:600;letter-spacing:-0.02em;text-decoration:none}
+.brand img{width:30px;height:30px;border-radius:8px}
+.bar nav{margin-left:auto;display:flex;gap:1.6rem;align-items:center;font-size:.92rem;color:var(--ink2)}
+.bar nav a{text-decoration:none}
+.bar nav a:hover{color:var(--amber)}
+
+.hero{padding:clamp(3.5rem,9vw,7rem) 0 clamp(2rem,5vw,3.5rem)}
+.hero .kicker{color:var(--amber);font-weight:500;font-size:.95rem;margin:0 0 1.2rem;letter-spacing:.01em}
+.hero h1 em{font-style:normal;color:var(--amber)}
+.hero .lede{margin:1.6rem 0 0}
+
+.cta{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;margin-top:2.4rem}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 1.35rem;border-radius:11px;
+  text-decoration:none;font-weight:600;font-size:1rem;border:1px solid transparent;transition:.18s ease}
+.btn-primary{background:var(--amber);color:oklch(0.20 0.03 62)}
+.btn-primary:hover{background:oklch(0.86 0.15 74)}
+.btn-ghost{border-color:var(--line);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--amberdim);color:var(--amber)}
+
+.cmd{display:flex;align-items:center;gap:.75rem;margin-top:1.5rem;padding:.85rem 1rem;
+  background:var(--bg2);border:1px solid var(--line);border-radius:11px;max-width:min(100%,44rem)}
+.cmd code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.83rem;color:var(--ink2);
+  overflow-x:auto;white-space:nowrap;flex:1}
+.cmd button{background:none;border:1px solid var(--line);color:var(--ink2);border-radius:7px;
+  padding:.35rem .7rem;font:inherit;font-size:.78rem;cursor:pointer;transition:.15s}
+.cmd button:hover{border-color:var(--amberdim);color:var(--amber)}
+.cmd .note{font-size:.78rem;color:var(--ink3)}
+
+figure{margin:clamp(2.5rem,6vw,4.5rem) 0 0}
+figure img{width:100%;height:auto;display:block;border-radius:14px;border:1px solid var(--line);
+  box-shadow:0 40px 90px -30px oklch(0 0 0 / .8)}
+figcaption{margin-top:.9rem;font-size:.85rem;color:var(--ink3)}
+
+section{padding:clamp(3.5rem,9vw,6.5rem) 0;border-top:1px solid var(--line)}
+.two{display:grid;gap:clamp(1.8rem,5vw,4rem);grid-template-columns:1fr}
+@media(min-width:900px){.two{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);align-items:start}}
+.sec-lede{color:var(--ink2);margin:1.1rem 0 0;max-width:46ch}
+
+/* the ledger — deliberately not a card grid */
+.ledger{margin:0;border-top:1px solid var(--line)}
+.ledger div{display:flex;align-items:baseline;gap:1rem;padding:.95rem 0;border-bottom:1px solid var(--line)}
+.ledger dt{flex:1;font-weight:500}
+.ledger .sz{font-variant-numeric:tabular-nums;font-weight:600;color:var(--amber);font-size:.98rem}
+.ledger .who{font-size:.82rem;color:var(--ink3);flex-basis:100%;margin:.15rem 0 0}
+@media(min-width:560px){.ledger .who{flex-basis:auto;flex:1.1;margin:0;text-align:right}}
+
+.rules{list-style:none;padding:0;margin:1.8rem 0 0;display:grid;gap:1.15rem}
+.rules li{display:flex;gap:.85rem;align-items:flex-start}
+.rules svg{flex:none;margin-top:.34rem}
+.rules b{font-weight:600}
+.rules span{color:var(--ink2)}
+
+.tiers{display:grid;gap:1rem;margin-top:2rem}
+@media(min-width:760px){.tiers{grid-template-columns:repeat(3,1fr)}}
+.tier{padding:1.3rem;border:1px solid var(--line);border-radius:13px;background:var(--bg2)}
+.tier h3{font-size:1.02rem;margin-bottom:.45rem}
+.tier p{margin:0;font-size:.9rem;color:var(--ink2);line-height:1.55}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:.5rem;vertical-align:middle}
+
+blockquote{margin:0;padding:clamp(1.5rem,4vw,2.4rem);border:1px solid var(--line);
+  border-radius:15px;background:var(--bg2)}
+blockquote p{margin:0 0 1rem;color:var(--ink2)}
+blockquote p:last-child{margin:0}
+blockquote strong{color:var(--ink);font-weight:600}
+.verdict{display:block;margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid var(--line);
+  color:var(--amber);font-weight:500}
+
+.faq{display:grid;gap:0;margin-top:2rem;border-top:1px solid var(--line)}
+.faq details{border-bottom:1px solid var(--line)}
+.faq summary{cursor:pointer;padding:1.15rem 0;font-weight:500;list-style:none;display:flex;gap:1rem}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";margin-left:auto;color:var(--ink3);font-weight:400}
+.faq details[open] summary::after{content:"–"}
+.faq p{margin:0 0 1.15rem;color:var(--ink2);font-size:.96rem;max-width:62ch}
+
+footer{padding:3rem 0 4rem;border-top:1px solid var(--line);color:var(--ink3);font-size:.88rem}
+footer a{color:var(--ink2)}
+.foot{display:flex;flex-wrap:wrap;gap:1.2rem;align-items:center}
+.foot nav{margin-left:auto;display:flex;gap:1.4rem}
+</style>
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"SoftwareApplication",
+  "name":"Attic",
+  "applicationCategory":"UtilitiesApplication",
+  "operatingSystem":"macOS 13.0 or later",
+  "description":"Attic shows what macOS hides as System Data, and never deletes anything you cannot get back without asking first.",
+  "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
+  "license":"https://opensource.org/licenses/MIT",
+  "url":"https://atticmac.app/",
+  "downloadUrl":"https://github.com/kapil303196/attic/releases/latest"
+}
+</script>
+</head>
+<body>
+<div class="lamp" aria-hidden="true"></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="/"><img src="/img/icon.png" alt="">Attic</a>
+    <nav>
+      <a href="#space">System Data</a>
+      <a href="#safety">Safety</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/kapil303196/attic">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+  <div class="hero">
+    <p class="kicker">Free and open source · macOS 13 and later</p>
+    <h1>Your Mac says <em>“System Data.”</em> It won’t say what that is.</h1>
+    <p class="lede">Attic opens the box. It measures every real consumer of space, sorts it by how recoverable it is, and refuses to delete anything you can’t get back without telling you first.</p>
+
+    <div class="cta">
+      <a class="btn btn-primary" href="#install">Install Attic</a>
+      <a class="btn btn-ghost" href="https://github.com/kapil303196/attic">Read the source</a>
+    </div>
+
+    <div class="cmd">
+      <code id="cmd">curl -fsSL https://raw.githubusercontent.com/kapil303196/attic/main/install-online.sh | bash</code>
+      <button type="button" id="copy" aria-label="Copy install command">Copy</button>
+    </div>
+    <p class="cmd-note" style="font-size:.82rem;color:var(--ink3);margin:.7rem 0 0">Installs the latest release and opens it. Universal build — Apple Silicon and Intel.</p>
+  </div>
+
+  <figure>
+    <img src="/img/overview.png" alt="Attic showing 226 GB free of 494 GB, a breakdown bar labelled ‘Where your space is going’, and a list of categories including App data at 30.21 GB and Package caches at 7.13 GB" width="2000" height="1176">
+    <figcaption>The Mac this was built on: 20 GB free at the start, 215 GB free by the end.</figcaption>
+  </figure>
+</div>
+
+<section id="space">
+  <div class="wrap two">
+    <div>
+      <h2>What is System Data on a Mac?</h2>
+      <p class="sec-lede">It isn’t one thing. macOS files anything it can’t categorise under that label — caches, containers, virtual machine disks, downloaded models, old device backups — then gives you no way to look inside. That’s why it grows to 100&nbsp;GB and nobody can say why.</p>
+      <p class="sec-lede">Here is what was actually hiding on one 512&nbsp;GB MacBook Pro that reported 96% full.</p>
+    </div>
+    <dl class="ledger">
+      <div><dt>WhatsApp media</dt><span class="sz">92 GB</span><dd class="who">Photos and video in one chat folder</dd></div>
+      <div><dt>node_modules</dt><span class="sz">46 GB</span><dd class="who">217 folders across projects</dd></div>
+      <div><dt>Build output</dt><span class="sz">20 GB</span><dd class="who">42 stale <code>.next</code> caches</dd></div>
+      <div><dt>Docker</dt><span class="sz">14 GB</span><dd class="who">Unused images, then the disk compacted</dd></div>
+      <div><dt>Local LLM models</dt><span class="sz">16 GB</span><dd class="who">Untouched for five months</dd></div>
+      <div><dt>Orphaned Xcode runtimes</dt><span class="sz">13 GB</span><dd class="who">Xcode had already been uninstalled</dd></div>
+      <div><dt>Developer caches</dt><span class="sz">10 GB</span><dd class="who">HuggingFace, uv, Puppeteer</dd></div>
+      <div><dt>Trash</dt><span class="sz">9.3 GB</span><dd class="who">Never emptied</dd></div>
+    </dl>
+  </div>
+</section>
+
+<section id="safety">
+  <div class="wrap">
+    <h2>The part most cleaners get wrong</h2>
+    <p class="sec-lede">Freeing space is easy. Not destroying something irreplaceable while you do it is the hard part. Attic sorts everything it finds into three tiers, and the tier decides how much friction stands between you and the delete button.</p>
+
+    <div class="tiers">
+      <div class="tier">
+        <h3><span class="dot" style="background:var(--safe)"></span>Regenerable</h3>
+        <p>Caches, build output, dependencies, Docker images. Comes back on its own. This is what one-click Quick Clean touches, and nothing else.</p>
+      </div>
+      <div class="tier">
+        <h3><span class="dot" style="background:var(--warn)"></span>Needs admin</h3>
+        <p>Safe to remove, but macOS asks for your password. Every item like this is batched into a single prompt rather than one per file.</p>
+      </div>
+      <div class="tier">
+        <h3><span class="dot" style="background:var(--danger)"></span>Permanent</h3>
+        <p>Gone forever. Never bulk-selected, never included in Quick Clean, and gated behind a separate confirmation you have to tick yourself.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:clamp(2.5rem,6vw,4rem)">What Attic refuses to do</h3>
+    <ul class="rules">
+      <li><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="oklch(0.70 0.16 27)" stroke-width="2"><path d="M3 8h10M8 3v10" transform="rotate(45 8 8)"/></svg>
+        <span><b>Delete a <code>.git</code> directory.</b> Ever. It offers <code>git gc</code> instead, and flags in red any repository whose history exists nowhere but your disk.</span></li>
+      <li><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="oklch(0.70 0.16 27)" stroke-width="2"><path d="M3 8h10M8 3v10" transform="rotate(45 8 8)"/></svg>
+        <span><b>Touch Dropbox, iCloud Drive or any synced folder.</b> A local delete there propagates to every other device. Not overridable.</span></li>
+      <li><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="oklch(0.70 0.16 27)" stroke-width="2"><path d="M3 8h10M8 3v10" transform="rotate(45 8 8)"/></svg>
+        <span><b>Remove Docker volumes.</b> Images and stopped containers, yes. The volumes holding your databases, never.</span></li>
+      <li><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="oklch(0.70 0.16 27)" stroke-width="2"><path d="M3 8h10M8 3v10" transform="rotate(45 8 8)"/></svg>
+        <span><b>Claim it can reclaim “purgeable” space.</b> No third-party app reliably can. Cleaners that promise it are overpromising.</span></li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="wrap two">
+    <div>
+      <h2>The near-miss that shaped the rules</h2>
+      <p class="sec-lede">Every safety rule above came from an actual cleanup, not a checklist. This one came closest to being a disaster.</p>
+    </div>
+    <blockquote>
+      <p>During the manual cleanup this app was built from, one project’s <code>.git</code> folder was 2.2&nbsp;GB. It had a GitHub remote configured, so deleting it looked obviously safe.</p>
+      <p>Running <code>git ls-remote</code> first told a different story. The remote <strong>authenticated successfully and returned zero refs.</strong> Nothing had ever been pushed. That local <code>.git</code> was the only copy of the project’s history that existed anywhere.</p>
+      <p>A repository with a remote configured looks backed up. It isn’t, until something has actually been pushed.</p>
+      <span class="verdict">Attic now runs that check for you, and never offers to delete a <code>.git</code> folder at all.</span>
+    </blockquote>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Nothing is removed until you’ve seen it</h2>
+    <p class="sec-lede">Every item is listed with its full path and real size. Untick anything you want to keep — the total follows along, and permanent items need one more confirmation before the button works.</p>
+    <figure>
+      <img src="/img/review.png" alt="Attic’s review screen listing 66 items totalling 26.36 GB, each with a checkbox, full file path and size, grouped by category" loading="lazy" width="2000" height="1176">
+      <figcaption>Real disk usage, not apparent size — a sparse Docker disk reporting 494 GB is shown at the 9.3 GB it actually occupies.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap two">
+    <div>
+      <h2>Install</h2>
+      <p class="sec-lede">One command. It fetches the latest release, installs it, and opens it.</p>
+      <div class="cmd" style="margin-top:1.6rem">
+        <code id="cmd2">curl -fsSL https://raw.githubusercontent.com/kapil303196/attic/main/install-online.sh | bash</code>
+        <button type="button" id="copy2" aria-label="Copy install command">Copy</button>
+      </div>
+      <p style="font-size:.87rem;color:var(--ink3);margin-top:1rem">Prefer a disk image? <a href="https://github.com/kapil303196/attic/releases/latest">Download the DMG</a>. Note that macOS shows a security warning for apps that aren’t notarised — the one-line install avoids it, because quarantine is applied to browser downloads and not to <code>curl</code>.</p>
+    </div>
+    <div class="faq">
+      <details><summary>Is it safe to run?</summary><p>The source is public and the safety rules are enforced in code and covered by tests — including that synced folders can never be offered for deletion, and that a repository with no remote refs is reported as the only copy. Nothing is deleted without a review screen.</p></details>
+      <details><summary>Why does it ask for Full Disk Access?</summary><p>Without it macOS hides the Trash, app containers and device backups, so sizes come out far lower than reality — and it asks separately for Desktop, Downloads and Documents. Attic asks once, up front, and explains why. macOS applies the permission only to a freshly launched app, so it restarts itself once.</p></details>
+      <details><summary>Why the “unidentified developer” warning?</summary><p>Notarisation requires a paid Apple Developer membership. The build is signed but not notarised. The one-line installer sidesteps the warning legitimately; from the DMG, use System Settings → Privacy &amp; Security → Open Anyway.</p></details>
+      <details><summary>Does it work on Intel Macs?</summary><p>Yes. Every release is a universal binary built in CI and verified with <code>lipo</code> to contain both architectures.</p></details>
+      <details><summary>What does it cost?</summary><p>Nothing. MIT licensed, no telemetry, no account, no upsell.</p></details>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span>Attic — MIT licensed. No telemetry.</span>
+    <nav>
+      <a href="https://github.com/kapil303196/attic">Source</a>
+      <a href="https://github.com/kapil303196/attic/releases/latest">Releases</a>
+      <a href="https://github.com/kapil303196/attic/blob/main/DOCFILES.md">Docs</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+for (const [btn, code] of [["copy","cmd"],["copy2","cmd2"]]) {
+  const b = document.getElementById(btn), c = document.getElementById(code);
+  if (!b || !c) continue;
+  b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(c.textContent.trim());
+      const was = b.textContent; b.textContent = "Copied";
+      setTimeout(() => { b.textContent = was; }, 1600);
+    } catch { b.textContent = "Press ⌘C"; }
+  });
+}
+</script>
+</body>
+</html>
