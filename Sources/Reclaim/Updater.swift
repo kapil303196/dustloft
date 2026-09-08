@@ -28,7 +28,8 @@ final class Updater: ObservableObject {
     }
 
     /// Plain semantic-version comparison; missing components count as zero.
-    static func isNewer(_ a: String, than b: String) -> Bool {
+    /// Pure, so it is deliberately not tied to the main actor.
+    nonisolated static func isNewer(_ a: String, than b: String) -> Bool {
         func parts(_ s: String) -> [Int] {
             s.trimmingCharacters(in: CharacterSet(charactersIn: "vV "))
              .split(separator: ".").map { Int($0.prefix(while: \.isNumber)) ?? 0 }
