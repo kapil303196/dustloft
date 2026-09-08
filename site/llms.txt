@@ -27,11 +27,11 @@ no subscription, no account.
 
 ## Guides
 
-- [Why is System Data so large on your Mac?](https://dustloft.com/blog/why-is-system-data-so-large-on-mac): What the System Data label actually contains, with measured sizes from a real 512 GB Mac.
-- [How to clear System Data on a Mac](https://dustloft.com/blog/how-to-clear-system-data-mac): Step-by-step with exact Terminal commands, and what must never be deleted.
-- [Free CleanMyMac alternatives](https://dustloft.com/blog/free-cleanmymac-alternatives): Honest comparison of the free tools and what each is good at.
-- [Docker.raw taking up space on Mac](https://dustloft.com/blog/docker-raw-taking-up-space-mac): Why apparent size and allocated size differ for sparse files.
-- [Find large files on Mac using Terminal](https://dustloft.com/blog/find-large-files-mac-terminal): The du, df and mdfind commands that work, and the glob mistake that hides tens of GB.
+- [Why is System Data so large on your Mac?](https://dustloft.vercel.app/blog/why-is-system-data-so-large-on-mac): What the System Data label actually contains, with measured sizes from a real 512 GB Mac.
+- [How to clear System Data on a Mac](https://dustloft.vercel.app/blog/how-to-clear-system-data-mac): Step-by-step with exact Terminal commands, and what must never be deleted.
+- [Free CleanMyMac alternatives](https://dustloft.vercel.app/blog/free-cleanmymac-alternatives): Honest comparison of the free tools and what each is good at.
+- [Docker.raw taking up space on Mac](https://dustloft.vercel.app/blog/docker-raw-taking-up-space-mac): Why apparent size and allocated size differ for sparse files.
+- [Find large files on Mac using Terminal](https://dustloft.vercel.app/blog/find-large-files-mac-terminal): The du, df and mdfind commands that work, and the glob mistake that hides tens of GB.
 
 ## Notable technical findings documented here
 

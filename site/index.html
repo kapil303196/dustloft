@@ -5,16 +5,23 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Dustloft — you already own the storage macOS is hiding from you</title>
 <meta name="description" content="Macs routinely hide 50–200 GB behind a label called “System Data”. Dustloft shows you exactly what it is and hands the space back, without ever deleting something you can’t get back. Free, open source, no subscription.">
-<link rel="canonical" href="https://getdustloft.com/">
+<link rel="canonical" href="https://dustloft.vercel.app/">
 <meta property="og:title" content="You already own the storage macOS is hiding from you">
 <meta property="og:description" content="One Mac was 96% full. 195 GB of it was invisible. Dustloft finds it in about two minutes.">
-<meta property="og:image" content="https://getdustloft.com/img/overview.png">
+<meta property="og:image" content="https://dustloft.vercel.app/img/overview.png">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#141013">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<meta property="og:site_name" content="Dustloft">
+<meta property="og:locale" content="en_US">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<meta property="og:url" content="https://dustloft.vercel.app/">
+<meta name="twitter:image" content="https://dustloft.vercel.app/img/overview.png">
 <link rel="icon" href="/img/mark-v3.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,800&display=swap" rel="stylesheet">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Dustloft","applicationCategory":"UtilitiesApplication","operatingSystem":"macOS 13.0 or later","description":"Shows what macOS hides as System Data and reclaims it safely.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://getdustloft.com/","downloadUrl":"https://github.com/kapil303196/dustloft/releases/latest"}
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Dustloft","applicationCategory":"UtilitiesApplication","operatingSystem":"macOS 13.0 or later","description":"Shows what macOS hides as System Data and reclaims it safely.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://dustloft.vercel.app/","downloadUrl":"https://github.com/kapil303196/dustloft/releases/latest"}
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
@@ -182,13 +189,42 @@ figure img{width:100%;height:auto;display:block;border-radius:14px;border:1px so
   box-shadow:0 40px 90px -32px oklch(0 0 0/.85)}
 figcaption{margin-top:.85rem;font-size:.84rem;color:var(--ink3)}
 
-.cmd{display:flex;align-items:center;gap:.7rem;margin-top:1.5rem;padding:.8rem 1rem;background:var(--bg2);
-  border:1px solid var(--line);border-radius:11px;max-width:min(100%,44rem)}
-.cmd code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.8rem;color:var(--ink2);
-  overflow-x:auto;white-space:nowrap;flex:1}
-.cmd button{background:none;border:1px solid var(--line);color:var(--ink2);border-radius:7px;
-  padding:.34rem .68rem;font:inherit;font-size:.76rem;cursor:pointer;transition:.15s}
-.cmd button:hover{border-color:var(--amber2);color:var(--amber)}
+/* The install command is the primary action, so it is built to be seen:
+   real terminal chrome, a prompt, and a copy target the whole width of the box. */
+.term{margin-top:2rem;max-width:min(100%,46rem);border-radius:14px;overflow:hidden;
+  border:1px solid oklch(.40 .06 66);background:oklch(.175 .016 62);
+  box-shadow:0 0 0 1px oklch(.815 .145 72/.10),0 24px 60px -28px oklch(0 0 0/.9),
+             0 0 44px -18px oklch(.815 .145 72/.30);
+  transition:border-color .25s,box-shadow .25s,transform .25s}
+.term:hover{border-color:var(--amber);transform:translateY(-2px);
+  box-shadow:0 0 0 1px oklch(.815 .145 72/.22),0 28px 70px -28px oklch(0 0 0/.9),
+             0 0 60px -14px oklch(.815 .145 72/.42)}
+.term-bar{display:flex;align-items:center;gap:.45rem;padding:.6rem .9rem;
+  background:oklch(.225 .016 62);border-bottom:1px solid oklch(.32 .02 62)}
+.term-bar i{width:10px;height:10px;border-radius:50%;display:block}
+.term-bar .t{margin-left:.6rem;font-size:.74rem;color:var(--ink3);letter-spacing:.02em}
+.term-body{display:flex;align-items:center;gap:.9rem;padding:1.05rem 1.1rem}
+.term-body .prompt{color:var(--amber);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:.95rem;font-weight:700;flex:none;user-select:none}
+.term-body code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:clamp(.78rem,.62rem + .42vw,.95rem);color:var(--ink);flex:1;min-width:0;
+  overflow-x:auto;white-space:nowrap;scrollbar-width:thin}
+.term-body code::-webkit-scrollbar{height:5px}
+.term-body code::-webkit-scrollbar-thumb{background:oklch(.35 .02 62);border-radius:9px}
+.caret{display:inline-block;width:8px;height:1.05em;background:var(--amber);vertical-align:-2px;
+  margin-left:2px;animation:blink 1.15s step-end infinite}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+.copy{flex:none;display:inline-flex;align-items:center;gap:.4rem;background:var(--amber);
+  color:oklch(.19 .03 62);border:none;border-radius:9px;padding:.55rem .95rem;
+  font:inherit;font-size:.85rem;font-weight:700;cursor:pointer;transition:.16s}
+.copy:hover{background:oklch(.87 .15 74)}
+.copy:active{transform:scale(.97)}
+.copy.done{background:var(--safe)}
+.term-note{display:flex;flex-wrap:wrap;gap:.4rem 1rem;align-items:center;
+  padding:.7rem 1.1rem;border-top:1px solid oklch(.28 .018 62);
+  font-size:.79rem;color:var(--ink3);background:oklch(.16 .014 62)}
+.term-note a{color:var(--ink2)}
+@media (prefers-reduced-motion:reduce){.caret{animation:none}.term:hover{transform:none}}
 
 .faq{margin-top:1.8rem;border-top:1px solid var(--line)}
 .faq details{border-bottom:1px solid var(--line)}
@@ -300,7 +336,7 @@ footer a{color:var(--ink2)}
 <div class="lamp" aria-hidden="true"></div>
 
 <header><div class="wrap bar">
-  <a class="brand" href="/"><img src="/img/mark-v3.png" alt="">Dustloft</a>
+  <a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="29" height="29">Dustloft</a>
   <nav>
     <a href="#inside">What's hiding</a><a href="#safety">Safety</a><a href="/blog/">Guides</a><a href="#install">Install</a>
     <a class="stars" href="https://github.com/kapil303196/dustloft" id="ghstars">
@@ -315,11 +351,23 @@ footer a{color:var(--ink2)}
     <span class="warn">⚠ Your Mac is not telling you the whole story</span>
     <h1>You’re about to pay for storage <span class="hide">you already own.</span></h1>
     <p class="lede">Macs routinely hide 50–200&nbsp;GB behind one unhelpful label: <em>System Data</em>. Buy a bigger Mac and you pay hundreds for space that was already sitting on your disk. Dustloft finds it in about two minutes.</p>
-    <div class="cta">
-      <a class="btn btn-primary" href="#install">Find my hidden space</a>
-      <a class="btn btn-ghost" href="#inside">Show me what’s in there</a>
+    <div class="term" id="term">
+      <div class="term-bar" aria-hidden="true">
+        <i style="background:oklch(.65 .19 25)"></i><i style="background:oklch(.80 .15 85)"></i><i style="background:oklch(.72 .17 145)"></i>
+        <span class="t">Terminal — paste this, press return</span>
+      </div>
+      <div class="term-body">
+        <span class="prompt" aria-hidden="true">$</span>
+        <code id="cmd">curl -fsSL https://raw.githubusercontent.com/kapil303196/dustloft/main/install-online.sh | bash</code><span class="caret" aria-hidden="true"></span>
+        <button type="button" class="copy" id="copy">Copy</button>
+      </div>
+      <div class="term-note">
+        <span>Takes about 10 seconds</span><span>·</span>
+        <span>Universal — Apple Silicon &amp; Intel</span><span>·</span>
+        <a href="https://github.com/kapil303196/dustloft/releases/latest">or download the DMG</a>
+      </div>
     </div>
-    <p class="trust">Free forever · Open source · No account · Nothing leaves your Mac</p>
+    <p class="trust">Free forever · Open source · No account · Nothing leaves your Mac · <a href="#inside" style="color:var(--ink2)">See what it finds first</a></p>
   </div>
 
   <div class="disk reveal" id="disk">
@@ -472,8 +520,17 @@ footer a{color:var(--ink2)}
     <div>
       <h2 class="reveal">Two minutes from now you’ll know</h2>
       <p class="sec-lede reveal">One command. It fetches the latest release, installs it and opens it.</p>
-      <div class="cmd reveal"><code id="cmd">curl -fsSL https://raw.githubusercontent.com/kapil303196/dustloft/main/install-online.sh | bash</code>
-        <button type="button" id="copy" aria-label="Copy install command">Copy</button></div>
+      <div class="term reveal" style="margin-top:1.6rem">
+        <div class="term-bar" aria-hidden="true">
+          <i style="background:oklch(.65 .19 25)"></i><i style="background:oklch(.80 .15 85)"></i><i style="background:oklch(.72 .17 145)"></i>
+          <span class="t">Terminal</span>
+        </div>
+        <div class="term-body">
+          <span class="prompt" aria-hidden="true">$</span>
+          <code id="cmd2">curl -fsSL https://raw.githubusercontent.com/kapil303196/dustloft/main/install-online.sh | bash</code>
+          <button type="button" class="copy" id="copy2">Copy</button>
+        </div>
+      </div>
       <p class="trust reveal" style="margin-top:1rem">Universal build — Apple Silicon and Intel. Prefer a disk image? <a href="https://github.com/kapil303196/dustloft/releases/latest">Download the DMG</a>.</p>
     </div>
     <div class="faq reveal" id="faq">
@@ -545,12 +602,24 @@ fetch("https://api.github.com/repos/kapil303196/dustloft").then(r => r.ok ? r.js
     document.getElementById("ghcount").textContent = d.stargazers_count.toLocaleString() + " on GitHub"; })
   .catch(() => {});
 
-const b = document.getElementById("copy"), c = document.getElementById("cmd");
-b && b.addEventListener("click", async () => {
-  try { await navigator.clipboard.writeText(c.textContent.trim());
-    const was = b.textContent; b.textContent = "Copied"; setTimeout(() => b.textContent = was, 1600);
-  } catch { b.textContent = "Press ⌘C"; }
-});
+function wireCopy(btnId, codeId) {
+  const b = document.getElementById(btnId), c = document.getElementById(codeId);
+  if (!b || !c) return;
+  const run = async (e) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(c.textContent.trim());
+      b.textContent = "Copied ✓"; b.classList.add("done");
+      setTimeout(() => { b.textContent = "Copy"; b.classList.remove("done"); }, 1900);
+    } catch { b.textContent = "Press ⌘C"; }
+  };
+  b.addEventListener("click", run);
+  // The whole box is a copy target, not just the small button.
+  const box = b.closest(".term");
+  if (box) { box.style.cursor = "pointer"; box.addEventListener("click", run); }
+}
+wireCopy("copy", "cmd");
+wireCopy("copy2", "cmd2");
 </script>
 </body>
 </html>

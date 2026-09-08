@@ -15,4 +15,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://dustloft.com/sitemap.xml
+Sitemap: https://dustloft.vercel.app/sitemap.xml
