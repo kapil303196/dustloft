@@ -10,6 +10,8 @@ struct RootView: View {
     /// nil = review everything selected; a category id = review just that section.
     @State private var reviewScope: String? = nil
     @State private var showWelcome = false
+    @State private var showSummary = false
+    @StateObject private var updater = Updater()
     @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
 
     init(settings: Settings) {
@@ -68,6 +70,9 @@ struct RootView: View {
         .sheet(isPresented: $showReview) {
             ReviewSheet(engine: engine, isPresented: $showReview, scope: reviewScope)
         }
+        .sheet(isPresented: $showSummary) {
+            SummarySheet(engine: engine, isPresented: $showSummary)
+        }
         .sheet(isPresented: $showWelcome) {
             WelcomeSheet(isPresented: $showWelcome) {
                 Task { await engine.scan() }
@@ -82,6 +87,18 @@ struct RootView: View {
                 return
             }
             if engine.lastScan == nil { await engine.scan() }
+            await updater.check(silent: true)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .reclaimCheckUpdates)) { _ in
+            Task { await updater.check() }
+        }
+        .alert("Updates", isPresented: Binding(
+            get: { updater.message != nil },
+            set: { if !$0 { updater.message = nil } })
+        ) {
+            Button("OK", role: .cancel) { updater.message = nil }
+        } message: {
+            Text(updater.message ?? "")
         }
     }
 
@@ -123,6 +140,10 @@ struct RootView: View {
             VStack(alignment: .leading, spacing: 0) {
 
                 hero
+
+                if updater.updateAvailable {
+                    UpdateBanner(updater: updater).padding(.bottom, DS.s4)
+                }
 
                 if engine.permissionDenied {
                     PermissionBanner(showWelcome: $showWelcome)
@@ -254,7 +275,8 @@ struct RootView: View {
                          value: Bytes.fmt(engine.volume.used), tint: DS.textDim)
                 if engine.totalFound > 0 {
                     StatChip(symbol: "sparkles", label: "Reclaimable",
-                             value: Bytes.fmt(engine.totalFound), tint: DS.safe)
+                             value: Bytes.fmt(engine.totalFound), tint: DS.safe,
+                             action: { showSummary = true })
                 }
                 if engine.totalSelected > 0 {
                     StatChip(symbol: "checkmark.circle.fill", label: "Selected",
@@ -432,7 +454,23 @@ struct StatChip: View {
     let label: String
     let value: String
     let tint: Color
+    /// When set the chip becomes a real control. It looked tappable before and
+    /// wasn't, which is worse than either alternative.
+    var action: (() -> Void)? = nil
+    @State private var hovering = false
+
     var body: some View {
+        if let action {
+            Button(action: action) { chip }
+                .buttonStyle(.plain)
+                .onHover { h in withAnimation(DS.quick) { hovering = h } }
+                .help("See what makes up this figure")
+        } else {
+            chip
+        }
+    }
+
+    private var chip: some View {
         HStack(spacing: DS.s1 + 2) {
             Image(systemName: symbol).font(.system(size: 10, weight: .semibold))
             Text(label).font(DS.caption())
@@ -441,10 +479,9 @@ struct StatChip: View {
         .foregroundStyle(tint)
         .padding(.horizontal, DS.s3)
         .padding(.vertical, DS.s1 + 3)
-        .background(
-            Capsule().fill(DS.surfaceAlt)
-        )
-        .overlay(Capsule().strokeBorder(DS.border, lineWidth: 1))
+        .background(Capsule().fill(hovering ? DS.raised : DS.surfaceAlt))
+        .overlay(Capsule().strokeBorder(hovering ? tint.opacity(0.5) : DS.border, lineWidth: 1))
+        .contentShape(Capsule())
         .accessibilityLabel("\(label): \(value)")
     }
 }

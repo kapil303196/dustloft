@@ -1,0 +1,61 @@
+name: Build DMG
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    # macOS runner is mandatory: SwiftUI and codesign do not exist on Linux.
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: swift --version
+
+      - name: Build universal app (Apple Silicon + Intel)
+        env:
+          UNIVERSAL: "1"
+        run: ./build.sh
+
+      - name: Verify the binary really is universal
+        run: |
+          lipo -info dist/Reclaim.app/Contents/MacOS/Reclaim
+          lipo -info dist/Reclaim.app/Contents/MacOS/Reclaim | grep -q "x86_64" \
+            && lipo -info dist/Reclaim.app/Contents/MacOS/Reclaim | grep -q "arm64" \
+            || { echo "not a universal binary"; exit 1; }
+
+      - name: Package DMG
+        run: ./tools/make_dmg.sh
+
+      - name: Read version
+        id: v
+        run: echo "version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Resources/Info.plist)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Reclaim-${{ steps.v.outputs.version }}-dmg
+          path: dist/*.dmg
+          if-no-files-found: error
+
+      # A tag publishes a Release, so the in-app updater has something to find.
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.dmg
+          generate_release_notes: true
+          body: |
+            Universal build for Apple Silicon and Intel Macs.
+
+            This build is not notarised by Apple, so the first launch needs a
+            right-click on Reclaim in Applications and then Open. You only do
+            this once.

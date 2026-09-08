@@ -115,25 +115,60 @@ final class ScanEngine: ObservableObject {
             ("nvm",          "Node versions",      { Scanners.nvm(s) }),
             ("whatsapp",     "WhatsApp media",     { Scanners.whatsapp(s) }),
             ("git",          "Git repositories",   { Scanners.gitRepos(roots, s) }),
+            ("inappjunk",    "in-app caches",      { Scanners.inAppJunk(s) }),
+            ("appdata",      "app data",           { Scanners.appData(s) }),
             ("advisory",     "system items",       { Scanners.advisories() + Scanners.systemAdvisories() })
         ]
 
+        // Scanners are independent and almost entirely I/O bound, so they run
+        // concurrently and results stream into the UI as each one lands.
+        // Concurrency is capped so a dozen parallel du calls cannot thrash the
+        // disk on a spinning-rust or heavily loaded machine.
         let total = Double(jobs.count)
         var collected: [String: [ScanItem]] = [:]
+        var completed = 0.0
+        let maxParallel = 5
 
-        for (idx, job) in jobs.enumerated() {
-            progressText = "Scanning \(job.1)…"
-            let found: [ScanItem] = await withCheckedContinuation { cont in
-                DispatchQueue.global(qos: .userInitiated).async {
-                    cont.resume(returning: job.2())
+        await withTaskGroup(of: (String, [ScanItem]).self) { group in
+            var next = 0
+
+            func addTask(_ job: (String, String, () -> [ScanItem])) {
+                group.addTask {
+                    let found: [ScanItem] = await withCheckedContinuation { cont in
+                        DispatchQueue.global(qos: .userInitiated).async {
+                            cont.resume(returning: job.2())
+                        }
+                    }
+                    return (job.0, found)
                 }
             }
-            let kept = found
-                .filter { $0.isAdvisory || $0.bytes >= ScanEngine.floor }
-                .sorted { $0.bytes > $1.bytes }
-            if !kept.isEmpty { collected[job.0] = kept }
-            items = collected
-            progress = Double(idx + 1) / total
+
+            while next < jobs.count && next < maxParallel {
+                addTask(jobs[next]); next += 1
+            }
+
+            var running = Set(jobs.prefix(next).map { $0.1 })
+            progressText = "Scanning " + running.sorted().prefix(2).joined(separator: ", ") + "…"
+
+            for await (key, found) in group {
+                let kept = found
+                    .filter { $0.isAdvisory || $0.bytes >= ScanEngine.floor }
+                    .sorted { $0.bytes > $1.bytes }
+                if !kept.isEmpty { collected[key] = kept }
+                items = collected
+
+                completed += 1
+                progress = completed / total
+
+                if let label = jobs.first(where: { $0.0 == key })?.1 { running.remove(label) }
+                if next < jobs.count {
+                    running.insert(jobs[next].1)
+                    addTask(jobs[next]); next += 1
+                }
+                progressText = running.isEmpty
+                    ? "Finishing…"
+                    : "Scanning " + running.sorted().prefix(2).joined(separator: ", ") + "…"
+            }
         }
 
         if Scanners.sawPermissionError { permissionDenied = true }
@@ -172,8 +207,9 @@ enum Scanners {
 
     static func trash(_ s: Settings) -> [ScanItem] {
         let dir = home + "/.Trash"
+        let sizes = Shell.childSizes(dir)
         return entries(of: dir).compactMap { p in
-            let size = Shell.diskUsage(p)
+            let size = sizes[p] ?? 0
             guard size > 0 else { return nil }
             let admin = isRootOwned(p)
             return ScanItem(
@@ -223,9 +259,10 @@ enum Scanners {
     // MARK: Caches
 
     static func devCaches(_ s: Settings) -> [ScanItem] {
-        entries(of: home + "/.cache").compactMap { p in
+        let sizes = Shell.childSizes(home + "/.cache")
+        return entries(of: home + "/.cache").compactMap { p in
             guard !s.isExcluded(p) else { return nil }
-            let size = Shell.diskUsage(p)
+            let size = sizes[p] ?? 0
             guard size > 0 else { return nil }
             return ScanItem(name: (p as NSString).lastPathComponent, path: p, bytes: size,
                             detail: nil, action: .removePath(p), tier: .regenerable)
@@ -233,9 +270,10 @@ enum Scanners {
     }
 
     static func appCaches(_ s: Settings) -> [ScanItem] {
-        entries(of: home + "/Library/Caches").compactMap { p in
+        let sizes = Shell.childSizes(home + "/Library/Caches")
+        return entries(of: home + "/Library/Caches").compactMap { p in
             guard !s.isExcluded(p) else { return nil }
-            let size = Shell.diskUsage(p)
+            let size = sizes[p] ?? 0
             guard size > 0 else { return nil }
             return ScanItem(name: (p as NSString).lastPathComponent, path: p, bytes: size,
                             detail: nil, action: .removePath(p), tier: .regenerable)
@@ -371,10 +409,11 @@ enum Scanners {
         let base = home + "/.nvm/versions/node"
         guard FileManager.default.fileExists(atPath: base) else { return [] }
         let current = Shell.tool("node", ["-v"], timeout: 10).out.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sizes = Shell.childSizes(base)
         return entries(of: base).compactMap { p in
             let v = (p as NSString).lastPathComponent
             guard v != current else { return nil }   // never offer the active runtime
-            let size = Shell.diskUsage(p)
+            let size = sizes[p] ?? 0
             guard size > 0 else { return nil }
             return ScanItem(name: v, path: p, bytes: size, detail: "not your active version (\(current))",
                             action: .removePath(p), tier: .regenerable)

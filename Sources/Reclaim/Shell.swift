@@ -89,6 +89,23 @@ enum Shell {
         return kb * 1024
     }
 
+    /// Sizes of every immediate child of `root`, from a SINGLE du process.
+    /// Forking du once per entry made a full scan take many minutes; a
+    /// directory with 700 children now costs one process instead of 700.
+    static func childSizes(_ root: String) -> [String: Int64] {
+        var out: [String: Int64] = [:]
+        let r = run("/usr/bin/du", ["-kxd", "1", root], timeout: 900)
+        for line in r.out.split(separator: "\n") {
+            let parts = line.split(separator: "\t", maxSplits: 1)
+            guard parts.count == 2,
+                  let kb = Int64(parts[0].trimmingCharacters(in: .whitespaces)) else { continue }
+            let path = String(parts[1])
+            guard path != root else { continue }
+            out[path] = kb * 1024
+        }
+        return out
+    }
+
     static func fileSize(_ path: String) -> Int64 {
         let a = try? FileManager.default.attributesOfItem(atPath: path)
         return (a?[.size] as? Int64) ?? 0

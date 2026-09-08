@@ -39,11 +39,12 @@ extension Scanners {
 
     static func oldDownloads(_ s: Settings) -> [ScanItem] {
         let dir = userHome + "/Downloads"
+        let sizes = Shell.childSizes(dir)
         return entriesPublic(dir).compactMap { p in
             guard !s.isExcluded(p) else { return nil }
             let d = daysOld(p)
             guard d >= 90 else { return nil }
-            let size = Shell.diskUsage(p)
+            let size = sizes[p] ?? 0
             guard size > 0 else { return nil }
             return ScanItem(name: (p as NSString).lastPathComponent, path: p, bytes: size,
                             detail: "\(d) days old",
@@ -65,6 +66,7 @@ extension Scanners {
         ]
         var out: [ScanItem] = []
         for root in roots {
+            let sizes = Shell.childSizes(root)
             for p in entriesPublic(root) {
                 let leaf = (p as NSString).lastPathComponent
                 // Only consider reverse-DNS folders — those map to a bundle id.
@@ -74,7 +76,7 @@ extension Scanners {
                     .replacingOccurrences(of: ".savedState", with: "")
                     .replacingOccurrences(of: ".ShipIt", with: "")
                 guard !installed.contains(base.lowercased()) else { continue }
-                let size = Shell.diskUsage(p)
+                let size = sizes[p] ?? 0
                 guard size > 0 else { continue }
                 out.append(ScanItem(name: leaf, path: p, bytes: size,
                                     detail: "no installed app matches this identifier",
@@ -105,8 +107,9 @@ extension Scanners {
     static func iosBackups(_ s: Settings) -> [ScanItem] {
         let dir = userHome + "/Library/Application Support/MobileSync/Backup"
         guard FileManager.default.fileExists(atPath: dir) else { return [] }
+        let sizes = Shell.childSizes(dir)
         return entriesPublic(dir).compactMap { p in
-            let size = Shell.diskUsage(p)
+            let size = sizes[p] ?? 0
             guard size > 0 else { return nil }
             let d = daysOld(p)
             return ScanItem(name: "Device backup " + (p as NSString).lastPathComponent.prefix(8),

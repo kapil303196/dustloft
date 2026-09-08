@@ -5,14 +5,31 @@ cd "$(dirname "$0")"
 
 APP="Reclaim"
 BUNDLE="dist/${APP}.app"
+BIN=".build/release/${APP}"
 
 echo "==> Compiling (release)"
-swift build -c release
+# UNIVERSAL=1 produces one binary that runs natively on both Apple Silicon
+# and Intel Macs, which is what a downloadable DMG has to ship.
+if [ "${UNIVERSAL:-0}" = "1" ]; then
+  # Multi-arch builds go through xcbuild, which ships with full Xcode only.
+  # CI has it; a Command Line Tools machine does not, so fall back cleanly
+  # rather than failing the whole build.
+  if swift build -c release --arch arm64 --arch x86_64 2>/dev/null; then
+    BIN="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/${APP}"
+  else
+    echo "    universal build needs full Xcode; falling back to this machine's architecture"
+    swift build -c release
+    BIN=".build/release/${APP}"
+  fi
+else
+  swift build -c release
+  BIN=".build/release/${APP}"
+fi
 
 echo "==> Assembling ${BUNDLE}"
 rm -rf "${BUNDLE}"
 mkdir -p "${BUNDLE}/Contents/MacOS" "${BUNDLE}/Contents/Resources"
-cp ".build/release/${APP}" "${BUNDLE}/Contents/MacOS/${APP}"
+cp "${BIN}" "${BUNDLE}/Contents/MacOS/${APP}"
 cp "Resources/Info.plist" "${BUNDLE}/Contents/Info.plist"
 [ -f "Resources/${APP}.icns" ] && cp "Resources/${APP}.icns" "${BUNDLE}/Contents/Resources/"
 

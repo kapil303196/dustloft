@@ -135,6 +135,16 @@ struct Category: Identifiable, Hashable {
                  restoreHint: "Already discarded by you.",
                  hue: Color.adaptive(light: 0x64748B, dark: 0x94A3B8)),
 
+        Category(id: "appdata", title: "App data", symbol: "square.grid.2x2.fill", tier: .permanent,
+                 blurb: "Every app on this Mac, measured and sorted by how much space its data takes. Discovered automatically, not from a fixed list.",
+                 restoreHint: "This is real app content — recordings, libraries, history. Open it before removing.",
+                 hue: Color.adaptive(light: 0x7C2D91, dark: 0xD8B4FE)),
+
+        Category(id: "inappjunk", title: "In-app caches", symbol: "trash.slash.fill", tier: .regenerable,
+                 blurb: "Cache folders found inside your installed apps, whichever apps those happen to be.",
+                 restoreHint: "Each app rebuilds its own cache.",
+                 hue: Color.adaptive(light: 0x0D9488, dark: 0x5EEAD4)),
+
         Category(id: "recordings", title: "Screen recordings", symbol: "record.circle.fill", tier: .permanent,
                  blurb: "Video files over 500 MB. Forgotten screen recordings are the single most common cause of a full Mac.",
                  restoreHint: "Not recoverable — play each one before selecting it.",
