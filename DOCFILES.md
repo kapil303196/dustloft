@@ -163,19 +163,36 @@ granted permission. `tools/setup_signing.sh` fixes this with a stable self-signe
 identity; `build.sh` uses it automatically when present. Also note macOS applies
 a new grant only to a freshly launched process, hence the relaunch button.
 
+### Testing
+
+`swift test` covers the pure parsers and, more importantly, the safety
+predicates: that synced folders and Brave can never be offered for deletion,
+that clearing the user exclusion list cannot unprotect a hard exclusion, that a
+lookalike prefix does not match, that Docker volumes never count as reclaimable,
+and that a remote with zero refs reads as "only copy" while an unchecked remote
+does not.
+
+Tests run in CI, not locally: XCTest ships with full Xcode, which the runner has
+and a Command Line Tools machine does not. Treat CI as the test environment.
+
 ### Known gaps / next steps
-1. **No app icon** — ships with the generic macOS placeholder. Needs an `.icns`
-   at `Resources/Reclaim.icns` (build.sh already copies it if present).
-2. **Not notarized** — ad-hoc signed only. Fine for personal use; Gatekeeper
-   will complain if distributed. Would need an Apple Developer ID.
-3. **No scheduling** — periodic auto-scan is not implemented.
-4. **No menu-bar mode.**
-5. **Simulator runtimes** are removed with `rm -rf`. When Xcode *is* installed,
-   `xcrun simctl runtime delete` is the correct path.
-6. **Docker size parsing** reads the `docker system df` table; a format change
-   upstream would break `parseDockerSize`. A `--format json` path would be more
-   robust.
-7. **No tests.** `parseDockerSize` and the ollama `list` parser are the two
-   pure functions most worth covering.
 
-
+1. **Not notarised** — the build is signed with a stable local identity, not an
+   Apple Developer ID, so a downloaded copy needs one right-click → Open. Fixing
+   this needs a paid account; the path is `Developer ID Application` signing,
+   `xcrun notarytool submit --wait`, then `xcrun stapler staple`, all of which
+   the existing workflow could do on tag.
+2. **No scheduling** — there is no periodic background scan. The scan is now
+   fast and cached, so a background refresh on a timer would be cheap to add.
+3. **No menu-bar mode** — the app is window-only.
+4. **Simulator runtimes** are removed with `rm -rf`. When Xcode *is* installed,
+   `xcrun simctl runtime delete` is the supported route and should be preferred.
+   This is untested here because Xcode is not installed on the machine it was
+   written on.
+5. **In-app update does not verify the download.** It checks the HTTP status and
+   that the mounted image contains `Reclaim.app`, but does not check a signature
+   or checksum before replacing the installed bundle. Notarisation plus a
+   published checksum would close this properly.
+6. **`describe()` cost** — naming the largest subfolder inside an app runs a
+   nested `du`, so it is limited to the twelve biggest apps. The rest show a
+   generic label.
