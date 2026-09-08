@@ -40,7 +40,9 @@ struct ReviewSheet: View {
             else if cleaner.isRunning { running }
             else                      { review }
         }
-        .frame(width: 620, height: 560)
+        // A progress bar does not need a 620x560 window.
+        .frame(width: cleaner.isRunning && !cleaner.finished ? 400 : 620,
+               height: cleaner.isRunning && !cleaner.finished ? 168 : 560)
         .background(DS.bg)
     }
 
@@ -95,7 +97,10 @@ struct ReviewSheet: View {
                         .font(DS.caption()).foregroundStyle(DS.textDim)
                 }
                 Button("Clean \(Bytes.fmt(totalBytes))") {
-                    Task { await cleaner.run(items) }
+                    Task {
+                        await cleaner.run(items)
+                        engine.removeCleaned(cleaner.cleanedIDs)
+                    }
                 }
                 .buttonStyle(PrimaryButton(tint: permanent.isEmpty ? DS.accent : DS.danger))
                 .disabled(blocked)
@@ -164,19 +169,21 @@ struct ReviewSheet: View {
     // MARK: Running
 
     private var running: some View {
-        VStack(spacing: DS.s4) {
-            Spacer()
-            ProgressView(value: cleaner.progress)
-                .progressViewStyle(.linear)
-                .frame(width: 320)
+        VStack(alignment: .leading, spacing: DS.s3) {
+            HStack(spacing: DS.s2) {
+                ProgressView().controlSize(.small)
+                Text("Cleaning…").font(DS.body().weight(.semibold)).foregroundStyle(DS.text)
+                Spacer()
+                Text("\(Int(cleaner.progress * 100))%")
+                    .font(DS.mono(12, .semibold)).foregroundStyle(DS.textDim)
+            }
+            ProgressView(value: cleaner.progress).progressViewStyle(.linear)
             Text(cleaner.currentStep.isEmpty ? "Working…" : cleaner.currentStep)
-                .font(DS.body()).foregroundStyle(DS.text)
-                .lineLimit(1).truncationMode(.middle).frame(maxWidth: 420)
-            Text("\(Int(cleaner.progress * 100))%")
-                .font(DS.mono(12, .medium)).foregroundStyle(DS.textDim)
-            Spacer()
+                .font(DS.caption()).foregroundStyle(DS.textDim)
+                .lineLimit(1).truncationMode(.middle)
         }
-        .frame(maxWidth: .infinity)
+        .padding(DS.s5)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
 
     // MARK: Results
@@ -220,10 +227,7 @@ struct ReviewSheet: View {
 
             HStack {
                 Spacer()
-                Button("Done") {
-                    isPresented = false
-                    Task { await engine.scan() }
-                }
+                Button("Done") { isPresented = false }
                 .buttonStyle(PrimaryButton())
                 .keyboardShortcut(.defaultAction)
             }

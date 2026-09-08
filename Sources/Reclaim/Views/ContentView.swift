@@ -86,7 +86,9 @@ struct RootView: View {
                 showWelcome = true
                 return
             }
-            if engine.lastScan == nil { await engine.scan() }
+            // Cached results are shown straight away; a fresh scan only starts
+            // when they are genuinely old.
+            if engine.isStale { await engine.scan() }
             await updater.check(silent: true)
         }
         .onReceive(NotificationCenter.default.publisher(for: .reclaimCheckUpdates)) { _ in
@@ -187,6 +189,20 @@ struct RootView: View {
                 }
 
                 SafetyNote()
+
+                HStack(spacing: DS.s2) {
+                    Text("Reclaim \(updater.current)")
+                        .font(DS.caption()).foregroundStyle(DS.textFaint)
+                    if let l = updater.latest, !updater.updateAvailable {
+                        Text("· latest release \(l)")
+                            .font(DS.caption()).foregroundStyle(DS.textFaint)
+                    }
+                    Button("Check for updates") { Task { await updater.check() } }
+                        .buttonStyle(.link)
+                        .font(DS.caption())
+                    Spacer()
+                }
+                .padding(.top, DS.s3)
             }
             .frame(maxWidth: 780, alignment: .leading)
             .padding(.horizontal, DS.s6)
@@ -343,9 +359,16 @@ struct RootView: View {
                 Text(Bytes.fmt(engine.totalSelected))
                     .font(DS.mono(14, .bold)).foregroundStyle(DS.accent)
                     .contentTransition(.numericText())
-            } else if let last = engine.lastScan {
-                Text("Last scanned \(last.formatted(date: .omitted, time: .shortened))")
-                    .font(DS.caption()).foregroundStyle(DS.textDim)
+            } else if let rel = engine.lastScanDescription {
+                HStack(spacing: DS.s1 + 2) {
+                    Image(systemName: engine.isStale ? "clock.badge.exclamationmark" : "clock")
+                        .font(.system(size: 10))
+                    Text("Scanned \(rel)")
+                    if engine.isStale {
+                        Text("· may be out of date").foregroundStyle(DS.warn)
+                    }
+                }
+                .font(DS.caption()).foregroundStyle(DS.textDim)
             }
 
             Spacer()

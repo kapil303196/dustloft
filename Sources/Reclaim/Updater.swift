@@ -14,6 +14,9 @@ final class Updater: ObservableObject {
     @Published var latest: String?
     @Published var checking = false
     @Published var message: String?
+    @Published var downloadURL: URL?
+    @Published var installing = false
+    @Published var installStep = ""
 
     var current: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
@@ -65,11 +68,77 @@ final class Updater: ObservableObject {
                 return
             }
             latest = tag
+            // Prefer the DMG asset so the app can update itself in place.
+            if let assets = obj["assets"] as? [[String: Any]] {
+                for a in assets {
+                    if let n = a["name"] as? String, n.hasSuffix(".dmg"),
+                       let u = a["browser_download_url"] as? String {
+                        downloadURL = URL(string: u); break
+                    }
+                }
+            }
             if !silent && !updateAvailable {
                 message = "Reclaim \(current) is the latest version."
             }
         } catch {
             if !silent { message = "Could not reach GitHub: \(error.localizedDescription)" }
+        }
+    }
+
+    /// Downloads the release DMG, mounts it, replaces the installed app and
+    /// relaunches. Falls back to the browser when the asset is not reachable,
+    /// which is what happens while the repository is private.
+    func installUpdate() async {
+        guard let url = downloadURL, !installing else {
+            openDownloadPage(); return
+        }
+        installing = true
+        defer { installing = false }
+
+        do {
+            installStep = "Downloading \(latest ?? "update")…"
+            let (tmp, resp) = try await URLSession.shared.download(from: url)
+            guard let http = resp as? HTTPURLResponse, http.statusCode == 200 else {
+                message = "The download was refused (the repository may be private). Opening the releases page instead."
+                openDownloadPage()
+                return
+            }
+
+            let dmg = FileManager.default.temporaryDirectory
+                .appendingPathComponent("Reclaim-update.dmg")
+            try? FileManager.default.removeItem(at: dmg)
+            try FileManager.default.moveItem(at: tmp, to: dmg)
+
+            installStep = "Mounting…"
+            let mountPoint = "/Volumes/Reclaim"
+            _ = Shell.run("/usr/bin/hdiutil",
+                          ["attach", dmg.path, "-nobrowse", "-quiet"], timeout: 180)
+            guard FileManager.default.fileExists(atPath: mountPoint + "/Reclaim.app") else {
+                message = "Could not read the downloaded disk image."
+                return
+            }
+
+            installStep = "Installing…"
+            // ditto preserves the signature and extended attributes; cp does not.
+            let target = "/Applications/Reclaim.app"
+            let staged = FileManager.default.temporaryDirectory
+                .appendingPathComponent("Reclaim-new.app").path
+            try? FileManager.default.removeItem(atPath: staged)
+            _ = Shell.run("/usr/bin/ditto", [mountPoint + "/Reclaim.app", staged], timeout: 300)
+            _ = Shell.run("/usr/bin/hdiutil", ["detach", mountPoint, "-quiet"], timeout: 120)
+
+            let script = "/bin/rm -rf '\(target)' && /usr/bin/ditto '\(staged)' '\(target)'"
+            var res = Shell.run("/bin/sh", ["-c", script], timeout: 300)
+            if !res.ok { res = Shell.runAsAdmin(script) }   // /Applications may need elevation
+            guard res.ok else {
+                message = "Could not replace the installed app: \(res.err)"
+                return
+            }
+
+            installStep = "Restarting…"
+            Permissions.relaunch()
+        } catch {
+            message = "Update failed: \(error.localizedDescription)"
         }
     }
 
@@ -97,8 +166,17 @@ struct UpdateBanner: View {
                         .font(DS.caption()).foregroundStyle(DS.textDim)
                 }
                 Spacer()
-                Button("Download") { updater.openDownloadPage() }
-                    .buttonStyle(PrimaryButton())
+                if updater.installing {
+                    HStack(spacing: DS.s2) {
+                        ProgressView().controlSize(.small)
+                        Text(updater.installStep).font(DS.caption()).foregroundStyle(DS.textDim)
+                    }
+                } else {
+                    Button("Release notes") { updater.openDownloadPage() }
+                        .buttonStyle(SecondaryButton())
+                    Button("Update now") { Task { await updater.installUpdate() } }
+                        .buttonStyle(PrimaryButton())
+                }
             }
         }
     }

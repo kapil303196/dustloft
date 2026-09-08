@@ -13,7 +13,65 @@ final class ScanEngine: ObservableObject {
     @Published var permissionDenied = false
 
     let settings: Settings
-    init(settings: Settings) { self.settings = settings }
+
+    /// A scan is expensive, so results are kept between launches and only
+    /// refreshed automatically once they are properly stale. Rescan is always
+    /// one click away.
+    static let staleAfter: TimeInterval = 6 * 60 * 60
+
+    var isStale: Bool {
+        guard let last = lastScan else { return true }
+        return Date().timeIntervalSince(last) > ScanEngine.staleAfter
+    }
+
+    var lastScanDescription: String? {
+        guard let last = lastScan else { return nil }
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .full
+        return f.localizedString(for: last, relativeTo: Date())
+    }
+
+    private struct Cache: Codable {
+        var date: Date
+        var items: [String: [ScanItem]]
+    }
+
+    private static var cacheURL: URL {
+        let dir = URL(fileURLWithPath: NSHomeDirectory())
+            .appendingPathComponent("Library/Application Support/Reclaim", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("lastScan.json")
+    }
+
+    init(settings: Settings) {
+        self.settings = settings
+        loadCache()
+    }
+
+    private func loadCache() {
+        guard let d = try? Data(contentsOf: ScanEngine.cacheURL),
+              let c = try? JSONDecoder().decode(Cache.self, from: d) else { return }
+        // Anything already deleted since the last scan must not be shown again.
+        var pruned: [String: [ScanItem]] = [:]
+        for (k, list) in c.items {
+            let alive = list.filter { item in
+                switch item.action {
+                case .removePath(let p), .removePathAdmin(let p), .gitGC(let p):
+                    return FileManager.default.fileExists(atPath: p)
+                default:
+                    return true
+                }
+            }.map { i -> ScanItem in var x = i; x.selected = false; return x }
+            if !alive.isEmpty { pruned[k] = alive }
+        }
+        items = pruned
+        lastScan = c.date
+    }
+
+    private func saveCache() {
+        let c = Cache(date: lastScan ?? Date(), items: items)
+        if let d = try? JSONEncoder().encode(c) { try? d.write(to: ScanEngine.cacheURL) }
+    }
 
     /// Anything smaller than this is noise in a disk-cleanup UI.
     private static let floor: Int64 = 8 * 1024 * 1024
@@ -26,6 +84,21 @@ final class ScanEngine: ObservableObject {
     }
     var totalFound: Int64 {
         items.values.flatMap { $0 }.filter { !$0.isAdvisory }.reduce(0) { $0 + $1.bytes }
+    }
+
+    /// Removes rows that have just been cleaned, so the UI reflects reality
+    /// immediately instead of waiting for another full scan.
+    func removeCleaned(_ ids: [UUID]) {
+        guard !ids.isEmpty else { return }
+        let gone = Set(ids)
+        var next: [String: [ScanItem]] = [:]
+        for (key, list) in items {
+            let remaining = list.filter { !gone.contains($0.id) }
+            if !remaining.isEmpty { next[key] = remaining }
+        }
+        items = next
+        volume = VolumeInfo.current()
+        saveCache()
     }
 
     func setSelection(_ id: UUID, _ on: Bool) {
@@ -174,6 +247,7 @@ final class ScanEngine: ObservableObject {
         if Scanners.sawPermissionError { permissionDenied = true }
         volume = VolumeInfo.current()
         lastScan = Date()
+        saveCache()
         progressText = ""
         isScanning = false
     }

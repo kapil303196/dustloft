@@ -3,7 +3,6 @@ name: Build DMG
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
@@ -11,7 +10,8 @@ permissions:
 
 jobs:
   build:
-    # macOS runner is mandatory: SwiftUI and codesign do not exist on Linux.
+    # A macOS runner is mandatory: SwiftUI, codesign and hdiutil do not exist
+    # on Linux, so this project cannot be built anywhere else.
     runs-on: macos-15
 
     steps:
@@ -19,6 +19,17 @@ jobs:
 
       - name: Show toolchain
         run: swift --version
+
+      # The release tag and the app's own version must agree, otherwise the
+      # in-app update check compares against the wrong number.
+      - name: Stamp version
+        id: v
+        run: |
+          VERSION="1.0.${{ github.run_number }}"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" Resources/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.run_number }}" Resources/Info.plist
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building $VERSION"
 
       - name: Build universal app (Apple Silicon + Intel)
         env:
@@ -30,32 +41,31 @@ jobs:
           lipo -info dist/Reclaim.app/Contents/MacOS/Reclaim
           lipo -info dist/Reclaim.app/Contents/MacOS/Reclaim | grep -q "x86_64" \
             && lipo -info dist/Reclaim.app/Contents/MacOS/Reclaim | grep -q "arm64" \
-            || { echo "not a universal binary"; exit 1; }
+            || { echo "::error::not a universal binary"; exit 1; }
 
       - name: Package DMG
         run: ./tools/make_dmg.sh
 
-      - name: Read version
-        id: v
-        run: echo "version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Resources/Info.plist)" >> "$GITHUB_OUTPUT"
-
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Reclaim-${{ steps.v.outputs.version }}-dmg
+          name: Reclaim-${{ steps.v.outputs.version }}
           path: dist/*.dmg
           if-no-files-found: error
 
-      # A tag publishes a Release, so the in-app updater has something to find.
       - name: Publish release
-        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.v.outputs.version }}
+          name: Reclaim ${{ steps.v.outputs.version }}
           files: dist/*.dmg
           generate_release_notes: true
           body: |
             Universal build for Apple Silicon and Intel Macs.
 
-            This build is not notarised by Apple, so the first launch needs a
-            right-click on Reclaim in Applications and then Open. You only do
-            this once.
+            **Installing:** open the DMG and drag Reclaim to Applications. This
+            build is not notarised by Apple, so the first launch needs a
+            right-click on Reclaim then Open. You only do this once.
+
+            **Updating:** Reclaim checks this page itself and can install a new
+            version from inside the app.

@@ -3,6 +3,8 @@ import SwiftUI
 
 struct CleanOutcome: Identifiable {
     let id = UUID()
+    /// The ScanItem this came from, so the UI can drop it once it is gone.
+    var itemID: UUID
     var name: String
     var bytes: Int64
     var ok: Bool
@@ -18,6 +20,9 @@ final class Cleaner: ObservableObject {
     @Published var outcomes: [CleanOutcome] = []
     @Published var freedBytes: Int64 = 0
     @Published var finished = false
+
+    /// Ids of everything that was actually removed.
+    var cleanedIDs: [UUID] { outcomes.filter { $0.ok }.map { $0.itemID } }
 
     /// Executes the chosen items. Admin removals are collected and run under a
     /// single authorisation prompt rather than one dialog per path.
@@ -56,8 +61,8 @@ final class Cleaner: ObservableObject {
                     cont.resume(returning: Cleaner.perform(item.action))
                 }
             }
-            outcomes.append(CleanOutcome(name: item.name, bytes: item.bytes,
-                                         ok: res.0, message: res.1))
+            outcomes.append(CleanOutcome(itemID: item.id, name: item.name,
+                                         bytes: item.bytes, ok: res.0, message: res.1))
             if res.0 { freedBytes += item.bytes }
             done += 1
             progress = done / total
@@ -84,7 +89,7 @@ final class Cleaner: ObservableObject {
             }
             for item in adminItems {
                 outcomes.append(CleanOutcome(
-                    name: item.name, bytes: item.bytes, ok: res.ok,
+                    itemID: item.id, name: item.name, bytes: item.bytes, ok: res.ok,
                     message: res.ok ? nil : (res.err.isEmpty ? "authorisation cancelled" : res.err)))
                 if res.ok { freedBytes += item.bytes }
             }

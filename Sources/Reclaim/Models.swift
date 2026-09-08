@@ -52,7 +52,7 @@ enum SafetyTier: String, CaseIterable, Codable {
 
 // MARK: - What a row actually does when cleaned
 
-enum CleanAction: Hashable {
+enum CleanAction: Hashable, Codable {
     case removePath(String)          // rm -rf
     case removePathAdmin(String)     // rm -rf, via admin prompt
     case ollamaModel(String)         // ollama rm <name>
@@ -64,7 +64,7 @@ enum CleanAction: Hashable {
 
 // MARK: - Git safety, learned the hard way
 
-struct GitSafety: Hashable {
+struct GitSafety: Hashable, Codable {
     var remoteRefCount: Int?   // nil = not checked / unreachable
     var uncommitted: Int
     var hasRemote: Bool
@@ -94,8 +94,8 @@ struct GitSafety: Hashable {
 
 // MARK: - A single reclaimable thing
 
-struct ScanItem: Identifiable, Hashable {
-    let id = UUID()
+struct ScanItem: Identifiable, Hashable, Codable {
+    var id = UUID()
     var name: String
     var path: String
     var bytes: Int64
