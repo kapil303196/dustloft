@@ -5,16 +5,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Attic — you already own the storage macOS is hiding from you</title>
 <meta name="description" content="Macs routinely hide 50–200 GB behind a label called “System Data”. Attic shows you exactly what it is and hands the space back, without ever deleting something you can’t get back. Free, open source, no subscription.">
-<link rel="canonical" href="https://atticmac.app/">
+<link rel="canonical" href="https://atticmac.com/">
 <meta property="og:title" content="You already own the storage macOS is hiding from you">
 <meta property="og:description" content="One Mac was 96% full. 195 GB of it was invisible. Attic finds it in about two minutes.">
-<meta property="og:image" content="https://atticmac.app/img/overview.png">
+<meta property="og:image" content="https://atticmac.com/img/overview.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/img/mark-v2.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,800&display=swap" rel="stylesheet">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Attic","applicationCategory":"UtilitiesApplication","operatingSystem":"macOS 13.0 or later","description":"Shows what macOS hides as System Data and reclaims it safely.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://atticmac.app/","downloadUrl":"https://github.com/kapil303196/attic/releases/latest"}
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Attic","applicationCategory":"UtilitiesApplication","operatingSystem":"macOS 13.0 or later","description":"Shows what macOS hides as System Data and reclaims it safely.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://atticmac.com/","downloadUrl":"https://github.com/kapil303196/attic/releases/latest"}
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
@@ -120,6 +120,35 @@ section{padding:clamp(3.2rem,8vw,6rem) 0;border-top:1px solid var(--line)}
 .ledger .sz{font-variant-numeric:tabular-nums;font-weight:600;color:var(--amber);font-size:.96rem}
 .ledger .who{font-size:.81rem;color:var(--ink3);flex-basis:100%;margin:.15rem 0 0}
 @media(min-width:560px){.ledger .who{flex-basis:auto;flex:1.1;margin:0;text-align:right}}
+
+/* Ranked magnitude chart.
+   One hue stepped light to dark, because the job is magnitude and not identity.
+   Values wear ink, never the series colour — the bar carries the meaning. */
+.chart{margin-top:clamp(2rem,5vw,3.2rem)}
+.scale{display:flex;justify-content:space-between;font-size:.72rem;color:var(--ink3);
+  padding-bottom:.55rem;border-bottom:1px solid var(--line);letter-spacing:.01em;
+  font-variant-numeric:tabular-nums}
+.rows{list-style:none;margin:0;padding:0}
+.row{padding:1.05rem 0 1.15rem;border-bottom:1px solid var(--line);
+  opacity:0;transform:translateY(10px);
+  transition:opacity .5s cubic-bezier(.16,1,.3,1),transform .5s cubic-bezier(.16,1,.3,1);
+  transition-delay:calc(var(--i) * 55ms)}
+.chart.in .row{opacity:1;transform:none}
+.rhead{display:flex;align-items:baseline;gap:1rem;margin-bottom:.55rem}
+.rname{font-weight:500;color:var(--ink);flex:1;min-width:0}
+.rval{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink);
+  font-size:.92rem;white-space:nowrap}
+.rtrack{position:relative;height:10px;border-radius:99px;background:oklch(.26 .012 62);overflow:hidden}
+.rspan{position:absolute;top:0;bottom:0;left:var(--l);width:0;border-radius:99px;
+  background:var(--tone);
+  transition:width .95s cubic-bezier(.16,1,.3,1);
+  transition-delay:calc(var(--i) * 55ms + 120ms)}
+.chart.in .rspan{width:var(--w)}
+.rcap{display:block;margin-top:.5rem;font-size:.8rem;color:var(--ink3)}
+.row{transition-property:opacity,transform,background-color}
+.row:hover{background:oklch(.20 .014 62)}
+.row:hover .rspan{filter:brightness(1.12)}
+.chartnote{margin:1.3rem 0 0;font-size:.82rem;color:var(--ink3);max-width:60ch}
 
 .cost{display:grid;gap:1rem;margin-top:2rem}
 @media(min-width:760px){.cost{grid-template-columns:1fr 1fr}}
@@ -260,6 +289,8 @@ footer a{color:var(--ink2)}
   *,.hero>*{animation:none!important;transition:none!important;opacity:1!important;transform:none!important}
   .seg{flex-grow:var(--g)!important}.seg.used{display:none}.legend{opacity:1!important}
   .ledger div::before{width:var(--w,0%)!important}
+  .row{opacity:1!important;transform:none!important}
+  .rspan{width:var(--w)!important;transition:none!important}
   .heart{animation:none}
   .opt.bad .price::after{right:-2%!important}
 }
@@ -320,22 +351,56 @@ footer a{color:var(--ink2)}
 </div>
 
 <section id="inside">
-  <div class="wrap two">
-    <div>
-      <h2 class="reveal">What is “System Data” actually made of?</h2>
-      <p class="sec-lede reveal">It isn’t one thing. macOS files anything it can’t categorise under that label, then gives you no way to look inside. That’s how it reaches 100&nbsp;GB with nobody able to say why.</p>
-      <p class="sec-lede reveal">These are the things that quietly fill a drive. Every one is a category Attic scans.</p>
+  <div class="wrap">
+    <h2 class="reveal">What is “System Data” actually made of?</h2>
+    <p class="sec-lede reveal">It isn’t one thing. macOS files anything it can’t categorise under that label, then gives you no way to look inside. These are the things that quietly fill a drive — every one a category Attic scans.</p>
+
+    <div class="chart reveal" id="chart">
+      <div class="scale" aria-hidden="true"><span>0</span><span>125&nbsp;GB</span><span>250&nbsp;GB</span><span>375&nbsp;GB</span><span>500&nbsp;GB</span></div>
+      <ol class="rows">
+      <li class="row" style="--l:40.0%;--w:60.0%;--i:0;--tone:oklch(0.860 0.145 72)">
+        <div class="rhead"><span class="rname">A forgotten screen recording</span><span class="rval">up to 500 GB</span></div>
+        <div class="rtrack"><span class="rspan"></span></div>
+        <span class="rcap">Started by accident, never stopped</span>
+      </li>
+      <li class="row" style="--l:20.0%;--w:80.0%;--i:1;--tone:oklch(0.815 0.145 72)">
+        <div class="rhead"><span class="rname">Video editing scratch caches</span><span class="rval">100–500 GB</span></div>
+        <div class="rtrack"><span class="rspan"></span></div>
+        <span class="rcap">After Effects, Premiere, Resolve</span>
+      </li>
+      <li class="row" style="--l:8.0%;--w:52.0%;--i:2;--tone:oklch(0.770 0.145 72)">
+        <div class="rhead"><span class="rname">Docker disk image</span><span class="rval">40–300 GB</span></div>
+        <div class="rtrack"><span class="rspan"></span></div>
+        <span class="rcap">Defaults to eating all free space</span>
+      </li>
+      <li class="row" style="--l:4.0%;--w:20.0%;--i:3;--tone:oklch(0.725 0.145 72)">
+        <div class="rhead"><span class="rname">Virtual machines & emulators</span><span class="rval">20–120 GB</span></div>
+        <div class="rtrack"><span class="rspan"></span></div>
+        <span class="rcap">Parallels, UTM, Android images</span>
+      </li>
+      <li class="row" style="--l:2.0%;--w:18.0%;--i:4;--tone:oklch(0.680 0.145 72)">
+        <div class="rhead"><span class="rname">Leftovers from deleted apps</span><span class="rval">10–100 GB</span></div>
+        <div class="rtrack"><span class="rspan"></span></div>
+        <span class="rcap">Uninstalling never removes these</span>
+      </li>
+      <li class="row" style="--l:10.0%;--w:10.0%;--i:5;--tone:oklch(0.635 0.145 72)">
+        <div class="rhead"><span class="rname">Messaging app media</span><span class="rval">50–100 GB</span></div>
+        <div class="rtrack"><span class="rspan"></span></div>
+        <span class="rcap">Every photo anyone ever sent you</span>
+      </li>
+      <li class="row" style="--l:2.0%;--w:14.000000000000002%;--i:6;--tone:oklch(0.590 0.145 72)">
+        <div class="rhead"><span class="rname">Old iPhone backups</span><span class="rval">10–80 GB</span></div>
+        <div class="rtrack"><span class="rspan"></span></div>
+        <span class="rcap">One per device, kept forever</span>
+      </li>
+      <li class="row" style="--l:2.0%;--w:8.0%;--i:7;--tone:oklch(0.545 0.145 72)">
+        <div class="rhead"><span class="rname">Developer dependencies</span><span class="rval">10–50 GB</span></div>
+        <div class="rtrack"><span class="rspan"></span></div>
+        <span class="rcap">node_modules, venvs, package stores</span>
+      </li>
+      </ol>
+      <p class="chartnote">Each bar spans the range commonly reported for that category in public macOS support threads. Attic reports what is actually on <em>your</em> disk — measured, never estimated.</p>
     </div>
-    <dl class="ledger reveal" id="ledger">
-      <div style="--w:100%;--i:0"><dt>A forgotten screen recording</dt><span class="sz">up to 500 GB</span><dd class="who">Started by accident, never stopped</dd></div>
-      <div style="--w:84%;--i:1"><dt>Video editing scratch caches</dt><span class="sz">100–500 GB</span><dd class="who">After Effects, Premiere, Resolve</dd></div>
-      <div style="--w:70%;--i:2"><dt>Docker disk image</dt><span class="sz">up to 300 GB</span><dd class="who">Defaults to eating all free space</dd></div>
-      <div style="--w:44%;--i:3"><dt>Messaging app media</dt><span class="sz">50–100 GB</span><dd class="who">Every photo anyone ever sent you</dd></div>
-      <div style="--w:38%;--i:4"><dt>Virtual machines &amp; emulators</dt><span class="sz">20–120 GB</span><dd class="who">Parallels, UTM, Android images</dd></div>
-      <div style="--w:32%;--i:5"><dt>Leftovers from deleted apps</dt><span class="sz">10–100 GB</span><dd class="who">Uninstalling never removes these</dd></div>
-      <div style="--w:26%;--i:6"><dt>Old iPhone backups</dt><span class="sz">10–80 GB</span><dd class="who">One per device, kept forever</dd></div>
-      <div style="--w:20%;--i:7"><dt>Developer dependencies</dt><span class="sz">10–50 GB</span><dd class="who">node_modules, venvs, package stores</dd></div>
-    </dl>
   </div>
 </section>
 
@@ -443,6 +508,7 @@ const rev = io((es) => es.forEach((e, i) => {
   e.target.classList.add("in"); rev.unobserve(e.target);
 }), { rootMargin: "0px 0px -12% 0px", threshold: .08 });
 document.querySelectorAll(".reveal").forEach(el => rev ? rev.observe(el) : el.classList.add("in"));
+if (reduce) document.querySelectorAll(".chart,.ledger,.tiers,.rules,.faq,.cost").forEach(el => el.classList.add("in"));
 
 // The disk splits open once it is on screen: one opaque block becomes the truth.
 const disk = document.getElementById("disk");
