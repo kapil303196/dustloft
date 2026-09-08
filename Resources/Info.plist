@@ -9,6 +9,8 @@
     <key>CFBundledVersion</key>             <string>1</string>
     <key>CFBundleVersion</key>              <string>1</string>
     <key>CFBundleShortVersionString</key>   <string>1.0.0</string>
+    <key>CFBundleIconFile</key>            <string>Reclaim</string>
+    <key>CFBundleIconName</key>            <string>Reclaim</string>
     <key>CFBundlePackageType</key>          <string>APPL</string>
     <key>LSMinimumSystemVersion</key>       <string>13.0</string>
     <key>NSHighResolutionCapable</key>      <true/>

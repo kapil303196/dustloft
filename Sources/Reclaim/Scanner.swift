@@ -40,8 +40,8 @@ final class ScanEngine: ObservableObject {
     func selectAll(in category: String, _ on: Bool) {
         guard var list = items[category] else { return }
         for i in list.indices where !list[i].isAdvisory {
-            // Permanent items are never bulk-selected. Deliberate friction.
-            if list[i].tier == .permanent && on { continue }
+            // Permanent and hand-pick-only rows are never bulk-selected.
+            if on && (list[i].tier == .permanent || !list[i].autoSelectable) { continue }
             list[i].selected = on
         }
         items[category] = list
@@ -61,6 +61,14 @@ final class ScanEngine: ObservableObject {
 
         let jobs: [(String, String, () -> [ScanItem])] = [
             ("trash",        "Trash",              { Scanners.trash(s) }),
+            ("leftovers",    "app leftovers",      { Scanners.leftovers(s) }),
+            ("downloads",    "old downloads",      { Scanners.oldDownloads(s) }),
+            ("browsers",     "browser caches",     { Scanners.browsers(s) }),
+            ("mail",         "Mail attachments",   { Scanners.mail(s) }),
+            ("logs",         "logs",               { Scanners.logs(s) }),
+            ("iosbackups",   "device backups",     { Scanners.iosBackups(s) }),
+            ("largeold",     "large and old files",{ Scanners.largeOld(s) }),
+            ("unusedapps",   "unused apps",        { Scanners.unusedApps(s) }),
             ("node_modules", "node_modules",       { Scanners.projectDirs(roots, ["node_modules"], "node_modules", s) }),
             ("build",        "build output",       { Scanners.buildArtifacts(roots, s) }),
             ("venv",         "Python venvs",       { Scanners.projectDirs(roots, [".venv", "venv"], "venv", s) }),

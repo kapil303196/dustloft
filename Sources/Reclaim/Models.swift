@@ -101,6 +101,8 @@ struct ScanItem: Identifiable, Hashable {
     var detail: String?          // "unused 5 months", "42 folders"
     var action: CleanAction
     var tier: SafetyTier
+    /// Rows a person must pick deliberately; "Select all" skips them.
+    var autoSelectable: Bool = true
     var selected: Bool = false
     var git: GitSafety?
 
@@ -109,6 +111,11 @@ struct ScanItem: Identifiable, Hashable {
 }
 
 // MARK: - Categories
+
+enum Audience: String, Hashable {
+    case everyone      // matters to any Mac owner
+    case developer     // only shown when dev tooling is present
+}
 
 struct Category: Identifiable, Hashable {
     let id: String
@@ -119,6 +126,7 @@ struct Category: Identifiable, Hashable {
     let restoreHint: String
     /// Stable hue for the storage bar. Paired with an icon so colour is never the sole cue.
     let hue: Color
+    var audience: Audience = .everyone
 
     static let all: [Category] = [
         Category(id: "trash", title: "Trash", symbol: "trash.fill", tier: .regenerable,
@@ -126,55 +134,95 @@ struct Category: Identifiable, Hashable {
                  restoreHint: "Already discarded by you.",
                  hue: Color.adaptive(light: 0x64748B, dark: 0x94A3B8)),
 
+        Category(id: "largeold", title: "Large & old files", symbol: "doc.viewfinder.fill", tier: .permanent,
+                 blurb: "Files over 200 MB you have not opened in more than a year.",
+                 restoreHint: "Not recoverable — check each one before selecting.",
+                 hue: Color.adaptive(light: 0xB45309, dark: 0xFBBF24)),
+
+        Category(id: "downloads", title: "Old downloads", symbol: "arrow.down.circle.fill", tier: .permanent,
+                 blurb: "Anything in your Downloads folder older than 90 days.",
+                 restoreHint: "Download it again if you still need it.",
+                 hue: Color.adaptive(light: 0x0EA5E9, dark: 0x38BDF8)),
+
+        Category(id: "leftovers", title: "App leftovers", symbol: "shippingbox.and.arrow.backward.fill", tier: .regenerable,
+                 blurb: "Support files and caches belonging to apps no longer installed.",
+                 restoreHint: "Only matters if you reinstall the app — settings would reset.",
+                 hue: Color.adaptive(light: 0x7C3AED, dark: 0xA78BFA)),
+
+        Category(id: "iosbackups", title: "Device backups", symbol: "iphone.badge.play", tier: .permanent,
+                 blurb: "Local device backups made by Finder or iTunes.",
+                 restoreHint: "Cannot be recovered. Check iCloud has a backup first.",
+                 hue: Color.adaptive(light: 0xBE123C, dark: 0xFB7185)),
+
+        Category(id: "mail", title: "Mail attachments", symbol: "envelope.fill", tier: .regenerable,
+                 blurb: "Attachments Mail downloaded to disk.",
+                 restoreHint: "Re-downloaded from the server when you open the message.",
+                 hue: Color.adaptive(light: 0x0F766E, dark: 0x2DD4BF)),
+
+        Category(id: "browsers", title: "Browser caches", symbol: "safari.fill", tier: .regenerable,
+                 blurb: "Cached pages and images. Your history, passwords and bookmarks are untouched.",
+                 restoreHint: "Rebuilt as you browse.",
+                 hue: Color.adaptive(light: 0x1D4ED8, dark: 0x60A5FA)),
+
+        Category(id: "logs", title: "Logs & reports", symbol: "doc.text.magnifyingglass", tier: .regenerable,
+                 blurb: "Diagnostic logs written by macOS and your apps.",
+                 restoreHint: "Regenerated automatically.",
+                 hue: Color.adaptive(light: 0x525252, dark: 0xA3A3A3)),
+
+        Category(id: "unusedapps", title: "Unused apps", symbol: "app.badge.checkmark", tier: .permanent,
+                 blurb: "Applications not opened in over six months.",
+                 restoreHint: "Reinstall from the App Store or the developer.",
+                 hue: Color.adaptive(light: 0xC2410C, dark: 0xFB923C)),
+
         Category(id: "node_modules", title: "node_modules", symbol: "shippingbox.fill", tier: .regenerable,
                  blurb: "Dependency folders inside your project roots.",
                  restoreHint: "npm install / pnpm install",
-                 hue: Color.adaptive(light: 0x2563EB, dark: 0x60A5FA)),
+                 hue: Color.adaptive(light: 0x2563EB, dark: 0x60A5FA), audience: .developer),
 
         Category(id: "build", title: "Build output", symbol: "hammer.fill", tier: .regenerable,
                  blurb: ".next, dist, build, out, target, __pycache__ and friends.",
                  restoreHint: "Rebuilt on your next build.",
-                 hue: Color.adaptive(light: 0x7C3AED, dark: 0xA78BFA)),
+                 hue: Color.adaptive(light: 0x7C3AED, dark: 0xA78BFA), audience: .developer),
 
         Category(id: "venv", title: "Python venvs", symbol: "chevron.left.forwardslash.chevron.right", tier: .regenerable,
                  blurb: "Virtual environments inside your project roots.",
                  restoreHint: "python -m venv + pip install -r requirements.txt",
-                 hue: Color.adaptive(light: 0x0891B2, dark: 0x22D3EE)),
+                 hue: Color.adaptive(light: 0x0891B2, dark: 0x22D3EE), audience: .developer),
 
         Category(id: "devcache", title: "Developer caches", symbol: "internaldrive.fill", tier: .regenerable,
                  blurb: "~/.cache — HuggingFace, uv, puppeteer, browser binaries.",
                  restoreHint: "Re-downloaded on demand.",
-                 hue: Color.adaptive(light: 0x0D9488, dark: 0x2DD4BF)),
+                 hue: Color.adaptive(light: 0x0D9488, dark: 0x2DD4BF), audience: .developer),
 
         Category(id: "appcache", title: "App caches", symbol: "square.stack.3d.up.fill", tier: .regenerable,
                  blurb: "~/Library/Caches, minus anything you have excluded.",
                  restoreHint: "Apps rebuild these as you use them.",
                  hue: Color.adaptive(light: 0x059669, dark: 0x34D399)),
 
-        Category(id: "pkgcache", title: "Package manager caches", symbol: "cube.box.fill", tier: .regenerable,
+        Category(id: "pkgcache", title: "Package caches", symbol: "cube.box.fill", tier: .regenerable,
                  blurb: "npm, pnpm, yarn, bun, cargo, gradle and Homebrew download caches.",
                  restoreHint: "Re-downloaded on your next install.",
-                 hue: Color.adaptive(light: 0xCA8A04, dark: 0xFACC15)),
+                 hue: Color.adaptive(light: 0xCA8A04, dark: 0xFACC15), audience: .developer),
 
         Category(id: "ollama", title: "Ollama models", symbol: "brain.head.profile", tier: .regenerable,
                  blurb: "Local LLM weights.",
                  restoreHint: "ollama pull <model>",
-                 hue: Color.adaptive(light: 0xDB2777, dark: 0xF472B6)),
+                 hue: Color.adaptive(light: 0xDB2777, dark: 0xF472B6), audience: .developer),
 
         Category(id: "docker", title: "Docker", symbol: "cube.transparent.fill", tier: .regenerable,
                  blurb: "Unused images, stopped containers and build cache. Volumes are never touched.",
                  restoreHint: "docker pull / docker compose up",
-                 hue: Color.adaptive(light: 0x0284C7, dark: 0x38BDF8)),
+                 hue: Color.adaptive(light: 0x0284C7, dark: 0x38BDF8), audience: .developer),
 
         Category(id: "xcode", title: "Xcode leftovers", symbol: "iphone.gen3", tier: .admin,
                  blurb: "Simulator runtimes and device images.",
                  restoreHint: "Xcode re-downloads runtimes on demand.",
-                 hue: Color.adaptive(light: 0xEA580C, dark: 0xFB923C)),
+                 hue: Color.adaptive(light: 0xEA580C, dark: 0xFB923C), audience: .developer),
 
         Category(id: "nvm", title: "Node versions", symbol: "n.square.fill", tier: .regenerable,
                  blurb: "Installed nvm runtimes other than your current one.",
                  restoreHint: "nvm install <version>",
-                 hue: Color.adaptive(light: 0x65A30D, dark: 0xA3E635)),
+                 hue: Color.adaptive(light: 0x65A30D, dark: 0xA3E635), audience: .developer),
 
         Category(id: "whatsapp", title: "WhatsApp media", symbol: "photo.stack.fill", tier: .permanent,
                  blurb: "Downloaded photos, video and voice notes. Chat text is never touched.",
@@ -184,9 +232,9 @@ struct Category: Identifiable, Hashable {
         Category(id: "git", title: "Git repositories", symbol: "arrow.triangle.branch", tier: .regenerable,
                  blurb: "Repack loose objects. Reclaim never deletes a .git folder.",
                  restoreHint: "Nothing is lost — gc only repacks.",
-                 hue: Color.adaptive(light: 0x9333EA, dark: 0xC084FC)),
+                 hue: Color.adaptive(light: 0x9333EA, dark: 0xC084FC), audience: .developer),
 
-        Category(id: "advisory", title: "Needs your attention", symbol: "info.circle.fill", tier: .admin,
+        Category(id: "advisory", title: "Worth a look", symbol: "info.circle.fill", tier: .admin,
                  blurb: "Things worth reclaiming that Reclaim will not do for you.",
                  restoreHint: "Run the shown command yourself.",
                  hue: Color.adaptive(light: 0x475569, dark: 0x94A3B8))

@@ -62,7 +62,6 @@ struct StorageMeter: View {
     private var selFrac: Double {
         volume.total > 0 ? min(Double(selected) / Double(volume.total), usedFrac) : 0
     }
-
     private var pressure: Color {
         switch usedFrac {
         case ..<0.75: return DS.safe
@@ -72,56 +71,28 @@ struct StorageMeter: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.s3) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(Bytes.fmt(volume.free))
-                        .font(DS.mono(30, .bold))
-                        .foregroundStyle(DS.text)
-                        .contentTransition(.numericText())
-                    Text("free of \(Bytes.fmt(volume.total))")
-                        .font(DS.body()).foregroundStyle(DS.textDim)
-                }
-                Spacer()
-                if selected > 0 {
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("+ " + Bytes.fmt(selected))
-                            .font(DS.mono(20, .bold)).foregroundStyle(DS.accent)
-                            .contentTransition(.numericText())
-                        Text("selected to reclaim")
-                            .font(DS.caption()).foregroundStyle(DS.textDim)
-                    }
-                    .transition(.opacity.combined(with: .move(edge: .trailing)))
-                }
-            }
-
+        VStack(alignment: .leading, spacing: DS.s2 + 2) {
             GeometryReader { geo in
                 let w = geo.size.width
                 ZStack(alignment: .leading) {
                     Capsule().fill(DS.surfaceAlt)
-                    // Space in use
-                    Capsule().fill(pressure.opacity(0.55))
+                    Capsule().fill(pressure.opacity(0.6))
                         .frame(width: max(0, w * usedFrac))
-                    // The slice the current selection would give back
                     if selFrac > 0 {
                         Capsule().fill(DS.accent)
-                            .frame(width: max(0, w * selFrac))
+                            .frame(width: max(2, w * selFrac))
                             .offset(x: max(0, w * (usedFrac - selFrac)))
                     }
                 }
             }
             .frame(height: 10)
             .animation(DS.spring, value: selFrac)
-            .animation(DS.spring, value: usedFrac)
 
             HStack(spacing: DS.s4) {
-                LegendDot(color: pressure.opacity(0.55), label: "\(Int(usedFrac * 100))% in use")
-                if selected > 0 { LegendDot(color: DS.accent, label: "would be freed") }
+                LegendDot(color: pressure.opacity(0.6),
+                          label: "\(Int(usedFrac * 100))% of \(Bytes.fmt(volume.total)) in use")
+                if selected > 0 { LegendDot(color: DS.accent, label: "selected to free") }
                 Spacer()
-                if reclaimable > 0 {
-                    Text("\(Bytes.fmt(reclaimable)) reclaimable found")
-                        .font(DS.caption()).foregroundStyle(DS.textDim)
-                }
             }
         }
         .accessibilityElement(children: .combine)

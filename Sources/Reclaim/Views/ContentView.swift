@@ -3,8 +3,12 @@ import SwiftUI
 struct RootView: View {
     @ObservedObject var settings: Settings
     @StateObject private var engine: ScanEngine
-    @State private var selection: String? = nil       // nil == Overview
+    // A List(selection:) bound to String? needs String tags, never String?.
+    // Overview therefore gets a real id rather than nil.
+    @State private var selection: String = "overview"
     @State private var showReview = false
+    @State private var showWelcome = false
+    @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
 
     init(settings: Settings) {
         self.settings = settings
@@ -13,6 +17,21 @@ struct RootView: View {
 
     private var presentCategories: [Category] {
         Category.all.filter { (engine.items[$0.id]?.isEmpty == false) }
+    }
+
+    private var currentTitle: String {
+        if selection == "overview" { return "Overview" }
+        return Category.all.first { $0.id == selection }?.title ?? "Overview"
+    }
+
+    private var currentSubtitle: String {
+        if engine.isScanning { return engine.progressText.isEmpty ? "Scanning…" : engine.progressText }
+        if selection == "overview" {
+            return "\(Bytes.fmt(engine.volume.free)) free of \(Bytes.fmt(engine.volume.total))"
+        }
+        let list = engine.items[selection] ?? []
+        let b = list.filter { !$0.isAdvisory }.reduce(Int64(0)) { $0 + $1.bytes }
+        return "\(list.count) item\(list.count == 1 ? "" : "s") · \(Bytes.fmt(b))"
     }
 
     private var slices: [(Category, Int64)] {
@@ -27,7 +46,9 @@ struct RootView: View {
             sidebar
         } detail: {
             Group {
-                if let sel = selection, let cat = Category.all.first(where: { $0.id == sel }) {
+                if selection == "overview" {
+                    overview
+                } else if let cat = Category.all.first(where: { $0.id == selection }) {
                     CategoryDetailView(category: cat, engine: engine)
                 } else {
                     overview
@@ -35,13 +56,29 @@ struct RootView: View {
             }
             .background(DS.bg)
         }
-        .navigationTitle("")
+        .navigationTitle(currentTitle)
+        .navigationSubtitle(currentSubtitle)
         .toolbar { toolbarContent }
         .safeAreaInset(edge: .bottom) { actionBar }
         .sheet(isPresented: $showReview) {
             ReviewSheet(engine: engine, isPresented: $showReview)
         }
-        .task { if engine.lastScan == nil { await engine.scan() } }
+        .sheet(isPresented: $showWelcome) {
+            WelcomeSheet(isPresented: $showWelcome) {
+                hasSeenWelcome = true
+                Task { await engine.scan() }
+            }
+        }
+        .task {
+            // Ask once, up front, for the one permission that matters.
+            if !hasSeenWelcome || !Permissions.hasFullDiskAccess() {
+                if !Permissions.hasFullDiskAccess() || !hasSeenWelcome {
+                    showWelcome = true
+                    return
+                }
+            }
+            if engine.lastScan == nil { await engine.scan() }
+        }
     }
 
     // MARK: Sidebar
@@ -50,13 +87,23 @@ struct RootView: View {
         List(selection: $selection) {
             Section {
                 Label("Overview", systemImage: "chart.pie.fill")
-                    .tag(String?.none)
+                    .tag("overview")
             }
-            if !presentCategories.isEmpty {
-                Section("Found") {
-                    ForEach(presentCategories) { cat in
+            let everyone = presentCategories.filter { $0.audience == .everyone }
+            let dev = presentCategories.filter { $0.audience == .developer }
+            if !everyone.isEmpty {
+                Section("Your Mac") {
+                    ForEach(everyone) { cat in
                         SidebarRow(category: cat, items: engine.items[cat.id] ?? [])
-                            .tag(String?.some(cat.id))
+                            .tag(cat.id)
+                    }
+                }
+            }
+            if !dev.isEmpty {
+                Section("Developer") {
+                    ForEach(dev) { cat in
+                        SidebarRow(category: cat, items: engine.items[cat.id] ?? [])
+                            .tag(cat.id)
                     }
                 }
             }
@@ -69,70 +116,122 @@ struct RootView: View {
 
     private var overview: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.s5) {
-                Card {
-                    StorageMeter(volume: engine.volume,
-                                 reclaimable: engine.totalFound,
-                                 selected: engine.totalSelected)
-                }
+            VStack(alignment: .leading, spacing: 0) {
+
+                hero
 
                 if engine.permissionDenied {
-                    PermissionBanner()
+                    PermissionBanner(showWelcome: $showWelcome)
+                        .padding(.bottom, DS.s6)
                 }
 
                 if engine.isScanning && slices.isEmpty {
-                    Card { ScanningPlaceholder(progressText: engine.progressText, progress: engine.progress) }
+                    sectionHeader("Looking through your Mac", engine.progressText)
+                    ScanningPlaceholder(progressText: engine.progressText, progress: engine.progress)
                 } else if slices.isEmpty {
-                    Card {
-                        EmptyStateView(
-                            symbol: "sparkles",
-                            title: "Nothing worth reclaiming",
-                            message: "Reclaim found no caches, build output or leftovers above 8 MB. Your disk is in good shape.",
-                            action: ("Scan again", { Task { await engine.scan() } })
-                        )
-                        .frame(height: 220)
-                    }
+                    EmptyStateView(
+                        symbol: "sparkles",
+                        title: "Nothing worth reclaiming",
+                        message: "Reclaim looked through caches, build output, leftovers and downloads and found nothing above 8 MB. Your Mac is in good shape.",
+                        action: ("Scan again", { Task { await engine.scan() } })
+                    )
+                    .frame(height: 300)
                 } else {
-                    Card {
-                        VStack(alignment: .leading, spacing: DS.s4) {
-                            Text("What is taking the space")
-                                .font(DS.heading()).foregroundStyle(DS.text)
-                            CompositionBar(slices: slices)
-                        }
-                    }
+                    sectionHeader("Where your space is going", nil)
+                    CompositionBar(slices: slices)
+                        .padding(.bottom, DS.s7)
 
-                    Card {
-                        VStack(alignment: .leading, spacing: DS.s3) {
-                            Text("Categories").font(DS.heading()).foregroundStyle(DS.text)
-                            ForEach(slices, id: \.0.id) { cat, bytes in
-                                Button {
-                                    withAnimation(DS.quick) { selection = cat.id }
-                                } label: {
-                                    OverviewRow(category: cat, bytes: bytes,
-                                                count: (engine.items[cat.id] ?? []).count)
-                                }
-                                .buttonStyle(.plain)
+                    sectionHeader("Choose what to clean", "Nothing is removed until you review it")
+                    VStack(spacing: 0) {
+                        ForEach(Array(slices.enumerated()), id: \.element.0.id) { idx, pair in
+                            let (cat, bytes) = pair
+                            Button {
+                                selection = cat.id
+                            } label: {
+                                OverviewRow(category: cat, bytes: bytes,
+                                            count: (engine.items[cat.id] ?? []).count,
+                                            picked: (engine.items[cat.id] ?? []).filter { $0.selected }.count)
+                            }
+                            .buttonStyle(.plain)
+                            if idx < slices.count - 1 {
+                                Divider().opacity(0.5).padding(.leading, 46)
                             }
                         }
                     }
+                    .padding(.bottom, DS.s7)
                 }
 
                 SafetyNote()
             }
-            .padding(DS.s5)
+            .frame(maxWidth: 780, alignment: .leading)
+            .padding(.horizontal, DS.s6)
+            .padding(.top, DS.s5)
+            .padding(.bottom, DS.s7)
+            .frame(maxWidth: .infinity)
         }
+    }
+
+    /// The one number allowed to shout, and the only place it appears.
+    private var hero: some View {
+        VStack(alignment: .leading, spacing: DS.s4) {
+            HStack(alignment: .firstTextBaseline, spacing: DS.s2) {
+                Text(freeValue)
+                    .font(.system(size: 44, weight: .bold, design: .rounded).monospacedDigit())
+                    .foregroundStyle(DS.text)
+                    .contentTransition(.numericText())
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(freeUnit).font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(DS.text)
+                    Text("free").font(.system(size: 12)).foregroundStyle(DS.textDim)
+                }
+                .padding(.bottom, 4)
+                Spacer()
+            }
+
+            StorageMeter(volume: engine.volume,
+                         reclaimable: engine.totalFound,
+                         selected: engine.totalSelected)
+
+            HStack(spacing: DS.s2) {
+                StatChip(symbol: "internaldrive", label: "In use",
+                         value: Bytes.fmt(engine.volume.used), tint: DS.textDim)
+                if engine.totalFound > 0 {
+                    StatChip(symbol: "sparkles", label: "Reclaimable",
+                             value: Bytes.fmt(engine.totalFound), tint: DS.safe)
+                }
+                if engine.totalSelected > 0 {
+                    StatChip(symbol: "checkmark.circle.fill", label: "Selected",
+                             value: Bytes.fmt(engine.totalSelected), tint: DS.accent)
+                }
+                Spacer()
+            }
+        }
+        .padding(.bottom, DS.s7)
+    }
+
+    private var freeValue: String {
+        let s = Bytes.fmt(engine.volume.free)
+        return s.split(separator: " ").first.map(String.init) ?? s
+    }
+    private var freeUnit: String {
+        let s = Bytes.fmt(engine.volume.free)
+        return s.split(separator: " ").dropFirst().first.map(String.init) ?? ""
+    }
+
+    private func sectionHeader(_ title: String, _ sub: String?) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(DS.text)
+            if let sub, !sub.isEmpty {
+                Text(sub).font(DS.caption()).foregroundStyle(DS.textDim)
+            }
+        }
+        .padding(.bottom, DS.s3)
     }
 
     // MARK: Toolbar + action bar
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .navigation) {
-            HStack(spacing: DS.s2) {
-                Image(systemName: "sparkles.rectangle.stack.fill").foregroundStyle(DS.accent)
-                Text("Reclaim").font(DS.heading())
-            }
-        }
         ToolbarItem(placement: .primaryAction) {
             Button {
                 Task { await engine.scan() }
@@ -204,9 +303,11 @@ struct SidebarRow: View {
             if picked > 0 {
                 Circle().fill(DS.accent).frame(width: 6, height: 6)
             }
-            Text(bytes > 0 ? Bytes.fmt(bytes) : "—")
-                .font(DS.mono(11, .medium))
-                .foregroundStyle(DS.textDim)
+            if bytes > 0 {
+                Text(Bytes.fmt(bytes))
+                    .font(DS.mono(11, .medium))
+                    .foregroundStyle(DS.textDim)
+            }
         }
         .accessibilityLabel("\(category.title), \(Bytes.fmt(bytes))")
     }
@@ -216,39 +317,78 @@ struct OverviewRow: View {
     let category: Category
     let bytes: Int64
     let count: Int
+    var picked: Int = 0
     @State private var hovering = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(spacing: DS.s3) {
             ZStack {
-                RoundedRectangle(cornerRadius: DS.rSm, style: .continuous)
-                    .fill(category.hue.opacity(0.16))
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .fill(category.hue.opacity(hovering ? 0.24 : 0.15))
                 Image(systemName: category.symbol)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(category.hue)
             }
-            .frame(width: 30, height: 30)
+            .frame(width: 34, height: 34)
 
-            VStack(alignment: .leading, spacing: 1) {
-                Text(category.title).font(DS.body().weight(.medium)).foregroundStyle(DS.text)
-                Text("\(count) item\(count == 1 ? "" : "s")")
-                    .font(DS.caption()).foregroundStyle(DS.textDim)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(category.title)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(DS.text)
+                HStack(spacing: DS.s1 + 2) {
+                    Text("\(count) item\(count == 1 ? "" : "s")")
+                        .font(DS.caption()).foregroundStyle(DS.textDim)
+                    if picked > 0 {
+                        Text("· \(picked) selected")
+                            .font(DS.caption().weight(.medium)).foregroundStyle(DS.accent)
+                    }
+                }
             }
-            Spacer()
+
+            Spacer(minLength: DS.s3)
             TierBadge(tier: category.tier)
-            Text(Bytes.fmt(bytes)).font(DS.mono(13, .semibold)).foregroundStyle(DS.text)
-                .frame(minWidth: 76, alignment: .trailing)
+            Text(Bytes.fmt(bytes))
+                .font(DS.mono(13, .semibold))
+                .foregroundStyle(DS.text)
+                .frame(minWidth: 82, alignment: .trailing)
             Image(systemName: "chevron.right")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(DS.textFaint)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(hovering ? DS.textDim : DS.textFaint)
         }
-        .padding(.vertical, DS.s2)
-        .padding(.horizontal, DS.s2)
+        .padding(.vertical, DS.s3)
+        .padding(.horizontal, DS.s3)
         .background(
             RoundedRectangle(cornerRadius: DS.rMd, style: .continuous)
                 .fill(hovering ? DS.surfaceAlt : Color.clear)
         )
-        .onHover { h in withAnimation(DS.quick) { hovering = h } }
+        .contentShape(Rectangle())
+        .onHover { h in
+            if reduceMotion { hovering = h }
+            else { withAnimation(DS.quick) { hovering = h } }
+        }
+    }
+}
+
+struct StatChip: View {
+    let symbol: String
+    let label: String
+    let value: String
+    let tint: Color
+    var body: some View {
+        HStack(spacing: DS.s1 + 2) {
+            Image(systemName: symbol).font(.system(size: 10, weight: .semibold))
+            Text(label).font(DS.caption())
+            Text(value).font(DS.mono(11, .semibold))
+        }
+        .foregroundStyle(tint)
+        .padding(.horizontal, DS.s3)
+        .padding(.vertical, DS.s1 + 3)
+        .background(
+            Capsule().fill(DS.surfaceAlt)
+        )
+        .overlay(Capsule().strokeBorder(DS.border, lineWidth: 1))
+        .accessibilityLabel("\(label): \(value)")
     }
 }
 
@@ -279,6 +419,7 @@ struct ScanningPlaceholder: View {
 }
 
 struct PermissionBanner: View {
+    @Binding var showWelcome: Bool
     var body: some View {
         Card(padding: DS.s4) {
             HStack(alignment: .top, spacing: DS.s3) {
@@ -292,12 +433,8 @@ struct PermissionBanner: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
-                Button("Open Settings") {
-                    if let u = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
-                        NSWorkspace.shared.open(u)
-                    }
-                }
-                .buttonStyle(SecondaryButton())
+                Button("Grant access") { showWelcome = true }
+                    .buttonStyle(SecondaryButton())
             }
         }
     }

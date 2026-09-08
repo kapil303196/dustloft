@@ -17,8 +17,7 @@ final class Settings: ObservableObject {
         home + "/Library/Mobile Documents",       // iCloud Drive
         home + "/Library/CloudStorage",           // OneDrive, Drive, Box…
         home + "/Library/Application Support/BraveSoftware",
-        home + "/Library/Caches/BraveSoftware",
-        home + "/Library/Application Support/MobileSync"  // iOS device backups
+        home + "/Library/Caches/BraveSoftware"
     ]
 
     static let defaultExclusions: [String] = [
