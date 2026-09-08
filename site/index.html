@@ -11,9 +11,10 @@
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://atticmac.app/img/overview.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="/img/icon.png">
+<link rel="icon" href="/img/mark-v2.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,800&display=swap">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,800&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -130,6 +131,41 @@ blockquote strong{color:var(--ink);font-weight:600}
 .faq details[open] summary::after{content:"–"}
 .faq p{margin:0 0 1.15rem;color:var(--ink2);font-size:.96rem;max-width:62ch}
 
+/* Motion. Everything is transform/opacity so it never triggers layout, and the
+   whole system switches off for anyone who asked for less movement. */
+.reveal{opacity:0;transform:translateY(14px);
+  transition:opacity .62s cubic-bezier(.16,1,.3,1),transform .62s cubic-bezier(.16,1,.3,1)}
+.reveal.in{opacity:1;transform:none}
+.hero .kicker,.hero h1,.hero .lede,.hero .cta,.hero .cmd,.hero .cmd-note{
+  opacity:0;transform:translateY(16px);animation:rise .7s cubic-bezier(.16,1,.3,1) forwards}
+.hero h1{animation-delay:.06s}
+.hero .lede{animation-delay:.14s}
+.hero .cta{animation-delay:.22s}
+.hero .cmd{animation-delay:.28s}
+.hero .cmd-note{animation-delay:.34s}
+@keyframes rise{to{opacity:1;transform:none}}
+.lamp{animation:breathe 9s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.85}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  .reveal,.hero .kicker,.hero h1,.hero .lede,.hero .cta,.hero .cmd,.hero .cmd-note{
+    opacity:1!important;transform:none!important;animation:none!important}
+  .lamp{animation:none}
+}
+
+/* headline figures */
+.stats{display:grid;gap:1px;margin-top:2.5rem;background:var(--line);
+  border:1px solid var(--line);border-radius:15px;overflow:hidden}
+@media(min-width:720px){.stats{grid-template-columns:repeat(3,1fr)}}
+.stat{background:var(--bg);padding:1.6rem 1.4rem}
+.stat b{display:block;font-size:clamp(2rem,1.4rem + 2.4vw,3.1rem);font-weight:800;
+  color:var(--amber);letter-spacing:-0.03em;font-variant-numeric:tabular-nums;line-height:1}
+.stat span{display:block;margin-top:.55rem;color:var(--ink2);font-size:.93rem;line-height:1.45}
+
+.stars{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .6rem;border:1px solid var(--line);
+  border-radius:99px;font-size:.82rem;color:var(--ink2);text-decoration:none;transition:.15s}
+.stars:hover{border-color:var(--amberdim);color:var(--amber)}
+.stars svg{flex:none}
+
 footer{padding:3rem 0 4rem;border-top:1px solid var(--line);color:var(--ink3);font-size:.88rem}
 footer a{color:var(--ink2)}
 .foot{display:flex;flex-wrap:wrap;gap:1.2rem;align-items:center}
@@ -149,18 +185,29 @@ footer a{color:var(--ink2)}
   "downloadUrl":"https://github.com/kapil303196/attic/releases/latest"
 }
 </script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"Why is my System Data so large on Mac?","acceptedAnswer":{"@type":"Answer","text":"macOS files everything it cannot categorise under System Data — caches, app containers, virtual machine disks, downloaded models, old device backups and local snapshots. It grows quietly and there is no built-in way to see inside it."}},
+{"@type":"Question","name":"How do I clear System Data on a Mac?","acceptedAnswer":{"@type":"Answer","text":"Identify what is actually inside it before deleting anything. Attic measures every real consumer of space, sorts it by how recoverable it is, and shows each item with its full path and size before anything is removed."}},
+{"@type":"Question","name":"Is Attic safe to use?","acceptedAnswer":{"@type":"Answer","text":"The source is public and the safety rules are enforced in code and covered by tests. It never deletes a .git directory, never touches Dropbox or iCloud Drive, and never removes Docker volumes. Nothing is deleted without a review screen."}},
+{"@type":"Question","name":"Does Attic work on Intel Macs?","acceptedAnswer":{"@type":"Answer","text":"Yes. Every release is a universal binary built in CI and verified to contain both Apple Silicon and Intel architectures."}},
+{"@type":"Question","name":"How much does Attic cost?","acceptedAnswer":{"@type":"Answer","text":"Nothing. It is MIT licensed with no telemetry, no account and no upsell."}}]}
+</script>
 </head>
 <body>
 <div class="lamp" aria-hidden="true"></div>
 
 <header>
   <div class="wrap bar">
-    <a class="brand" href="/"><img src="/img/icon.png" alt="">Attic</a>
+    <a class="brand" href="/"><img src="/img/mark-v2.png" alt="">Attic</a>
     <nav>
       <a href="#space">System Data</a>
       <a href="#safety">Safety</a>
       <a href="#install">Install</a>
-      <a href="https://github.com/kapil303196/attic">GitHub</a>
+      <a class="stars" href="https://github.com/kapil303196/attic" id="ghstars">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
+        <span id="ghcount">GitHub</span>
+      </a>
     </nav>
   </div>
 </header>
@@ -184,8 +231,14 @@ footer a{color:var(--ink2)}
     <p class="cmd-note" style="font-size:.82rem;color:var(--ink3);margin:.7rem 0 0">Installs the latest release and opens it. Universal build — Apple Silicon and Intel.</p>
   </div>
 
-  <figure>
-    <img src="/img/overview.png" alt="Attic showing 226 GB free of 494 GB, a breakdown bar labelled ‘Where your space is going’, and a list of categories including App data at 30.21 GB and Package caches at 7.13 GB" width="2000" height="1176">
+  <div class="stats reveal">
+    <div class="stat"><b data-count="195" data-suffix=" GB">195 GB</b><span>recovered on the Mac this was built from, in a single session</span></div>
+    <div class="stat"><b data-count="92" data-suffix=" GB">92 GB</b><span>sitting in one app's media folder, invisible in Finder</span></div>
+    <div class="stat"><b data-count="16" data-suffix="">16</b><span>categories scanned, from browser caches to virtual machine disks</span></div>
+  </div>
+
+  <figure class="reveal">
+    <img src="/img/overview.png" loading="eager" decoding="async" alt="Attic showing 226 GB free of 494 GB, a breakdown bar labelled ‘Where your space is going’, and a list of categories including App data at 30.21 GB and Package caches at 7.13 GB" width="2000" height="1176">
     <figcaption>The Mac this was built on: 20 GB free at the start, 215 GB free by the end.</figcaption>
   </figure>
 </div>
@@ -193,11 +246,11 @@ footer a{color:var(--ink2)}
 <section id="space">
   <div class="wrap two">
     <div>
-      <h2>What is System Data on a Mac?</h2>
+      <h2 class="reveal">What is System Data on a Mac?</h2>
       <p class="sec-lede">It isn’t one thing. macOS files anything it can’t categorise under that label — caches, containers, virtual machine disks, downloaded models, old device backups — then gives you no way to look inside. That’s why it grows to 100&nbsp;GB and nobody can say why.</p>
       <p class="sec-lede">Here is what was actually hiding on one 512&nbsp;GB MacBook Pro that reported 96% full.</p>
     </div>
-    <dl class="ledger">
+    <dl class="ledger reveal">
       <div><dt>WhatsApp media</dt><span class="sz">92 GB</span><dd class="who">Photos and video in one chat folder</dd></div>
       <div><dt>node_modules</dt><span class="sz">46 GB</span><dd class="who">217 folders across projects</dd></div>
       <div><dt>Build output</dt><span class="sz">20 GB</span><dd class="who">42 stale <code>.next</code> caches</dd></div>
@@ -210,12 +263,30 @@ footer a{color:var(--ink2)}
   </div>
 </section>
 
+<section id="finds">
+  <div class="wrap">
+    <h2 class="reveal">The things that quietly eat a hard drive</h2>
+    <p class="sec-lede reveal">None of these show up in Finder in any obvious way. All of them are routinely reported by people whose Macs filled up for no apparent reason — and every one of them is a category Attic scans.</p>
+    <dl class="ledger reveal">
+      <div><dt>A forgotten screen recording</dt><span class="sz">up to 500 GB</span><dd class="who">Started by accident, never stopped</dd></div>
+      <div><dt>After Effects &amp; Premiere disk cache</dt><span class="sz">100–500 GB</span><dd class="who">Never cleared automatically</dd></div>
+      <div><dt>Docker disk image</dt><span class="sz">up to 300 GB</span><dd class="who">Defaults to consuming all free space</dd></div>
+      <div><dt>Messaging app media</dt><span class="sz">50–100 GB</span><dd class="who">Every photo anyone ever sent you</dd></div>
+      <div><dt>Leftovers from deleted apps</dt><span class="sz">10–100 GB</span><dd class="who">Uninstalling never removes these</dd></div>
+      <div><dt>Virtual machines &amp; emulators</dt><span class="sz">20–120 GB</span><dd class="who">Parallels, UTM, Android images</dd></div>
+      <div><dt>Old iPhone backups</dt><span class="sz">10–80 GB</span><dd class="who">One per device, kept forever</dd></div>
+      <div><dt>Developer dependencies</dt><span class="sz">10–50 GB</span><dd class="who">node_modules, venvs, package stores</dd></div>
+    </dl>
+    <p style="margin-top:1.6rem;font-size:.86rem;color:var(--ink3)" class="reveal">Ranges reflect cases commonly reported in public macOS support threads. Attic reports what is actually on <em>your</em> disk — measured, never estimated.</p>
+  </div>
+</section>
+
 <section id="safety">
   <div class="wrap">
-    <h2>The part most cleaners get wrong</h2>
+    <h2 class="reveal">The part most cleaners get wrong</h2>
     <p class="sec-lede">Freeing space is easy. Not destroying something irreplaceable while you do it is the hard part. Attic sorts everything it finds into three tiers, and the tier decides how much friction stands between you and the delete button.</p>
 
-    <div class="tiers">
+    <div class="tiers reveal">
       <div class="tier">
         <h3><span class="dot" style="background:var(--safe)"></span>Regenerable</h3>
         <p>Caches, build output, dependencies, Docker images. Comes back on its own. This is what one-click Quick Clean touches, and nothing else.</p>
@@ -231,7 +302,7 @@ footer a{color:var(--ink2)}
     </div>
 
     <h3 style="margin-top:clamp(2.5rem,6vw,4rem)">What Attic refuses to do</h3>
-    <ul class="rules">
+    <ul class="rules reveal">
       <li><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="oklch(0.70 0.16 27)" stroke-width="2"><path d="M3 8h10M8 3v10" transform="rotate(45 8 8)"/></svg>
         <span><b>Delete a <code>.git</code> directory.</b> Ever. It offers <code>git gc</code> instead, and flags in red any repository whose history exists nowhere but your disk.</span></li>
       <li><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="oklch(0.70 0.16 27)" stroke-width="2"><path d="M3 8h10M8 3v10" transform="rotate(45 8 8)"/></svg>
@@ -247,10 +318,10 @@ footer a{color:var(--ink2)}
 <section>
   <div class="wrap two">
     <div>
-      <h2>The near-miss that shaped the rules</h2>
+      <h2 class="reveal">The near-miss that shaped the rules</h2>
       <p class="sec-lede">Every safety rule above came from an actual cleanup, not a checklist. This one came closest to being a disaster.</p>
     </div>
-    <blockquote>
+    <blockquote class="reveal">
       <p>During the manual cleanup this app was built from, one project’s <code>.git</code> folder was 2.2&nbsp;GB. It had a GitHub remote configured, so deleting it looked obviously safe.</p>
       <p>Running <code>git ls-remote</code> first told a different story. The remote <strong>authenticated successfully and returned zero refs.</strong> Nothing had ever been pushed. That local <code>.git</code> was the only copy of the project’s history that existed anywhere.</p>
       <p>A repository with a remote configured looks backed up. It isn’t, until something has actually been pushed.</p>
@@ -261,10 +332,10 @@ footer a{color:var(--ink2)}
 
 <section>
   <div class="wrap">
-    <h2>Nothing is removed until you’ve seen it</h2>
+    <h2 class="reveal">Nothing is removed until you’ve seen it</h2>
     <p class="sec-lede">Every item is listed with its full path and real size. Untick anything you want to keep — the total follows along, and permanent items need one more confirmation before the button works.</p>
     <figure>
-      <img src="/img/review.png" alt="Attic’s review screen listing 66 items totalling 26.36 GB, each with a checkbox, full file path and size, grouped by category" loading="lazy" width="2000" height="1176">
+      <img src="/img/review.png" decoding="async" alt="Attic’s review screen listing 66 items totalling 26.36 GB, each with a checkbox, full file path and size, grouped by category" loading="lazy" width="2000" height="1176">
       <figcaption>Real disk usage, not apparent size — a sparse Docker disk reporting 494 GB is shown at the 9.3 GB it actually occupies.</figcaption>
     </figure>
   </div>
@@ -273,7 +344,7 @@ footer a{color:var(--ink2)}
 <section id="install">
   <div class="wrap two">
     <div>
-      <h2>Install</h2>
+      <h2 class="reveal">Install</h2>
       <p class="sec-lede">One command. It fetches the latest release, installs it, and opens it.</p>
       <div class="cmd" style="margin-top:1.6rem">
         <code id="cmd2">curl -fsSL https://raw.githubusercontent.com/kapil303196/attic/main/install-online.sh | bash</code>
@@ -281,12 +352,17 @@ footer a{color:var(--ink2)}
       </div>
       <p style="font-size:.87rem;color:var(--ink3);margin-top:1rem">Prefer a disk image? <a href="https://github.com/kapil303196/attic/releases/latest">Download the DMG</a>. Note that macOS shows a security warning for apps that aren’t notarised — the one-line install avoids it, because quarantine is applied to browser downloads and not to <code>curl</code>.</p>
     </div>
-    <div class="faq">
+    <div class="faq reveal">
       <details><summary>Is it safe to run?</summary><p>The source is public and the safety rules are enforced in code and covered by tests — including that synced folders can never be offered for deletion, and that a repository with no remote refs is reported as the only copy. Nothing is deleted without a review screen.</p></details>
       <details><summary>Why does it ask for Full Disk Access?</summary><p>Without it macOS hides the Trash, app containers and device backups, so sizes come out far lower than reality — and it asks separately for Desktop, Downloads and Documents. Attic asks once, up front, and explains why. macOS applies the permission only to a freshly launched app, so it restarts itself once.</p></details>
       <details><summary>Why the “unidentified developer” warning?</summary><p>Notarisation requires a paid Apple Developer membership. The build is signed but not notarised. The one-line installer sidesteps the warning legitimately; from the DMG, use System Settings → Privacy &amp; Security → Open Anyway.</p></details>
       <details><summary>Does it work on Intel Macs?</summary><p>Yes. Every release is a universal binary built in CI and verified with <code>lipo</code> to contain both architectures.</p></details>
       <details><summary>What does it cost?</summary><p>Nothing. MIT licensed, no telemetry, no account, no upsell.</p></details>
+      <details><summary>Will it delete something I need?</summary><p>Not without showing you first. Everything is listed with its full path and real size, and you untick anything you want to keep. Items that cannot be recovered are never bulk-selected and need a separate confirmation. Quick Clean only ever touches things that rebuild themselves.</p></details>
+      <details><summary>Why is my System Data so large?</summary><p>Because macOS files everything it cannot categorise under that one label — caches, app containers, virtual machine disks, downloaded models, old device backups, local snapshots. It grows quietly and there is no built-in way to see inside it. That is the specific problem Attic was built to solve.</p></details>
+      <details><summary>Does emptying the Trash actually free the space?</summary><p>Usually, but not always. Root-owned items left by uninstalled apps often refuse to delete and sit there indefinitely. Attic spots those and removes them under a single administrator prompt.</p></details>
+      <details><summary>Can it clean an external drive?</summary><p>Not yet. Scanning is scoped to your home folder and system locations on the startup disk.</p></details>
+      <details><summary>How is it different from CleanMyMac?</summary><p>It is free, open source, and has no subscription. It also declines to do several things commercial cleaners advertise: it will not claim to reclaim purgeable space, will not delete a <code>.git</code> directory, and will not touch a cloud-synced folder. The trade is fewer promises and no surprises.</p></details>
     </div>
   </div>
 </section>
@@ -304,6 +380,53 @@ footer a{color:var(--ink2)}
 </footer>
 
 <script>
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Reveal on scroll, staggered within each section.
+if (!reduce && "IntersectionObserver" in window) {
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (!e.isIntersecting) return;
+      e.target.style.transitionDelay = Math.min(i, 4) * 70 + "ms";
+      e.target.classList.add("in");
+      io.unobserve(e.target);
+    });
+  }, { rootMargin: "0px 0px -12% 0px", threshold: 0.08 });
+  document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+} else {
+  document.querySelectorAll(".reveal").forEach(el => el.classList.add("in"));
+}
+
+// Count the headline figures up once they are on screen.
+function countUp(el) {
+  const target = parseFloat(el.dataset.count), suffix = el.dataset.suffix || "";
+  if (reduce || !target) { el.textContent = target + suffix; return; }
+  const dur = 1100, t0 = performance.now();
+  const tick = (t) => {
+    const p = Math.min((t - t0) / dur, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(target * eased) + suffix;
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+if ("IntersectionObserver" in window) {
+  const co = new IntersectionObserver((es) => es.forEach(e => {
+    if (e.isIntersecting) { countUp(e.target); co.unobserve(e.target); }
+  }), { threshold: 0.6 });
+  document.querySelectorAll("[data-count]").forEach(el => co.observe(el));
+}
+
+// Live star count. Non-blocking, and the link still works if it fails.
+fetch("https://api.github.com/repos/kapil303196/attic")
+  .then(r => r.ok ? r.json() : null)
+  .then(d => {
+    if (d && typeof d.stargazers_count === "number") {
+      document.getElementById("ghcount").textContent =
+        d.stargazers_count.toLocaleString() + " on GitHub";
+    }
+  }).catch(() => {});
+
 for (const [btn, code] of [["copy","cmd"],["copy2","cmd2"]]) {
   const b = document.getElementById(btn), c = document.getElementById(code);
   if (!b || !c) continue;
