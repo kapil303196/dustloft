@@ -26,6 +26,7 @@
 </script>
 <style>
 :root{
+  interpolate-size:allow-keywords;
   --bg:oklch(0.145 0.012 62);--bg2:oklch(0.198 0.014 62);--line:oklch(0.29 0.016 62);
   --ink:oklch(0.955 0.010 82);--ink2:oklch(0.745 0.018 78);--ink3:oklch(0.605 0.018 74);
   --amber:oklch(0.815 0.145 72);--amber2:oklch(0.70 0.14 58);
@@ -173,6 +174,80 @@ footer{padding:2.8rem 0 4rem;border-top:1px solid var(--line);color:var(--ink3);
 .foot nav{margin-left:auto;display:flex;gap:1.3rem}
 footer a{color:var(--ink2)}
 
+/* The ledger IS the chart: each row carries a bar sized to its value, which
+   grows on reveal. Staggered so the eye reads down the list. */
+.ledger div{position:relative;overflow:hidden}
+.ledger div::before{content:"";position:absolute;inset:0 auto 0 0;width:0;border-radius:0 6px 6px 0;
+  background:linear-gradient(90deg,oklch(.815 .145 72/.16),oklch(.815 .145 72/.02));
+  transition:width 1.05s cubic-bezier(.16,1,.3,1);z-index:0}
+.ledger.in div::before{width:var(--w,0%)}
+.ledger div>*{position:relative;z-index:1}
+.ledger.in div:nth-child(1)::before{transition-delay:.02s}
+.ledger.in div:nth-child(2)::before{transition-delay:.09s}
+.ledger.in div:nth-child(3)::before{transition-delay:.16s}
+.ledger.in div:nth-child(4)::before{transition-delay:.23s}
+.ledger.in div:nth-child(5)::before{transition-delay:.30s}
+.ledger.in div:nth-child(6)::before{transition-delay:.37s}
+.ledger.in div:nth-child(7)::before{transition-delay:.44s}
+.ledger.in div:nth-child(8)::before{transition-delay:.51s}
+.ledger div{opacity:0;transform:translateX(-10px);
+  transition:opacity .5s cubic-bezier(.16,1,.3,1),transform .5s cubic-bezier(.16,1,.3,1)}
+.ledger.in div{opacity:1;transform:none}
+.ledger.in div:nth-child(n){transition-delay:calc(var(--i,0) * 60ms)}
+.ledger div:hover .sz{color:oklch(.88 .15 76)}
+.ledger .sz{transition:color .2s}
+
+/* Tiers and rules arrive one after another rather than all at once */
+.tiers .tier,.rules li,.cost .opt{opacity:0;transform:translateY(16px);
+  transition:opacity .55s cubic-bezier(.16,1,.3,1),transform .55s cubic-bezier(.16,1,.3,1)}
+.tiers.in .tier,.rules.in li,.cost.in .opt{opacity:1;transform:none}
+.tiers.in .tier:nth-child(2),.cost.in .opt:nth-child(2){transition-delay:.11s}
+.tiers.in .tier:nth-child(3){transition-delay:.22s}
+.rules.in li:nth-child(2){transition-delay:.08s}
+.rules.in li:nth-child(3){transition-delay:.16s}
+.rules.in li:nth-child(4){transition-delay:.24s}
+.tier{transition:border-color .25s,transform .25s}
+.tier:hover{border-color:var(--amber2);transform:translateY(-3px)}
+.tier .dot{animation:pulse 2.8s ease-in-out infinite}
+.tiers .tier:nth-child(2) .dot{animation-delay:.5s}
+.tiers .tier:nth-child(3) .dot{animation-delay:1s}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 currentColor;opacity:1}50%{box-shadow:0 0 0 4px transparent;opacity:.65}}
+.opt{transition:border-color .25s,transform .25s}
+.opt.good:hover{transform:translateY(-3px)}
+.opt.bad .price{position:relative;text-decoration:none}
+.opt.bad .price::after{content:"";position:absolute;left:-2%;right:102%;top:52%;height:3px;
+  background:var(--ink3);border-radius:2px;transition:right .7s cubic-bezier(.16,1,.3,1) .45s}
+.cost.in .opt.bad .price::after{right:-2%}
+
+/* FAQ: real height animation, and the marker turns */
+.faq summary{transition:color .2s,padding-left .25s}
+.faq summary:hover{color:var(--amber)}
+.faq details[open] summary{color:var(--ink)}
+.faq summary::after{content:"+";margin-left:auto;color:var(--ink3);font-weight:400;
+  transition:transform .3s cubic-bezier(.16,1,.3,1),color .2s;transform-origin:center}
+.faq details[open] summary::after{transform:rotate(45deg);color:var(--amber)}
+.faq details::details-content{block-size:0;overflow:hidden;opacity:0;
+  transition:block-size .4s cubic-bezier(.16,1,.3,1),opacity .3s ease,content-visibility .4s allow-discrete;
+  transition-behavior:allow-discrete}
+.faq details[open]::details-content{block-size:auto;opacity:1}
+.faq details{opacity:0;transform:translateY(10px);
+  transition:opacity .5s cubic-bezier(.16,1,.3,1),transform .5s cubic-bezier(.16,1,.3,1)}
+.faq.in details{opacity:1;transform:none}
+.faq.in details:nth-child(2){transition-delay:.06s}
+.faq.in details:nth-child(3){transition-delay:.12s}
+.faq.in details:nth-child(4){transition-delay:.18s}
+.faq.in details:nth-child(5){transition-delay:.24s}
+.faq.in details:nth-child(6){transition-delay:.3s}
+.faq.in details:nth-child(7){transition-delay:.36s}
+.faq.in details:nth-child(8){transition-delay:.42s}
+
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.made{margin:1.4rem 0 0;width:100%;color:var(--ink3)}
+.made a{color:var(--amber);text-decoration:none;font-weight:500;border-bottom:1px solid transparent;transition:.2s}
+.made a:hover{border-bottom-color:var(--amber)}
+.heart{display:inline-block;color:oklch(.68 .19 20);animation:beat 1.9s ease-in-out infinite}
+@keyframes beat{0%,100%{transform:scale(1)}14%{transform:scale(1.22)}28%{transform:scale(1)}42%{transform:scale(1.16)}56%{transform:scale(1)}}
+
 .reveal{opacity:0;transform:translateY(14px);
   transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1)}
 .reveal.in{opacity:1;transform:none}
@@ -184,6 +259,9 @@ footer a{color:var(--ink2)}
   html{scroll-behavior:auto}
   *,.hero>*{animation:none!important;transition:none!important;opacity:1!important;transform:none!important}
   .seg{flex-grow:var(--g)!important}.seg.used{display:none}.legend{opacity:1!important}
+  .ledger div::before{width:var(--w,0%)!important}
+  .heart{animation:none}
+  .opt.bad .price::after{right:-2%!important}
 }
 </style>
 </head>
@@ -248,15 +326,15 @@ footer a{color:var(--ink2)}
       <p class="sec-lede reveal">It isn’t one thing. macOS files anything it can’t categorise under that label, then gives you no way to look inside. That’s how it reaches 100&nbsp;GB with nobody able to say why.</p>
       <p class="sec-lede reveal">These are the things that quietly fill a drive. Every one is a category Attic scans.</p>
     </div>
-    <dl class="ledger reveal">
-      <div><dt>A forgotten screen recording</dt><span class="sz">up to 500 GB</span><dd class="who">Started by accident, never stopped</dd></div>
-      <div><dt>Video editing scratch caches</dt><span class="sz">100–500 GB</span><dd class="who">After Effects, Premiere, Resolve</dd></div>
-      <div><dt>Docker disk image</dt><span class="sz">up to 300 GB</span><dd class="who">Defaults to eating all free space</dd></div>
-      <div><dt>Messaging app media</dt><span class="sz">50–100 GB</span><dd class="who">Every photo anyone ever sent you</dd></div>
-      <div><dt>Virtual machines &amp; emulators</dt><span class="sz">20–120 GB</span><dd class="who">Parallels, UTM, Android images</dd></div>
-      <div><dt>Leftovers from deleted apps</dt><span class="sz">10–100 GB</span><dd class="who">Uninstalling never removes these</dd></div>
-      <div><dt>Old iPhone backups</dt><span class="sz">10–80 GB</span><dd class="who">One per device, kept forever</dd></div>
-      <div><dt>Developer dependencies</dt><span class="sz">10–50 GB</span><dd class="who">node_modules, venvs, package stores</dd></div>
+    <dl class="ledger reveal" id="ledger">
+      <div style="--w:100%;--i:0"><dt>A forgotten screen recording</dt><span class="sz">up to 500 GB</span><dd class="who">Started by accident, never stopped</dd></div>
+      <div style="--w:84%;--i:1"><dt>Video editing scratch caches</dt><span class="sz">100–500 GB</span><dd class="who">After Effects, Premiere, Resolve</dd></div>
+      <div style="--w:70%;--i:2"><dt>Docker disk image</dt><span class="sz">up to 300 GB</span><dd class="who">Defaults to eating all free space</dd></div>
+      <div style="--w:44%;--i:3"><dt>Messaging app media</dt><span class="sz">50–100 GB</span><dd class="who">Every photo anyone ever sent you</dd></div>
+      <div style="--w:38%;--i:4"><dt>Virtual machines &amp; emulators</dt><span class="sz">20–120 GB</span><dd class="who">Parallels, UTM, Android images</dd></div>
+      <div style="--w:32%;--i:5"><dt>Leftovers from deleted apps</dt><span class="sz">10–100 GB</span><dd class="who">Uninstalling never removes these</dd></div>
+      <div style="--w:26%;--i:6"><dt>Old iPhone backups</dt><span class="sz">10–80 GB</span><dd class="who">One per device, kept forever</dd></div>
+      <div style="--w:20%;--i:7"><dt>Developer dependencies</dt><span class="sz">10–50 GB</span><dd class="who">node_modules, venvs, package stores</dd></div>
     </dl>
   </div>
 </section>
@@ -265,10 +343,10 @@ footer a{color:var(--ink2)}
   <div class="wrap">
     <h2 class="reveal">The expensive way, and the free one</h2>
     <p class="sec-lede reveal">When a Mac fills up, the default answer is to pay — for a bigger machine, or for cloud storage every month, forever. Both are reasonable. Both are worth trying second.</p>
-    <div class="cost reveal">
+    <div class="cost reveal" id="cost">
       <div class="opt bad">
         <h3>Buy your way out</h3>
-        <div class="price">$200+</div>
+        <div class="price"><span data-count="200" data-prefix="$" data-suffix="+">$200+</span></div>
         <p>A storage upgrade is configured at purchase and can never be changed afterwards. Cloud storage is a subscription you keep paying for as long as the files exist. Neither tells you what was filling the disk in the first place.</p>
       </div>
       <div class="opt good">
@@ -284,7 +362,7 @@ footer a{color:var(--ink2)}
   <div class="wrap">
     <h2 class="reveal">Fast is easy. Not destroying anything is the hard part.</h2>
     <p class="sec-lede reveal">Everything Attic finds is sorted into three tiers, and the tier decides how much friction sits between you and the delete button.</p>
-    <div class="tiers reveal">
+    <div class="tiers reveal" id="tiers">
       <div class="tier"><h3><span class="dot" style="background:var(--safe)"></span>Regenerable</h3>
         <p>Caches, build output, dependencies, Docker images. Comes back on its own. This is all Quick Clean will ever touch.</p></div>
       <div class="tier"><h3><span class="dot" style="background:oklch(.80 .13 78)"></span>Needs admin</h3>
@@ -293,7 +371,7 @@ footer a{color:var(--ink2)}
         <p>Gone forever. Never bulk-selected, never in Quick Clean, gated behind a confirmation you tick yourself.</p></div>
     </div>
     <h3 class="reveal" style="margin-top:clamp(2.4rem,6vw,3.6rem)">Four things it flatly refuses to do</h3>
-    <ul class="rules reveal">
+    <ul class="rules reveal" id="rules">
       <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="oklch(.70 .16 27)" stroke-width="2.2"><path d="M3 8h10M8 3v10" transform="rotate(45 8 8)"/></svg><span><b>Delete a <code>.git</code> directory.</b> It offers <code>git gc</code> instead, and flags in red any repository whose history exists nowhere but your disk.</span></li>
       <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="oklch(.70 .16 27)" stroke-width="2.2"><path d="M3 8h10M8 3v10" transform="rotate(45 8 8)"/></svg><span><b>Touch Dropbox, iCloud Drive or any synced folder.</b> A delete there propagates to every device you own. Not overridable.</span></li>
       <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="oklch(.70 .16 27)" stroke-width="2.2"><path d="M3 8h10M8 3v10" transform="rotate(45 8 8)"/></svg><span><b>Remove Docker volumes.</b> Unused images, yes. The volumes holding your databases, never.</span></li>
@@ -333,7 +411,7 @@ footer a{color:var(--ink2)}
         <button type="button" id="copy" aria-label="Copy install command">Copy</button></div>
       <p class="trust reveal" style="margin-top:1rem">Universal build — Apple Silicon and Intel. Prefer a disk image? <a href="https://github.com/kapil303196/attic/releases/latest">Download the DMG</a>.</p>
     </div>
-    <div class="faq reveal">
+    <div class="faq reveal" id="faq">
       <details><summary>Will it delete something I need?</summary><p>Not without showing you first. Everything is listed with its full path and real size, and you untick anything you want to keep. Items that cannot be recovered are never bulk-selected and need a separate confirmation. Quick Clean only touches things that rebuild themselves.</p></details>
       <details><summary>Why is my System Data so large?</summary><p>macOS files everything it cannot categorise under that one label — caches, app containers, virtual machine disks, downloaded models, old device backups, local snapshots. It grows quietly and there is no built-in way to look inside. That is the exact problem Attic was built for.</p></details>
       <details><summary>Why does it need Full Disk Access?</summary><p>Without it macOS hides the Trash, app containers and device backups, so sizes come out far lower than reality — and it asks separately for Desktop, Downloads and Documents. Attic asks once, up front, and explains why. macOS applies the permission only to a freshly launched app, so it restarts itself once.</p></details>
@@ -352,6 +430,7 @@ footer a{color:var(--ink2)}
   <nav><a href="https://github.com/kapil303196/attic">Source</a>
     <a href="https://github.com/kapil303196/attic/releases/latest">Releases</a>
     <a href="https://github.com/kapil303196/attic/blob/main/DOCFILES.md">Docs</a></nav>
+  <p class="made">Made with <span class="heart" aria-hidden="true">♥</span><span class="sr-only">love</span> in India by <a href="https://logicspark.io" target="_blank" rel="noopener">Logicspark</a></p>
 </div></footer>
 
 <script>
@@ -381,13 +460,13 @@ else {
 }
 
 function countUp(el) {
-  const t = parseFloat(el.dataset.count), sfx = el.dataset.suffix || "";
-  if (reduce) { el.textContent = (t === 0 ? "$0" : t + sfx); return; }
+  const t = parseFloat(el.dataset.count), sfx = el.dataset.suffix || "", pre = el.dataset.prefix || "";
+  if (reduce) { el.textContent = (t === 0 ? "$0" : pre + t + sfx); return; }
   if (t === 0) { el.textContent = "$0"; return; }
   const dur = 1000, t0 = performance.now();
   const tick = (n) => {
     const p = Math.min((n - t0) / dur, 1);
-    el.textContent = Math.round(t * (1 - Math.pow(1 - p, 3))) + sfx;
+    el.textContent = pre + Math.round(t * (1 - Math.pow(1 - p, 3))) + sfx;
     if (p < 1) requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
