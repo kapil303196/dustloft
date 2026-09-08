@@ -2,442 +2,410 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Attic — find out what System Data is really doing to your Mac</title>
-<meta name="description" content="macOS hides tens of gigabytes as “System Data” and gives you no way to look inside. Attic opens it up, shows you exactly what is taking the space, and never deletes anything you cannot get back without asking first. Free and open source.">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Attic — you already own the storage macOS is hiding from you</title>
+<meta name="description" content="Macs routinely hide 50–200 GB behind a label called “System Data”. Attic shows you exactly what it is and hands the space back, without ever deleting something you can’t get back. Free, open source, no subscription.">
 <link rel="canonical" href="https://atticmac.app/">
-<meta property="og:title" content="Attic — see what System Data is really doing to your Mac">
-<meta property="og:description" content="One Mac went from 20 GB free to 215 GB free. Attic shows you what is actually taking the space, sorted by how recoverable it is.">
-<meta property="og:type" content="website">
+<meta property="og:title" content="You already own the storage macOS is hiding from you">
+<meta property="og:description" content="One Mac was 96% full. 195 GB of it was invisible. Attic finds it in about two minutes.">
 <meta property="og:image" content="https://atticmac.app/img/overview.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/img/mark-v2.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,800&display=swap">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,800&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:oklch(0.155 0.012 62);
-  --bg2:oklch(0.205 0.014 62);
-  --line:oklch(0.30 0.016 62);
-  --ink:oklch(0.945 0.012 82);
-  --ink2:oklch(0.735 0.018 78);
-  --ink3:oklch(0.60 0.018 74);
-  --amber:oklch(0.80 0.145 72);
-  --amberdim:oklch(0.62 0.12 66);
-  --safe:oklch(0.78 0.125 158);
-  --warn:oklch(0.80 0.13 78);
-  --danger:oklch(0.70 0.16 27);
-  --maxw:1120px;
-  --step:clamp(1rem,0.6rem + 1.6vw,1.35rem);
-}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
-body{
-  margin:0;background:var(--bg);color:var(--ink);
-  font-family:"Bricolage Grotesque",ui-sans-serif,system-ui,-apple-system,sans-serif;
-  font-size:var(--step);line-height:1.65;-webkit-font-smoothing:antialiased;
-}
-.wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:clamp(1.2rem,4vw,2.5rem)}
-a{color:inherit}
-h1,h2,h3{line-height:1.05;letter-spacing:-0.025em;text-wrap:balance;margin:0}
-h1{font-size:clamp(2.7rem,1.4rem + 5.6vw,5.6rem);font-weight:800}
-h2{font-size:clamp(1.9rem,1.2rem + 2.6vw,3.1rem);font-weight:600}
-h3{font-size:clamp(1.15rem,1rem + 0.7vw,1.5rem);font-weight:600}
-p{text-wrap:pretty}
-.lede{font-size:clamp(1.1rem,0.95rem + 0.8vw,1.5rem);color:var(--ink2);max-width:42ch;line-height:1.5}
-
-/* the single lamp in the attic */
-.lamp{position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:radial-gradient(60rem 40rem at 68% -10%, oklch(0.80 0.145 72 / 0.13), transparent 62%);}
-main,header,footer{position:relative;z-index:1}
-
-header{padding:1.6rem 0;border-bottom:1px solid var(--line)}
-.bar{display:flex;align-items:center;gap:1rem}
-.brand{display:flex;align-items:center;gap:.65rem;font-weight:600;letter-spacing:-0.02em;text-decoration:none}
-.brand img{width:30px;height:30px;border-radius:8px}
-.bar nav{margin-left:auto;display:flex;gap:1.6rem;align-items:center;font-size:.92rem;color:var(--ink2)}
-.bar nav a{text-decoration:none}
-.bar nav a:hover{color:var(--amber)}
-
-.hero{padding:clamp(3.5rem,9vw,7rem) 0 clamp(2rem,5vw,3.5rem)}
-.hero .kicker{color:var(--amber);font-weight:500;font-size:.95rem;margin:0 0 1.2rem;letter-spacing:.01em}
-.hero h1 em{font-style:normal;color:var(--amber)}
-.hero .lede{margin:1.6rem 0 0}
-
-.cta{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;margin-top:2.4rem}
-.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 1.35rem;border-radius:11px;
-  text-decoration:none;font-weight:600;font-size:1rem;border:1px solid transparent;transition:.18s ease}
-.btn-primary{background:var(--amber);color:oklch(0.20 0.03 62)}
-.btn-primary:hover{background:oklch(0.86 0.15 74)}
-.btn-ghost{border-color:var(--line);color:var(--ink)}
-.btn-ghost:hover{border-color:var(--amberdim);color:var(--amber)}
-
-.cmd{display:flex;align-items:center;gap:.75rem;margin-top:1.5rem;padding:.85rem 1rem;
-  background:var(--bg2);border:1px solid var(--line);border-radius:11px;max-width:min(100%,44rem)}
-.cmd code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.83rem;color:var(--ink2);
-  overflow-x:auto;white-space:nowrap;flex:1}
-.cmd button{background:none;border:1px solid var(--line);color:var(--ink2);border-radius:7px;
-  padding:.35rem .7rem;font:inherit;font-size:.78rem;cursor:pointer;transition:.15s}
-.cmd button:hover{border-color:var(--amberdim);color:var(--amber)}
-.cmd .note{font-size:.78rem;color:var(--ink3)}
-
-figure{margin:clamp(2.5rem,6vw,4.5rem) 0 0}
-figure img{width:100%;height:auto;display:block;border-radius:14px;border:1px solid var(--line);
-  box-shadow:0 40px 90px -30px oklch(0 0 0 / .8)}
-figcaption{margin-top:.9rem;font-size:.85rem;color:var(--ink3)}
-
-section{padding:clamp(3.5rem,9vw,6.5rem) 0;border-top:1px solid var(--line)}
-.two{display:grid;gap:clamp(1.8rem,5vw,4rem);grid-template-columns:1fr}
-@media(min-width:900px){.two{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);align-items:start}}
-.sec-lede{color:var(--ink2);margin:1.1rem 0 0;max-width:46ch}
-
-/* the ledger — deliberately not a card grid */
-.ledger{margin:0;border-top:1px solid var(--line)}
-.ledger div{display:flex;align-items:baseline;gap:1rem;padding:.95rem 0;border-bottom:1px solid var(--line)}
-.ledger dt{flex:1;font-weight:500}
-.ledger .sz{font-variant-numeric:tabular-nums;font-weight:600;color:var(--amber);font-size:.98rem}
-.ledger .who{font-size:.82rem;color:var(--ink3);flex-basis:100%;margin:.15rem 0 0}
-@media(min-width:560px){.ledger .who{flex-basis:auto;flex:1.1;margin:0;text-align:right}}
-
-.rules{list-style:none;padding:0;margin:1.8rem 0 0;display:grid;gap:1.15rem}
-.rules li{display:flex;gap:.85rem;align-items:flex-start}
-.rules svg{flex:none;margin-top:.34rem}
-.rules b{font-weight:600}
-.rules span{color:var(--ink2)}
-
-.tiers{display:grid;gap:1rem;margin-top:2rem}
-@media(min-width:760px){.tiers{grid-template-columns:repeat(3,1fr)}}
-.tier{padding:1.3rem;border:1px solid var(--line);border-radius:13px;background:var(--bg2)}
-.tier h3{font-size:1.02rem;margin-bottom:.45rem}
-.tier p{margin:0;font-size:.9rem;color:var(--ink2);line-height:1.55}
-.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:.5rem;vertical-align:middle}
-
-blockquote{margin:0;padding:clamp(1.5rem,4vw,2.4rem);border:1px solid var(--line);
-  border-radius:15px;background:var(--bg2)}
-blockquote p{margin:0 0 1rem;color:var(--ink2)}
-blockquote p:last-child{margin:0}
-blockquote strong{color:var(--ink);font-weight:600}
-.verdict{display:block;margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid var(--line);
-  color:var(--amber);font-weight:500}
-
-.faq{display:grid;gap:0;margin-top:2rem;border-top:1px solid var(--line)}
-.faq details{border-bottom:1px solid var(--line)}
-.faq summary{cursor:pointer;padding:1.15rem 0;font-weight:500;list-style:none;display:flex;gap:1rem}
-.faq summary::-webkit-details-marker{display:none}
-.faq summary::after{content:"+";margin-left:auto;color:var(--ink3);font-weight:400}
-.faq details[open] summary::after{content:"–"}
-.faq p{margin:0 0 1.15rem;color:var(--ink2);font-size:.96rem;max-width:62ch}
-
-/* Motion. Everything is transform/opacity so it never triggers layout, and the
-   whole system switches off for anyone who asked for less movement. */
-.reveal{opacity:0;transform:translateY(14px);
-  transition:opacity .62s cubic-bezier(.16,1,.3,1),transform .62s cubic-bezier(.16,1,.3,1)}
-.reveal.in{opacity:1;transform:none}
-.hero .kicker,.hero h1,.hero .lede,.hero .cta,.hero .cmd,.hero .cmd-note{
-  opacity:0;transform:translateY(16px);animation:rise .7s cubic-bezier(.16,1,.3,1) forwards}
-.hero h1{animation-delay:.06s}
-.hero .lede{animation-delay:.14s}
-.hero .cta{animation-delay:.22s}
-.hero .cmd{animation-delay:.28s}
-.hero .cmd-note{animation-delay:.34s}
-@keyframes rise{to{opacity:1;transform:none}}
-.lamp{animation:breathe 9s ease-in-out infinite}
-@keyframes breathe{0%,100%{opacity:.85}50%{opacity:1}}
-@media (prefers-reduced-motion:reduce){
-  .reveal,.hero .kicker,.hero h1,.hero .lede,.hero .cta,.hero .cmd,.hero .cmd-note{
-    opacity:1!important;transform:none!important;animation:none!important}
-  .lamp{animation:none}
-}
-
-/* headline figures */
-.stats{display:grid;gap:1px;margin-top:2.5rem;background:var(--line);
-  border:1px solid var(--line);border-radius:15px;overflow:hidden}
-@media(min-width:720px){.stats{grid-template-columns:repeat(3,1fr)}}
-.stat{background:var(--bg);padding:1.6rem 1.4rem}
-.stat b{display:block;font-size:clamp(2rem,1.4rem + 2.4vw,3.1rem);font-weight:800;
-  color:var(--amber);letter-spacing:-0.03em;font-variant-numeric:tabular-nums;line-height:1}
-.stat span{display:block;margin-top:.55rem;color:var(--ink2);font-size:.93rem;line-height:1.45}
-
-.stars{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .6rem;border:1px solid var(--line);
-  border-radius:99px;font-size:.82rem;color:var(--ink2);text-decoration:none;transition:.15s}
-.stars:hover{border-color:var(--amberdim);color:var(--amber)}
-.stars svg{flex:none}
-
-footer{padding:3rem 0 4rem;border-top:1px solid var(--line);color:var(--ink3);font-size:.88rem}
-footer a{color:var(--ink2)}
-.foot{display:flex;flex-wrap:wrap;gap:1.2rem;align-items:center}
-.foot nav{margin-left:auto;display:flex;gap:1.4rem}
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,800&display=swap" rel="stylesheet">
 <script type="application/ld+json">
-{
-  "@context":"https://schema.org",
-  "@type":"SoftwareApplication",
-  "name":"Attic",
-  "applicationCategory":"UtilitiesApplication",
-  "operatingSystem":"macOS 13.0 or later",
-  "description":"Attic shows what macOS hides as System Data, and never deletes anything you cannot get back without asking first.",
-  "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
-  "license":"https://opensource.org/licenses/MIT",
-  "url":"https://atticmac.app/",
-  "downloadUrl":"https://github.com/kapil303196/attic/releases/latest"
-}
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Attic","applicationCategory":"UtilitiesApplication","operatingSystem":"macOS 13.0 or later","description":"Shows what macOS hides as System Data and reclaims it safely.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://atticmac.app/","downloadUrl":"https://github.com/kapil303196/attic/releases/latest"}
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
-{"@type":"Question","name":"Why is my System Data so large on Mac?","acceptedAnswer":{"@type":"Answer","text":"macOS files everything it cannot categorise under System Data — caches, app containers, virtual machine disks, downloaded models, old device backups and local snapshots. It grows quietly and there is no built-in way to see inside it."}},
-{"@type":"Question","name":"How do I clear System Data on a Mac?","acceptedAnswer":{"@type":"Answer","text":"Identify what is actually inside it before deleting anything. Attic measures every real consumer of space, sorts it by how recoverable it is, and shows each item with its full path and size before anything is removed."}},
-{"@type":"Question","name":"Is Attic safe to use?","acceptedAnswer":{"@type":"Answer","text":"The source is public and the safety rules are enforced in code and covered by tests. It never deletes a .git directory, never touches Dropbox or iCloud Drive, and never removes Docker volumes. Nothing is deleted without a review screen."}},
-{"@type":"Question","name":"Does Attic work on Intel Macs?","acceptedAnswer":{"@type":"Answer","text":"Yes. Every release is a universal binary built in CI and verified to contain both Apple Silicon and Intel architectures."}},
-{"@type":"Question","name":"How much does Attic cost?","acceptedAnswer":{"@type":"Answer","text":"Nothing. It is MIT licensed with no telemetry, no account and no upsell."}}]}
+{"@type":"Question","name":"Why is my System Data so large on Mac?","acceptedAnswer":{"@type":"Answer","text":"macOS files everything it cannot categorise under System Data — caches, app containers, virtual machine disks, downloaded models, old device backups and local snapshots. It grows quietly and there is no built-in way to look inside it."}},
+{"@type":"Question","name":"How do I clear System Data on a Mac?","acceptedAnswer":{"@type":"Answer","text":"Find out what is inside it before deleting anything. Attic measures every real consumer of space, sorts it by how recoverable it is, and shows each item with its full path and size before anything is removed."}},
+{"@type":"Question","name":"Is Attic safe?","acceptedAnswer":{"@type":"Answer","text":"The source is public and the safety rules are enforced in code and covered by tests. It never deletes a .git directory, never touches Dropbox or iCloud Drive, and never removes Docker volumes."}},
+{"@type":"Question","name":"Does Attic work on Intel Macs?","acceptedAnswer":{"@type":"Answer","text":"Yes. Every release is a universal binary verified to contain both Apple Silicon and Intel architectures."}},
+{"@type":"Question","name":"How much does Attic cost?","acceptedAnswer":{"@type":"Answer","text":"Nothing. MIT licensed, no telemetry, no account, no subscription."}}]}
 </script>
+<style>
+:root{
+  --bg:oklch(0.145 0.012 62);--bg2:oklch(0.198 0.014 62);--line:oklch(0.29 0.016 62);
+  --ink:oklch(0.955 0.010 82);--ink2:oklch(0.745 0.018 78);--ink3:oklch(0.605 0.018 74);
+  --amber:oklch(0.815 0.145 72);--amber2:oklch(0.70 0.14 58);
+  --safe:oklch(0.78 0.125 158);--danger:oklch(0.70 0.16 27);--violet:oklch(0.70 0.13 300);
+  --blue:oklch(0.72 0.12 240);--teal:oklch(0.76 0.11 190);--pink:oklch(0.74 0.14 350);
+  --maxw:1140px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  font-size:clamp(1rem,.62rem + 1.5vw,1.3rem);line-height:1.62;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:clamp(1.2rem,4vw,2.5rem)}
+a{color:inherit}
+h1,h2,h3{line-height:1.04;letter-spacing:-.028em;text-wrap:balance;margin:0}
+h1{font-size:clamp(2.6rem,1.1rem + 6vw,5.4rem);font-weight:800}
+h2{font-size:clamp(1.85rem,1.1rem + 2.7vw,3rem);font-weight:600}
+h3{font-size:clamp(1.1rem,.98rem + .6vw,1.4rem);font-weight:600}
+p{text-wrap:pretty}
+.lede{font-size:clamp(1.05rem,.9rem + .75vw,1.42rem);color:var(--ink2);max-width:44ch;line-height:1.5}
+.lamp{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(58rem 38rem at 72% -12%,oklch(0.815 0.145 72/.14),transparent 62%);
+  animation:breathe 10s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.82}50%{opacity:1}}
+header,main,footer{position:relative;z-index:1}
+
+header{padding:1.5rem 0;border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:1rem}
+.brand{display:flex;align-items:center;gap:.6rem;font-weight:600;text-decoration:none;letter-spacing:-.02em}
+.brand img{width:29px;height:29px;border-radius:8px}
+.bar nav{margin-left:auto;display:flex;gap:1.5rem;align-items:center;font-size:.9rem;color:var(--ink2)}
+.bar nav a{text-decoration:none}.bar nav a:hover{color:var(--amber)}
+.stars{display:inline-flex;align-items:center;gap:.38rem;padding:.32rem .68rem;border:1px solid var(--line);
+  border-radius:99px;font-size:.8rem;transition:.15s}
+.stars:hover{border-color:var(--amber2);color:var(--amber)}
+@media(max-width:680px){.bar nav a:not(.stars){display:none}}
+
+.hero{padding:clamp(3rem,8vw,6rem) 0 clamp(2rem,5vw,3rem)}
+.warn{display:inline-flex;align-items:center;gap:.5rem;color:var(--amber);font-weight:500;
+  font-size:.9rem;border:1px solid var(--amber2);border-radius:99px;padding:.35rem .85rem;margin-bottom:1.6rem}
+h1 .hide{color:var(--amber)}
+.hero .lede{margin:1.7rem 0 0}
+.cta{display:flex;flex-wrap:wrap;gap:.75rem;align-items:center;margin-top:2.2rem}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.9rem 1.4rem;border-radius:11px;
+  text-decoration:none;font-weight:600;font-size:1rem;border:1px solid transparent;transition:.18s}
+.btn-primary{background:var(--amber);color:oklch(.19 .03 62)}
+.btn-primary:hover{background:oklch(.87 .15 74);transform:translateY(-1px)}
+.btn-ghost{border-color:var(--line)}
+.btn-ghost:hover{border-color:var(--amber2);color:var(--amber)}
+.trust{margin-top:1.1rem;font-size:.85rem;color:var(--ink3)}
+
+/* the disk that reveals itself */
+.disk{margin-top:clamp(2.5rem,6vw,4rem)}
+.disk .cap{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;
+  font-size:.85rem;color:var(--ink3);margin-bottom:.7rem}
+.disk .cap b{color:var(--ink);font-weight:600;font-size:.95rem}
+.track{display:flex;height:clamp(46px,7vw,64px);border-radius:13px;overflow:hidden;
+  border:1px solid var(--line);background:var(--bg2)}
+.seg{position:relative;transition:flex-grow 1.05s cubic-bezier(.16,1,.3,1);flex-grow:0;min-width:0}
+.seg.used{background:oklch(.38 .02 62);flex-grow:38}
+.seg[data-c]{flex-grow:0}
+.revealed .seg[data-c]{flex-grow:var(--g)}
+.revealed .seg.used{flex-grow:0}
+.seg .lbl{position:absolute;inset:0;display:grid;place-items:center;font-size:.78rem;font-weight:600;
+  color:oklch(.16 .02 62);opacity:0;transition:opacity .5s ease .5s;white-space:nowrap;padding-inline:.3rem}
+.revealed .seg .lbl{opacity:1}
+.seg.used .lbl{color:var(--ink2);opacity:1;transition:opacity .3s}
+.revealed .seg.used .lbl{opacity:0}
+.legend{display:flex;flex-wrap:wrap;gap:.55rem 1.3rem;margin-top:1rem;font-size:.83rem;color:var(--ink2);
+  opacity:0;transform:translateY(6px);transition:.6s cubic-bezier(.16,1,.3,1) .55s}
+.revealed .legend{opacity:1;transform:none}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:.45rem;vertical-align:middle}
+.legend b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+
+.stats{display:grid;gap:1px;margin-top:clamp(2.5rem,6vw,4rem);background:var(--line);
+  border:1px solid var(--line);border-radius:15px;overflow:hidden}
+@media(min-width:720px){.stats{grid-template-columns:repeat(3,1fr)}}
+.stat{background:var(--bg);padding:1.6rem 1.4rem}
+.stat b{display:block;font-size:clamp(1.9rem,1.3rem + 2.3vw,3rem);font-weight:800;color:var(--amber);
+  letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+.stat span{display:block;margin-top:.5rem;color:var(--ink2);font-size:.9rem;line-height:1.45}
+
+section{padding:clamp(3.2rem,8vw,6rem) 0;border-top:1px solid var(--line)}
+.two{display:grid;gap:clamp(1.6rem,5vw,3.8rem);grid-template-columns:1fr}
+@media(min-width:900px){.two{grid-template-columns:minmax(0,1fr) minmax(0,1.12fr);align-items:start}}
+.sec-lede{color:var(--ink2);margin:1rem 0 0;max-width:46ch}
+
+.ledger{margin:0;border-top:1px solid var(--line)}
+.ledger div{display:flex;align-items:baseline;gap:1rem;padding:.9rem 0;border-bottom:1px solid var(--line)}
+.ledger dt{flex:1;font-weight:500}
+.ledger .sz{font-variant-numeric:tabular-nums;font-weight:600;color:var(--amber);font-size:.96rem}
+.ledger .who{font-size:.81rem;color:var(--ink3);flex-basis:100%;margin:.15rem 0 0}
+@media(min-width:560px){.ledger .who{flex-basis:auto;flex:1.1;margin:0;text-align:right}}
+
+.cost{display:grid;gap:1rem;margin-top:2rem}
+@media(min-width:760px){.cost{grid-template-columns:1fr 1fr}}
+.opt{padding:1.5rem;border:1px solid var(--line);border-radius:14px;background:var(--bg2)}
+.opt.good{border-color:var(--amber2)}
+.opt h3{margin-bottom:.4rem}
+.opt .price{font-size:clamp(1.6rem,1.2rem + 1.4vw,2.2rem);font-weight:800;letter-spacing:-.03em;margin:.2rem 0 .6rem}
+.opt.bad .price{color:var(--ink3);text-decoration:line-through;text-decoration-thickness:2px}
+.opt.good .price{color:var(--amber)}
+.opt p{margin:0;font-size:.9rem;color:var(--ink2);line-height:1.5}
+
+.tiers{display:grid;gap:1rem;margin-top:1.8rem}
+@media(min-width:760px){.tiers{grid-template-columns:repeat(3,1fr)}}
+.tier{padding:1.25rem;border:1px solid var(--line);border-radius:13px;background:var(--bg2)}
+.tier h3{font-size:1rem;margin-bottom:.4rem}
+.tier p{margin:0;font-size:.88rem;color:var(--ink2);line-height:1.55}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:.5rem;vertical-align:middle}
+
+.rules{list-style:none;padding:0;margin:1.6rem 0 0;display:grid;gap:1.05rem}
+.rules li{display:flex;gap:.8rem;align-items:flex-start}
+.rules svg{flex:none;margin-top:.35rem}
+.rules span{color:var(--ink2)}.rules b{color:var(--ink);font-weight:600}
+
+blockquote{margin:0;padding:clamp(1.4rem,4vw,2.3rem);border:1px solid var(--line);border-radius:15px;background:var(--bg2)}
+blockquote p{margin:0 0 1rem;color:var(--ink2)}blockquote p:last-of-type{margin:0}
+blockquote strong{color:var(--ink);font-weight:600}
+.verdict{display:block;margin-top:1.1rem;padding-top:1.1rem;border-top:1px solid var(--line);color:var(--amber);font-weight:500}
+
+figure{margin:2rem 0 0}
+figure img{width:100%;height:auto;display:block;border-radius:14px;border:1px solid var(--line);
+  box-shadow:0 40px 90px -32px oklch(0 0 0/.85)}
+figcaption{margin-top:.85rem;font-size:.84rem;color:var(--ink3)}
+
+.cmd{display:flex;align-items:center;gap:.7rem;margin-top:1.5rem;padding:.8rem 1rem;background:var(--bg2);
+  border:1px solid var(--line);border-radius:11px;max-width:min(100%,44rem)}
+.cmd code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.8rem;color:var(--ink2);
+  overflow-x:auto;white-space:nowrap;flex:1}
+.cmd button{background:none;border:1px solid var(--line);color:var(--ink2);border-radius:7px;
+  padding:.34rem .68rem;font:inherit;font-size:.76rem;cursor:pointer;transition:.15s}
+.cmd button:hover{border-color:var(--amber2);color:var(--amber)}
+
+.faq{margin-top:1.8rem;border-top:1px solid var(--line)}
+.faq details{border-bottom:1px solid var(--line)}
+.faq summary{cursor:pointer;padding:1.1rem 0;font-weight:500;list-style:none;display:flex;gap:1rem}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";margin-left:auto;color:var(--ink3);font-weight:400}
+.faq details[open] summary::after{content:"–"}
+.faq p{margin:0 0 1.1rem;color:var(--ink2);font-size:.94rem;max-width:62ch}
+
+footer{padding:2.8rem 0 4rem;border-top:1px solid var(--line);color:var(--ink3);font-size:.86rem}
+.foot{display:flex;flex-wrap:wrap;gap:1.1rem;align-items:center}
+.foot nav{margin-left:auto;display:flex;gap:1.3rem}
+footer a{color:var(--ink2)}
+
+.reveal{opacity:0;transform:translateY(14px);
+  transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1)}
+.reveal.in{opacity:1;transform:none}
+.hero>*{opacity:0;transform:translateY(16px);animation:rise .7s cubic-bezier(.16,1,.3,1) forwards}
+.hero>*:nth-child(2){animation-delay:.06s}.hero>*:nth-child(3){animation-delay:.13s}
+.hero>*:nth-child(4){animation-delay:.2s}.hero>*:nth-child(5){animation-delay:.26s}
+@keyframes rise{to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,.hero>*{animation:none!important;transition:none!important;opacity:1!important;transform:none!important}
+  .seg{flex-grow:var(--g)!important}.seg.used{display:none}.legend{opacity:1!important}
+}
+</style>
 </head>
 <body>
 <div class="lamp" aria-hidden="true"></div>
 
-<header>
-  <div class="wrap bar">
-    <a class="brand" href="/"><img src="/img/mark-v2.png" alt="">Attic</a>
-    <nav>
-      <a href="#space">System Data</a>
-      <a href="#safety">Safety</a>
-      <a href="#install">Install</a>
-      <a class="stars" href="https://github.com/kapil303196/attic" id="ghstars">
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
-        <span id="ghcount">GitHub</span>
-      </a>
-    </nav>
-  </div>
-</header>
+<header><div class="wrap bar">
+  <a class="brand" href="/"><img src="/img/mark-v2.png" alt="">Attic</a>
+  <nav>
+    <a href="#inside">What's hiding</a><a href="#safety">Safety</a><a href="#install">Install</a>
+    <a class="stars" href="https://github.com/kapil303196/attic" id="ghstars">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
+      <span id="ghcount">GitHub</span></a>
+  </nav>
+</div></header>
 
 <main>
 <div class="wrap">
   <div class="hero">
-    <p class="kicker">Free and open source · macOS 13 and later</p>
-    <h1>Your Mac says <em>“System Data.”</em> It won’t say what that is.</h1>
-    <p class="lede">Attic opens the box. It measures every real consumer of space, sorts it by how recoverable it is, and refuses to delete anything you can’t get back without telling you first.</p>
-
+    <span class="warn">⚠ Your Mac is not telling you the whole story</span>
+    <h1>You’re about to pay for storage <span class="hide">you already own.</span></h1>
+    <p class="lede">Macs routinely hide 50–200&nbsp;GB behind one unhelpful label: <em>System Data</em>. Buy a bigger Mac and you pay hundreds for space that was already sitting on your disk. Attic finds it in about two minutes.</p>
     <div class="cta">
-      <a class="btn btn-primary" href="#install">Install Attic</a>
-      <a class="btn btn-ghost" href="https://github.com/kapil303196/attic">Read the source</a>
+      <a class="btn btn-primary" href="#install">Find my hidden space</a>
+      <a class="btn btn-ghost" href="#inside">Show me what’s in there</a>
     </div>
+    <p class="trust">Free forever · Open source · No account · Nothing leaves your Mac</p>
+  </div>
 
-    <div class="cmd">
-      <code id="cmd">curl -fsSL https://raw.githubusercontent.com/kapil303196/attic/main/install-online.sh | bash</code>
-      <button type="button" id="copy" aria-label="Copy install command">Copy</button>
+  <div class="disk reveal" id="disk">
+    <div class="cap"><b>What Finder tells you</b><span id="diskstate">494 GB drive · 96% full</span></div>
+    <div class="track" id="track">
+      <div class="seg used"><span class="lbl">System Data — 187 GB. That’s all you get.</span></div>
+      <div class="seg" data-c style="--g:92;background:var(--pink)"><span class="lbl">Media 92</span></div>
+      <div class="seg" data-c style="--g:46;background:var(--blue)"><span class="lbl">Deps 46</span></div>
+      <div class="seg" data-c style="--g:20;background:var(--violet)"><span class="lbl">Builds 20</span></div>
+      <div class="seg" data-c style="--g:16;background:var(--amber)"><span class="lbl">Models 16</span></div>
+      <div class="seg" data-c style="--g:14;background:var(--teal)"><span class="lbl">Docker 14</span></div>
+      <div class="seg" data-c style="--g:13;background:var(--safe)"><span class="lbl">Xcode 13</span></div>
     </div>
-    <p class="cmd-note" style="font-size:.82rem;color:var(--ink3);margin:.7rem 0 0">Installs the latest release and opens it. Universal build — Apple Silicon and Intel.</p>
+    <div class="legend">
+      <span><i style="background:var(--pink)"></i>Messaging media <b>92 GB</b></span>
+      <span><i style="background:var(--blue)"></i>Dependencies <b>46 GB</b></span>
+      <span><i style="background:var(--violet)"></i>Build output <b>20 GB</b></span>
+      <span><i style="background:var(--amber)"></i>Local AI models <b>16 GB</b></span>
+      <span><i style="background:var(--teal)"></i>Docker <b>14 GB</b></span>
+      <span><i style="background:var(--safe)"></i>Orphaned Xcode <b>13 GB</b></span>
+    </div>
   </div>
 
   <div class="stats reveal">
-    <div class="stat"><b data-count="195" data-suffix=" GB">195 GB</b><span>recovered on the Mac this was built from, in a single session</span></div>
-    <div class="stat"><b data-count="92" data-suffix=" GB">92 GB</b><span>sitting in one app's media folder, invisible in Finder</span></div>
-    <div class="stat"><b data-count="16" data-suffix="">16</b><span>categories scanned, from browser caches to virtual machine disks</span></div>
+    <div class="stat"><b data-count="195" data-suffix=" GB">195 GB</b><span>handed back on the Mac this was built from, in one session</span></div>
+    <div class="stat"><b data-count="2" data-suffix=" min">2 min</b><span>from install to knowing exactly where your space went</span></div>
+    <div class="stat"><b data-count="0" data-suffix="">$0</b><span>forever. No subscription, no upsell, no telemetry</span></div>
   </div>
-
-  <figure class="reveal">
-    <img src="/img/overview.png" loading="eager" decoding="async" alt="Attic showing 226 GB free of 494 GB, a breakdown bar labelled ‘Where your space is going’, and a list of categories including App data at 30.21 GB and Package caches at 7.13 GB" width="2000" height="1176">
-    <figcaption>The Mac this was built on: 20 GB free at the start, 215 GB free by the end.</figcaption>
-  </figure>
 </div>
 
-<section id="space">
+<section id="inside">
   <div class="wrap two">
     <div>
-      <h2 class="reveal">What is System Data on a Mac?</h2>
-      <p class="sec-lede">It isn’t one thing. macOS files anything it can’t categorise under that label — caches, containers, virtual machine disks, downloaded models, old device backups — then gives you no way to look inside. That’s why it grows to 100&nbsp;GB and nobody can say why.</p>
-      <p class="sec-lede">Here is what was actually hiding on one 512&nbsp;GB MacBook Pro that reported 96% full.</p>
+      <h2 class="reveal">What is “System Data” actually made of?</h2>
+      <p class="sec-lede reveal">It isn’t one thing. macOS files anything it can’t categorise under that label, then gives you no way to look inside. That’s how it reaches 100&nbsp;GB with nobody able to say why.</p>
+      <p class="sec-lede reveal">These are the things that quietly fill a drive. Every one is a category Attic scans.</p>
     </div>
     <dl class="ledger reveal">
-      <div><dt>WhatsApp media</dt><span class="sz">92 GB</span><dd class="who">Photos and video in one chat folder</dd></div>
-      <div><dt>node_modules</dt><span class="sz">46 GB</span><dd class="who">217 folders across projects</dd></div>
-      <div><dt>Build output</dt><span class="sz">20 GB</span><dd class="who">42 stale <code>.next</code> caches</dd></div>
-      <div><dt>Docker</dt><span class="sz">14 GB</span><dd class="who">Unused images, then the disk compacted</dd></div>
-      <div><dt>Local LLM models</dt><span class="sz">16 GB</span><dd class="who">Untouched for five months</dd></div>
-      <div><dt>Orphaned Xcode runtimes</dt><span class="sz">13 GB</span><dd class="who">Xcode had already been uninstalled</dd></div>
-      <div><dt>Developer caches</dt><span class="sz">10 GB</span><dd class="who">HuggingFace, uv, Puppeteer</dd></div>
-      <div><dt>Trash</dt><span class="sz">9.3 GB</span><dd class="who">Never emptied</dd></div>
+      <div><dt>A forgotten screen recording</dt><span class="sz">up to 500 GB</span><dd class="who">Started by accident, never stopped</dd></div>
+      <div><dt>Video editing scratch caches</dt><span class="sz">100–500 GB</span><dd class="who">After Effects, Premiere, Resolve</dd></div>
+      <div><dt>Docker disk image</dt><span class="sz">up to 300 GB</span><dd class="who">Defaults to eating all free space</dd></div>
+      <div><dt>Messaging app media</dt><span class="sz">50–100 GB</span><dd class="who">Every photo anyone ever sent you</dd></div>
+      <div><dt>Virtual machines &amp; emulators</dt><span class="sz">20–120 GB</span><dd class="who">Parallels, UTM, Android images</dd></div>
+      <div><dt>Leftovers from deleted apps</dt><span class="sz">10–100 GB</span><dd class="who">Uninstalling never removes these</dd></div>
+      <div><dt>Old iPhone backups</dt><span class="sz">10–80 GB</span><dd class="who">One per device, kept forever</dd></div>
+      <div><dt>Developer dependencies</dt><span class="sz">10–50 GB</span><dd class="who">node_modules, venvs, package stores</dd></div>
     </dl>
   </div>
 </section>
 
-<section id="finds">
+<section>
   <div class="wrap">
-    <h2 class="reveal">The things that quietly eat a hard drive</h2>
-    <p class="sec-lede reveal">None of these show up in Finder in any obvious way. All of them are routinely reported by people whose Macs filled up for no apparent reason — and every one of them is a category Attic scans.</p>
-    <dl class="ledger reveal">
-      <div><dt>A forgotten screen recording</dt><span class="sz">up to 500 GB</span><dd class="who">Started by accident, never stopped</dd></div>
-      <div><dt>After Effects &amp; Premiere disk cache</dt><span class="sz">100–500 GB</span><dd class="who">Never cleared automatically</dd></div>
-      <div><dt>Docker disk image</dt><span class="sz">up to 300 GB</span><dd class="who">Defaults to consuming all free space</dd></div>
-      <div><dt>Messaging app media</dt><span class="sz">50–100 GB</span><dd class="who">Every photo anyone ever sent you</dd></div>
-      <div><dt>Leftovers from deleted apps</dt><span class="sz">10–100 GB</span><dd class="who">Uninstalling never removes these</dd></div>
-      <div><dt>Virtual machines &amp; emulators</dt><span class="sz">20–120 GB</span><dd class="who">Parallels, UTM, Android images</dd></div>
-      <div><dt>Old iPhone backups</dt><span class="sz">10–80 GB</span><dd class="who">One per device, kept forever</dd></div>
-      <div><dt>Developer dependencies</dt><span class="sz">10–50 GB</span><dd class="who">node_modules, venvs, package stores</dd></div>
-    </dl>
-    <p style="margin-top:1.6rem;font-size:.86rem;color:var(--ink3)" class="reveal">Ranges reflect cases commonly reported in public macOS support threads. Attic reports what is actually on <em>your</em> disk — measured, never estimated.</p>
+    <h2 class="reveal">The expensive way, and the free one</h2>
+    <p class="sec-lede reveal">When a Mac fills up, the default answer is to pay — for a bigger machine, or for cloud storage every month, forever. Both are reasonable. Both are worth trying second.</p>
+    <div class="cost reveal">
+      <div class="opt bad">
+        <h3>Buy your way out</h3>
+        <div class="price">$200+</div>
+        <p>A storage upgrade is configured at purchase and can never be changed afterwards. Cloud storage is a subscription you keep paying for as long as the files exist. Neither tells you what was filling the disk in the first place.</p>
+      </div>
+      <div class="opt good">
+        <h3>Look first</h3>
+        <div class="price">Free</div>
+        <p>Two minutes to find out whether the space you’re about to buy is already sitting on your disk under a label macOS won’t explain. If it isn’t, you’ve lost two minutes. If it is, you’ve saved the upgrade.</p>
+      </div>
+    </div>
   </div>
 </section>
 
 <section id="safety">
   <div class="wrap">
-    <h2 class="reveal">The part most cleaners get wrong</h2>
-    <p class="sec-lede">Freeing space is easy. Not destroying something irreplaceable while you do it is the hard part. Attic sorts everything it finds into three tiers, and the tier decides how much friction stands between you and the delete button.</p>
-
+    <h2 class="reveal">Fast is easy. Not destroying anything is the hard part.</h2>
+    <p class="sec-lede reveal">Everything Attic finds is sorted into three tiers, and the tier decides how much friction sits between you and the delete button.</p>
     <div class="tiers reveal">
-      <div class="tier">
-        <h3><span class="dot" style="background:var(--safe)"></span>Regenerable</h3>
-        <p>Caches, build output, dependencies, Docker images. Comes back on its own. This is what one-click Quick Clean touches, and nothing else.</p>
-      </div>
-      <div class="tier">
-        <h3><span class="dot" style="background:var(--warn)"></span>Needs admin</h3>
-        <p>Safe to remove, but macOS asks for your password. Every item like this is batched into a single prompt rather than one per file.</p>
-      </div>
-      <div class="tier">
-        <h3><span class="dot" style="background:var(--danger)"></span>Permanent</h3>
-        <p>Gone forever. Never bulk-selected, never included in Quick Clean, and gated behind a separate confirmation you have to tick yourself.</p>
-      </div>
+      <div class="tier"><h3><span class="dot" style="background:var(--safe)"></span>Regenerable</h3>
+        <p>Caches, build output, dependencies, Docker images. Comes back on its own. This is all Quick Clean will ever touch.</p></div>
+      <div class="tier"><h3><span class="dot" style="background:oklch(.80 .13 78)"></span>Needs admin</h3>
+        <p>Safe, but macOS wants your password. Every such item is batched into one prompt instead of one per file.</p></div>
+      <div class="tier"><h3><span class="dot" style="background:var(--danger)"></span>Permanent</h3>
+        <p>Gone forever. Never bulk-selected, never in Quick Clean, gated behind a confirmation you tick yourself.</p></div>
     </div>
-
-    <h3 style="margin-top:clamp(2.5rem,6vw,4rem)">What Attic refuses to do</h3>
+    <h3 class="reveal" style="margin-top:clamp(2.4rem,6vw,3.6rem)">Four things it flatly refuses to do</h3>
     <ul class="rules reveal">
-      <li><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="oklch(0.70 0.16 27)" stroke-width="2"><path d="M3 8h10M8 3v10" transform="rotate(45 8 8)"/></svg>
-        <span><b>Delete a <code>.git</code> directory.</b> Ever. It offers <code>git gc</code> instead, and flags in red any repository whose history exists nowhere but your disk.</span></li>
-      <li><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="oklch(0.70 0.16 27)" stroke-width="2"><path d="M3 8h10M8 3v10" transform="rotate(45 8 8)"/></svg>
-        <span><b>Touch Dropbox, iCloud Drive or any synced folder.</b> A local delete there propagates to every other device. Not overridable.</span></li>
-      <li><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="oklch(0.70 0.16 27)" stroke-width="2"><path d="M3 8h10M8 3v10" transform="rotate(45 8 8)"/></svg>
-        <span><b>Remove Docker volumes.</b> Images and stopped containers, yes. The volumes holding your databases, never.</span></li>
-      <li><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="oklch(0.70 0.16 27)" stroke-width="2"><path d="M3 8h10M8 3v10" transform="rotate(45 8 8)"/></svg>
-        <span><b>Claim it can reclaim “purgeable” space.</b> No third-party app reliably can. Cleaners that promise it are overpromising.</span></li>
+      <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="oklch(.70 .16 27)" stroke-width="2.2"><path d="M3 8h10M8 3v10" transform="rotate(45 8 8)"/></svg><span><b>Delete a <code>.git</code> directory.</b> It offers <code>git gc</code> instead, and flags in red any repository whose history exists nowhere but your disk.</span></li>
+      <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="oklch(.70 .16 27)" stroke-width="2.2"><path d="M3 8h10M8 3v10" transform="rotate(45 8 8)"/></svg><span><b>Touch Dropbox, iCloud Drive or any synced folder.</b> A delete there propagates to every device you own. Not overridable.</span></li>
+      <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="oklch(.70 .16 27)" stroke-width="2.2"><path d="M3 8h10M8 3v10" transform="rotate(45 8 8)"/></svg><span><b>Remove Docker volumes.</b> Unused images, yes. The volumes holding your databases, never.</span></li>
+      <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="oklch(.70 .16 27)" stroke-width="2.2"><path d="M3 8h10M8 3v10" transform="rotate(45 8 8)"/></svg><span><b>Claim it can reclaim “purgeable” space.</b> No third-party app reliably can. Anyone promising it is overpromising.</span></li>
     </ul>
   </div>
 </section>
 
 <section>
   <div class="wrap two">
-    <div>
-      <h2 class="reveal">The near-miss that shaped the rules</h2>
-      <p class="sec-lede">Every safety rule above came from an actual cleanup, not a checklist. This one came closest to being a disaster.</p>
-    </div>
+    <div><h2 class="reveal">The near-miss that wrote the rules</h2>
+      <p class="sec-lede reveal">These rules came from an actual cleanup, not a checklist. This one came closest to a disaster.</p></div>
     <blockquote class="reveal">
-      <p>During the manual cleanup this app was built from, one project’s <code>.git</code> folder was 2.2&nbsp;GB. It had a GitHub remote configured, so deleting it looked obviously safe.</p>
-      <p>Running <code>git ls-remote</code> first told a different story. The remote <strong>authenticated successfully and returned zero refs.</strong> Nothing had ever been pushed. That local <code>.git</code> was the only copy of the project’s history that existed anywhere.</p>
-      <p>A repository with a remote configured looks backed up. It isn’t, until something has actually been pushed.</p>
-      <span class="verdict">Attic now runs that check for you, and never offers to delete a <code>.git</code> folder at all.</span>
+      <p>One project’s <code>.git</code> folder was 2.2&nbsp;GB. It had a GitHub remote configured, so deleting it looked obviously safe.</p>
+      <p>Running <code>git ls-remote</code> first told a different story. The remote <strong>authenticated successfully and returned zero refs.</strong> Nothing had ever been pushed. That local <code>.git</code> was the only copy of the project’s history in existence.</p>
+      <p>A repository with a remote configured <em>looks</em> backed up. It isn’t, until something has actually been pushed.</p>
+      <span class="verdict">Attic runs that check for you, and never offers to delete a <code>.git</code> folder at all.</span>
     </blockquote>
   </div>
 </section>
 
 <section>
   <div class="wrap">
-    <h2 class="reveal">Nothing is removed until you’ve seen it</h2>
-    <p class="sec-lede">Every item is listed with its full path and real size. Untick anything you want to keep — the total follows along, and permanent items need one more confirmation before the button works.</p>
-    <figure>
-      <img src="/img/review.png" decoding="async" alt="Attic’s review screen listing 66 items totalling 26.36 GB, each with a checkbox, full file path and size, grouped by category" loading="lazy" width="2000" height="1176">
-      <figcaption>Real disk usage, not apparent size — a sparse Docker disk reporting 494 GB is shown at the 9.3 GB it actually occupies.</figcaption>
-    </figure>
+    <h2 class="reveal">Nothing goes until you’ve seen it</h2>
+    <p class="sec-lede reveal">Every item, with its full path and real size. Untick anything you want to keep — the total follows along.</p>
+    <figure class="reveal"><img src="/img/review.png" loading="lazy" decoding="async" width="1600" height="941" alt="Attic’s review screen listing 66 items totalling 26.36 GB, each with a checkbox, full path and size">
+      <figcaption>Real disk usage, not apparent size — a sparse Docker image reporting 494 GB is shown at the 9.3 GB it actually occupies.</figcaption></figure>
   </div>
 </section>
 
 <section id="install">
   <div class="wrap two">
     <div>
-      <h2 class="reveal">Install</h2>
-      <p class="sec-lede">One command. It fetches the latest release, installs it, and opens it.</p>
-      <div class="cmd" style="margin-top:1.6rem">
-        <code id="cmd2">curl -fsSL https://raw.githubusercontent.com/kapil303196/attic/main/install-online.sh | bash</code>
-        <button type="button" id="copy2" aria-label="Copy install command">Copy</button>
-      </div>
-      <p style="font-size:.87rem;color:var(--ink3);margin-top:1rem">Prefer a disk image? <a href="https://github.com/kapil303196/attic/releases/latest">Download the DMG</a>. Note that macOS shows a security warning for apps that aren’t notarised — the one-line install avoids it, because quarantine is applied to browser downloads and not to <code>curl</code>.</p>
+      <h2 class="reveal">Two minutes from now you’ll know</h2>
+      <p class="sec-lede reveal">One command. It fetches the latest release, installs it and opens it.</p>
+      <div class="cmd reveal"><code id="cmd">curl -fsSL https://raw.githubusercontent.com/kapil303196/attic/main/install-online.sh | bash</code>
+        <button type="button" id="copy" aria-label="Copy install command">Copy</button></div>
+      <p class="trust reveal" style="margin-top:1rem">Universal build — Apple Silicon and Intel. Prefer a disk image? <a href="https://github.com/kapil303196/attic/releases/latest">Download the DMG</a>.</p>
     </div>
     <div class="faq reveal">
-      <details><summary>Is it safe to run?</summary><p>The source is public and the safety rules are enforced in code and covered by tests — including that synced folders can never be offered for deletion, and that a repository with no remote refs is reported as the only copy. Nothing is deleted without a review screen.</p></details>
-      <details><summary>Why does it ask for Full Disk Access?</summary><p>Without it macOS hides the Trash, app containers and device backups, so sizes come out far lower than reality — and it asks separately for Desktop, Downloads and Documents. Attic asks once, up front, and explains why. macOS applies the permission only to a freshly launched app, so it restarts itself once.</p></details>
-      <details><summary>Why the “unidentified developer” warning?</summary><p>Notarisation requires a paid Apple Developer membership. The build is signed but not notarised. The one-line installer sidesteps the warning legitimately; from the DMG, use System Settings → Privacy &amp; Security → Open Anyway.</p></details>
-      <details><summary>Does it work on Intel Macs?</summary><p>Yes. Every release is a universal binary built in CI and verified with <code>lipo</code> to contain both architectures.</p></details>
-      <details><summary>What does it cost?</summary><p>Nothing. MIT licensed, no telemetry, no account, no upsell.</p></details>
-      <details><summary>Will it delete something I need?</summary><p>Not without showing you first. Everything is listed with its full path and real size, and you untick anything you want to keep. Items that cannot be recovered are never bulk-selected and need a separate confirmation. Quick Clean only ever touches things that rebuild themselves.</p></details>
-      <details><summary>Why is my System Data so large?</summary><p>Because macOS files everything it cannot categorise under that one label — caches, app containers, virtual machine disks, downloaded models, old device backups, local snapshots. It grows quietly and there is no built-in way to see inside it. That is the specific problem Attic was built to solve.</p></details>
+      <details><summary>Will it delete something I need?</summary><p>Not without showing you first. Everything is listed with its full path and real size, and you untick anything you want to keep. Items that cannot be recovered are never bulk-selected and need a separate confirmation. Quick Clean only touches things that rebuild themselves.</p></details>
+      <details><summary>Why is my System Data so large?</summary><p>macOS files everything it cannot categorise under that one label — caches, app containers, virtual machine disks, downloaded models, old device backups, local snapshots. It grows quietly and there is no built-in way to look inside. That is the exact problem Attic was built for.</p></details>
+      <details><summary>Why does it need Full Disk Access?</summary><p>Without it macOS hides the Trash, app containers and device backups, so sizes come out far lower than reality — and it asks separately for Desktop, Downloads and Documents. Attic asks once, up front, and explains why. macOS applies the permission only to a freshly launched app, so it restarts itself once.</p></details>
+      <details><summary>Why the “unidentified developer” warning?</summary><p>Notarisation requires a paid Apple Developer membership. The build is signed but not notarised. The one-line installer avoids the warning legitimately, because quarantine is applied to browser downloads and not to <code>curl</code>.</p></details>
       <details><summary>Does emptying the Trash actually free the space?</summary><p>Usually, but not always. Root-owned items left by uninstalled apps often refuse to delete and sit there indefinitely. Attic spots those and removes them under a single administrator prompt.</p></details>
-      <details><summary>Can it clean an external drive?</summary><p>Not yet. Scanning is scoped to your home folder and system locations on the startup disk.</p></details>
-      <details><summary>How is it different from CleanMyMac?</summary><p>It is free, open source, and has no subscription. It also declines to do several things commercial cleaners advertise: it will not claim to reclaim purgeable space, will not delete a <code>.git</code> directory, and will not touch a cloud-synced folder. The trade is fewer promises and no surprises.</p></details>
+      <details><summary>How is it different from CleanMyMac?</summary><p>Free, open source, no subscription. It also declines to do several things commercial cleaners advertise: it will not claim to reclaim purgeable space, will not delete a <code>.git</code> directory, and will not touch a cloud-synced folder. Fewer promises, no surprises.</p></details>
+      <details><summary>Does it work on Intel Macs?</summary><p>Yes. Every release is a universal binary built in CI and verified with <code>lipo</code> to contain both architectures.</p></details>
+      <details><summary>Does anything leave my Mac?</summary><p>No. There is no telemetry, no account and no server. The only network request it ever makes is checking GitHub for a newer version.</p></details>
     </div>
   </div>
 </section>
 </main>
 
-<footer>
-  <div class="wrap foot">
-    <span>Attic — MIT licensed. No telemetry.</span>
-    <nav>
-      <a href="https://github.com/kapil303196/attic">Source</a>
-      <a href="https://github.com/kapil303196/attic/releases/latest">Releases</a>
-      <a href="https://github.com/kapil303196/attic/blob/main/DOCFILES.md">Docs</a>
-    </nav>
-  </div>
-</footer>
+<footer><div class="wrap foot">
+  <span>Attic — MIT licensed. No telemetry.</span>
+  <nav><a href="https://github.com/kapil303196/attic">Source</a>
+    <a href="https://github.com/kapil303196/attic/releases/latest">Releases</a>
+    <a href="https://github.com/kapil303196/attic/blob/main/DOCFILES.md">Docs</a></nav>
+</div></footer>
 
 <script>
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const io = (cb, opt) => "IntersectionObserver" in window ? new IntersectionObserver(cb, opt) : null;
 
-// Reveal on scroll, staggered within each section.
-if (!reduce && "IntersectionObserver" in window) {
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((e, i) => {
-      if (!e.isIntersecting) return;
-      e.target.style.transitionDelay = Math.min(i, 4) * 70 + "ms";
-      e.target.classList.add("in");
-      io.unobserve(e.target);
-    });
-  }, { rootMargin: "0px 0px -12% 0px", threshold: 0.08 });
-  document.querySelectorAll(".reveal").forEach(el => io.observe(el));
-} else {
-  document.querySelectorAll(".reveal").forEach(el => el.classList.add("in"));
+const rev = io((es) => es.forEach((e, i) => {
+  if (!e.isIntersecting) return;
+  e.target.style.transitionDelay = Math.min(i, 4) * 70 + "ms";
+  e.target.classList.add("in"); rev.unobserve(e.target);
+}), { rootMargin: "0px 0px -12% 0px", threshold: .08 });
+document.querySelectorAll(".reveal").forEach(el => rev ? rev.observe(el) : el.classList.add("in"));
+
+// The disk splits open once it is on screen: one opaque block becomes the truth.
+const disk = document.getElementById("disk");
+const openDisk = () => {
+  disk.classList.add("revealed");
+  const s = document.getElementById("diskstate");
+  if (s) s.textContent = "494 GB drive · 195 GB was reclaimable";
+};
+if (reduce) { openDisk(); }
+else {
+  const d = io((es) => es.forEach(e => {
+    if (e.isIntersecting) { setTimeout(openDisk, 620); d.unobserve(e.target); }
+  }), { threshold: .45 });
+  d ? d.observe(disk) : openDisk();
 }
 
-// Count the headline figures up once they are on screen.
 function countUp(el) {
-  const target = parseFloat(el.dataset.count), suffix = el.dataset.suffix || "";
-  if (reduce || !target) { el.textContent = target + suffix; return; }
-  const dur = 1100, t0 = performance.now();
-  const tick = (t) => {
-    const p = Math.min((t - t0) / dur, 1);
-    const eased = 1 - Math.pow(1 - p, 3);
-    el.textContent = Math.round(target * eased) + suffix;
+  const t = parseFloat(el.dataset.count), sfx = el.dataset.suffix || "";
+  if (reduce) { el.textContent = (t === 0 ? "$0" : t + sfx); return; }
+  if (t === 0) { el.textContent = "$0"; return; }
+  const dur = 1000, t0 = performance.now();
+  const tick = (n) => {
+    const p = Math.min((n - t0) / dur, 1);
+    el.textContent = Math.round(t * (1 - Math.pow(1 - p, 3))) + sfx;
     if (p < 1) requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
 }
-if ("IntersectionObserver" in window) {
-  const co = new IntersectionObserver((es) => es.forEach(e => {
-    if (e.isIntersecting) { countUp(e.target); co.unobserve(e.target); }
-  }), { threshold: 0.6 });
-  document.querySelectorAll("[data-count]").forEach(el => co.observe(el));
-}
+const co = io((es) => es.forEach(e => { if (e.isIntersecting) { countUp(e.target); co.unobserve(e.target); } }), { threshold: .6 });
+document.querySelectorAll("[data-count]").forEach(el => co ? co.observe(el) : countUp(el));
 
-// Live star count. Non-blocking, and the link still works if it fails.
-fetch("https://api.github.com/repos/kapil303196/attic")
-  .then(r => r.ok ? r.json() : null)
-  .then(d => {
-    if (d && typeof d.stargazers_count === "number") {
-      document.getElementById("ghcount").textContent =
-        d.stargazers_count.toLocaleString() + " on GitHub";
-    }
-  }).catch(() => {});
+fetch("https://api.github.com/repos/kapil303196/attic").then(r => r.ok ? r.json() : null)
+  .then(d => { if (d && typeof d.stargazers_count === "number")
+    document.getElementById("ghcount").textContent = d.stargazers_count.toLocaleString() + " on GitHub"; })
+  .catch(() => {});
 
-for (const [btn, code] of [["copy","cmd"],["copy2","cmd2"]]) {
-  const b = document.getElementById(btn), c = document.getElementById(code);
-  if (!b || !c) continue;
-  b.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(c.textContent.trim());
-      const was = b.textContent; b.textContent = "Copied";
-      setTimeout(() => { b.textContent = was; }, 1600);
-    } catch { b.textContent = "Press ⌘C"; }
-  });
-}
+const b = document.getElementById("copy"), c = document.getElementById("cmd");
+b && b.addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(c.textContent.trim());
+    const was = b.textContent; b.textContent = "Copied"; setTimeout(() => b.textContent = was, 1600);
+  } catch { b.textContent = "Press ⌘C"; }
+});
 </script>
 </body>
 </html>
