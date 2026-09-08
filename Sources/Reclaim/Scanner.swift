@@ -101,6 +101,15 @@ final class ScanEngine: ObservableObject {
         saveCache()
     }
 
+    /// Look up a row by id, so a sheet can render a frozen list while still
+    /// reflecting live selection state.
+    func item(_ id: UUID) -> ScanItem? {
+        for list in items.values {
+            if let hit = list.first(where: { $0.id == id }) { return hit }
+        }
+        return nil
+    }
+
     func setSelection(_ id: UUID, _ on: Bool) {
         for (k, list) in items {
             if let i = list.firstIndex(where: { $0.id == id }) {

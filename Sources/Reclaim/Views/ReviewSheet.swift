@@ -7,28 +7,44 @@ struct ReviewSheet: View {
     var scope: String? = nil
     @StateObject private var cleaner = Cleaner()
     @State private var acknowledgePermanent = false
+    /// Category id -> the rows that were selected when this sheet opened.
+    /// Rendering from this fixed list means unticking every row in a section
+    /// leaves the section on screen so it can be ticked back on.
+    @State private var frozen: [(String, [UUID])] = []
 
     /// Selected rows, grouped by the section they came from and ordered with
     /// the riskiest sections first so nothing dangerous hides below the fold.
-    private var groups: [(Category, [ScanItem])] {
+    /// Captures what was selected when the sheet appeared.
+    private func freeze() {
         let keys = scope.map { [$0] } ?? Array(engine.items.keys)
-        return keys.compactMap { key -> (Category, [ScanItem])? in
+        let built: [(String, [UUID])] = keys.compactMap { key in
             let picked = (engine.items[key] ?? []).filter { $0.selected }
             guard !picked.isEmpty else { return nil }
-            return (Category.find(key), picked)
+            return (key, picked.map { $0.id })
         }
         .sorted { a, b in
             func rank(_ t: SafetyTier) -> Int {
                 switch t { case .permanent: return 0; case .admin: return 1; case .regenerable: return 2 }
             }
-            let ra = rank(a.0.tier), rb = rank(b.0.tier)
-            if ra != rb { return ra < rb }
-            return a.1.reduce(0) { $0 + $1.bytes } > b.1.reduce(0) { $0 + $1.bytes }
+            let ca = Category.find(a.0), cb = Category.find(b.0)
+            if rank(ca.tier) != rank(cb.tier) { return rank(ca.tier) < rank(cb.tier) }
+            let sa = a.1.compactMap { engine.item($0)?.bytes }.reduce(0, +)
+            let sb = b.1.compactMap { engine.item($0)?.bytes }.reduce(0, +)
+            return sa > sb
         }
+        frozen = built
     }
 
-    private var items: [ScanItem] { groups.flatMap { $0.1 } }
+    private func rows(_ ids: [UUID]) -> [ScanItem] { ids.compactMap { engine.item($0) } }
+
+    private var groups: [(Category, [ScanItem])] {
+        frozen.map { (Category.find($0.0), rows($0.1)) }.filter { !$0.1.isEmpty }
+    }
+
+    /// Only what is still ticked gets cleaned.
+    private var items: [ScanItem] { groups.flatMap { $0.1 }.filter { $0.selected } }
     private var totalBytes: Int64 { items.reduce(0) { $0 + $1.bytes } }
+    private var offeredCount: Int { groups.reduce(0) { $0 + $1.1.count } }
     private var permanent: [ScanItem] { items.filter { $0.tier == .permanent } }
     private var admin: [ScanItem] { items.filter { $0.tier == .admin } }
     private var regen: [ScanItem] { items.filter { $0.tier == .regenerable } }
@@ -41,6 +57,7 @@ struct ReviewSheet: View {
             else                      { review }
         }
         // A progress bar does not need a 620x560 window.
+        .onAppear { if frozen.isEmpty { freeze() } }
         .frame(width: cleaner.isRunning && !cleaner.finished ? 400 : 620,
                height: cleaner.isRunning && !cleaner.finished ? 168 : 560)
         .background(DS.bg)
@@ -54,8 +71,10 @@ struct ReviewSheet: View {
                 Text(scope == nil ? "Review before cleaning"
                                   : "Review \(Category.find(scope!).title)")
                     .font(DS.title()).foregroundStyle(DS.text)
-                Text("\(items.count) item\(items.count == 1 ? "" : "s") in \(groups.count) section\(groups.count == 1 ? "" : "s") · \(Bytes.fmt(totalBytes)) will be freed")
+                Text("\(items.count) of \(offeredCount) item\(offeredCount == 1 ? "" : "s") ticked · \(Bytes.fmt(totalBytes)) will be freed")
                     .font(DS.body()).foregroundStyle(DS.textDim)
+                Text("Untick anything you want to keep. Only ticked items are removed.")
+                    .font(DS.caption()).foregroundStyle(DS.textFaint)
             }
             .padding(DS.s5)
 
@@ -96,14 +115,14 @@ struct ReviewSheet: View {
                           systemImage: "lock.fill")
                         .font(DS.caption()).foregroundStyle(DS.textDim)
                 }
-                Button("Clean \(Bytes.fmt(totalBytes))") {
+                Button(items.isEmpty ? "Nothing ticked" : "Clean \(Bytes.fmt(totalBytes))") {
                     Task {
                         await cleaner.run(items)
                         engine.removeCleaned(cleaner.cleanedIDs)
                     }
                 }
                 .buttonStyle(PrimaryButton(tint: permanent.isEmpty ? DS.accent : DS.danger))
-                .disabled(blocked)
+                .disabled(blocked || items.isEmpty)
                 .help(blocked ? "Confirm the permanent deletions first" : "Begin cleaning")
             }
             .padding(DS.s5)
@@ -111,7 +130,9 @@ struct ReviewSheet: View {
     }
 
     private func sectionCard(_ cat: Category, _ list: [ScanItem]) -> some View {
-        Card(padding: DS.s4) {
+        let picked = list.filter { $0.selected }
+        let allOn = picked.count == list.count
+        return Card(padding: DS.s4) {
             VStack(alignment: .leading, spacing: DS.s3) {
                 HStack(spacing: DS.s2) {
                     Image(systemName: cat.symbol)
@@ -119,23 +140,52 @@ struct ReviewSheet: View {
                     Text(cat.title).font(DS.body().weight(.semibold)).foregroundStyle(DS.text)
                     TierBadge(tier: cat.tier)
                     Spacer()
-                    Text(Bytes.fmt(list.reduce(0) { $0 + $1.bytes }))
-                        .font(DS.mono(13, .semibold)).foregroundStyle(DS.text)
+                    Button(allOn ? "Untick all" : "Tick all") {
+                        withAnimation(DS.quick) {
+                            for i in list { engine.setSelection(i.id, !allOn) }
+                        }
+                    }
+                    .buttonStyle(.link)
+                    .font(DS.caption())
+                    Text(Bytes.fmt(picked.reduce(0) { $0 + $1.bytes }))
+                        .font(DS.mono(13, .semibold))
+                        .foregroundStyle(picked.isEmpty ? DS.textFaint : DS.text)
+                        .frame(minWidth: 72, alignment: .trailing)
                 }
                 Text(cat.restoreHint).font(DS.caption()).foregroundStyle(DS.textDim)
                 Divider().opacity(0.5)
+
                 ForEach(list) { i in
                     HStack(spacing: DS.s2) {
+                        Toggle("", isOn: Binding(
+                            get: { i.selected },
+                            set: { engine.setSelection(i.id, $0) }))
+                            .toggleStyle(.checkbox)
+                            .labelsHidden()
+                            .accessibilityLabel("Keep or remove \(i.name)")
                         Image(systemName: i.tier.symbol)
-                            .font(.system(size: 9)).foregroundStyle(i.tier.tint)
-                        Text(i.name).font(DS.caption()).foregroundStyle(DS.text)
-                            .lineLimit(1).truncationMode(.middle)
+                            .font(.system(size: 9))
+                            .foregroundStyle(i.selected ? i.tier.tint : DS.textFaint)
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(i.name)
+                                .font(DS.caption())
+                                .foregroundStyle(i.selected ? DS.text : DS.textFaint)
+                                .strikethrough(!i.selected, color: DS.textFaint)
+                                .lineLimit(1).truncationMode(.middle)
+                            Text(i.path)
+                                .font(.system(size: 10))
+                                .foregroundStyle(DS.textFaint)
+                                .lineLimit(1).truncationMode(.middle)
+                        }
                         Spacer()
                         if i.bytes > 0 {
-                            Text(Bytes.fmt(i.bytes)).font(DS.mono(11, .medium))
-                                .foregroundStyle(DS.textDim)
+                            Text(Bytes.fmt(i.bytes))
+                                .font(DS.mono(11, .medium))
+                                .foregroundStyle(i.selected ? DS.textDim : DS.textFaint)
                         }
                     }
+                    .contentShape(Rectangle())
+                    .onTapGesture { engine.setSelection(i.id, !i.selected) }
                 }
             }
         }
