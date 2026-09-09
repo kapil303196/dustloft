@@ -2,7 +2,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>How to clear System Data on a Mac without breaking anything — Dustloft</title>
 <meta name="description" content="A step-by-step guide to safely reclaiming System Data on macOS, with the exact Terminal commands, what each one does, and which things you must never delete.">
-<link rel="canonical" href="https://dustloft.vercel.app/blog/how-to-clear-system-data-mac">
+<link rel="canonical" href="https://dustloft.com/blog/how-to-clear-system-data-mac">
 <meta property="og:title" content="How to clear System Data on a Mac without breaking anything"><meta property="og:description" content="A step-by-step guide to safely reclaiming System Data on macOS, with the exact Terminal commands, what each one does, and which things you must never delete.">
 <meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#141013">
@@ -10,16 +10,23 @@
 <meta property="og:site_name" content="Dustloft">
 <meta property="og:locale" content="en_US">
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
-<meta property="og:url" content="https://dustloft.vercel.app/blog/how-to-clear-system-data-mac">
-<meta property="og:image" content="https://dustloft.vercel.app/img/overview.png">
-<meta name="twitter:image" content="https://dustloft.vercel.app/img/overview.png">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.vercel.app"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.vercel.app/blog/"}, {"@type": "ListItem", "position": 3, "name": "Guide", "item": "https://dustloft.vercel.app/blog/how-to-clear-system-data-mac"}]}</script>
+<meta property="og:url" content="https://dustloft.com/blog/how-to-clear-system-data-mac">
+<meta property="og:image" content="https://dustloft.com/img/overview.png">
+<meta name="twitter:image" content="https://dustloft.com/img/overview.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Guide", "item": "https://dustloft.com/blog/how-to-clear-system-data-mac"}]}</script>
 <link rel="icon" href="/img/mark-v3.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/blog/_shared.css">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "How to clear System Data on a Mac without breaking anything", "description": "A step-by-step guide to safely reclaiming System Data on macOS, with the exact Terminal commands, what each one does, and which things you must never delete.", "url": "https://dustloft.vercel.app/blog/how-to-clear-system-data-mac", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.vercel.app"}, "datePublished": "2026-09-08", "dateModified": "2026-09-08"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "How to clear System Data on a Mac without breaking anything", "description": "A step-by-step guide to safely reclaiming System Data on macOS, with the exact Terminal commands, what each one does, and which things you must never delete.", "url": "https://dustloft.com/blog/how-to-clear-system-data-mac", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.com"}, "datePublished": "2026-09-08", "dateModified": "2026-09-08"}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I clear System Data on my Mac?", "acceptedAnswer": {"@type": "Answer", "text": "Measure first with du -kxd 1 to find what is actually inside it, then work from the largest item down. Caches, build output and unused Docker images are safe. App containers, device backups and .git directories are not."}}, {"@type": "Question", "name": "Does deleting System Data speed up a Mac?", "acceptedAnswer": {"@type": "Answer", "text": "Not directly. It frees disk space. macOS does slow down when a disk is nearly full, so reclaiming space on a drive above 90% full often helps indirectly."}}, {"@type": "Question", "name": "Why does du -sh miss folders on Mac?", "acceptedAnswer": {"@type": "Answer", "text": "The shell glob does not match names starting with a dot, so hidden folders such as ~/.cache and ~/.Trash are skipped entirely. Use du -kxd 1 ~ instead."}}]}</script>
+<script>
+(function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+})(window, document, "clarity", "script", "yfsb7st26m");
+</script>
 </head><body>
 <header><div class="wrap">
 <a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
