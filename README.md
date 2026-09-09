@@ -35,7 +35,7 @@ And it refuses, by design, to:
 - touch Dropbox, iCloud Drive or any synced folder, where a local delete propagates everywhere
 - remove Docker volumes
 - touch your MySQL data directory
-- claim it can dustloft "purgeable" space, which no third-party app can reliably free
+- claim it can reclaim "purgeable" space, which no third-party app can reliably free
 
 ## Install
 

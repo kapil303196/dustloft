@@ -1,6 +1,41 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "dustloft.vercel.app"
+        }
+      ],
+      "destination": "https://dustloft.com/$1",
+      "permanent": true
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "atticmac.vercel.app"
+        }
+      ],
+      "destination": "https://dustloft.com/$1",
+      "permanent": true
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "site-sable-zeta-79.vercel.app"
+        }
+      ],
+      "destination": "https://dustloft.com/$1",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/img/(.*)",
