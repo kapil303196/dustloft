@@ -36,6 +36,10 @@ And it refuses, by design, to:
 - remove Docker volumes
 - touch your MySQL data directory
 - claim it can reclaim "purgeable" space, which no third-party app can reliably free
+- delete inside `/System`, `/usr`, `/bin`, `/etc`, `/var`, `/private` or any other
+  protected system tree, at any privilege level
+- follow a symlinked parent folder into a protected location — the parent is
+  canonicalised and the refusal list re-checked against the resolved path
 
 Every removal is appended to `~/Library/Logs/Dustloft/operations.log` — timestamp,
 action, size and full path, tab separated. It stays on your machine; there is no

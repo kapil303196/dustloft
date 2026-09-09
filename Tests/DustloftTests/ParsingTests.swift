@@ -285,4 +285,65 @@ extension DustloftTests {
         }
     }
 
+    // MARK: path safety — the guards in front of every deletion
+
+    func test_systemLocationsAreRefused() {
+        for p in ["/System", "/System/Library/Fonts", "/usr/bin", "/etc/hosts",
+                  "/private/var/db", "/bin", "/Library/Extensions/x.kext"] {
+            XCTAssertNotNil(SafePath.validate(p), "\(p) must be refused")
+        }
+    }
+
+    func test_filesystemRootIsRefused() {
+        XCTAssertEqual(SafePath.validate("/"), .rootItself)
+        XCTAssertEqual(SafePath.validate("///"), .rootItself)
+    }
+
+    func test_traversalIsRefused() {
+        XCTAssertEqual(SafePath.validate("/tmp/../System"), .traversal)
+        XCTAssertEqual(SafePath.validate("/tmp/a/../../etc"), .traversal)
+    }
+
+    func test_relativePathsAreRefused() {
+        XCTAssertEqual(SafePath.validate("tmp/x"), .notAbsolute)
+    }
+
+    func test_cloudFoldersAreStillRefused() {
+        XCTAssertNotNil(SafePath.validate(NSHomeDirectory() + "/Dropbox/x"))
+        XCTAssertNotNil(SafePath.validate(NSHomeDirectory() + "/Library/Mobile Documents/y"))
+    }
+
+    func test_ordinaryCachePathIsAllowed() {
+        XCTAssertNil(SafePath.validate(NSHomeDirectory() + "/Library/Caches/SomeApp"))
+    }
+
+    func test_lookalikeIsNotRefused() {
+        // /Systemic is not /System, and /usr-backup is not /usr.
+        XCTAssertNil(SafePath.validate("/Systemic/thing"))
+        XCTAssertNil(SafePath.validate("/usr-backup/thing"))
+    }
+
+    // MARK: shell quoting — an apostrophe used to end up as root shell
+
+    func test_apostropheInPathCannotEscapeQuoting() {
+        let q = SafePath.shellQuote("/tmp/Kapil's backup")
+        XCTAssertEqual(q, "'/tmp/Kapil'\\''s backup'")
+    }
+
+    /// The property that actually matters: however hostile the filename, the
+    /// shell must receive exactly one argument whose content is the path
+    /// unchanged. Verified against /bin/sh rather than asserted about the
+    /// escaped string, which legitimately contains "; rm" once escaped.
+    func test_hostilePathReachesTheShellAsASingleArgument() throws {
+        let evil = "/tmp/x'; rm -rf /System; echo '"
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: "/bin/sh")
+        proc.arguments = ["-c", "printf '%s' " + SafePath.shellQuote(evil)]
+        let pipe = Pipe()
+        proc.standardOutput = pipe
+        try proc.run()
+        proc.waitUntilExit()
+        let out = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)
+        XCTAssertEqual(out, evil, "the shell must see the path verbatim, as one argument")
+    }
 }

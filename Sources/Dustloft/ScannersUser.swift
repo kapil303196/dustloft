@@ -133,8 +133,23 @@ extension Scanners {
 
     private static func installedBundleIDs() -> Set<String> {
         var ids = Set<String>()
-        for dir in ["/Applications", userHome + "/Applications",
-                    "/Applications/Utilities", "/System/Applications"] {
+        // Anything missing here is read as an app that is no longer installed,
+        // and its data becomes a deletion candidate. Under-counting install
+        // locations is therefore how live app data gets offered up as junk, so
+        // this list errs wide: Setapp keeps its apps in a subfolder, and
+        // Homebrew casks live under a versioned Caskroom path.
+        var roots = ["/Applications", userHome + "/Applications",
+                     "/Applications/Utilities", "/System/Applications",
+                     "/System/Applications/Utilities",
+                     "/Applications/Setapp", userHome + "/Applications/Setapp"]
+        for caskroom in ["/opt/homebrew/Caskroom", "/usr/local/Caskroom"]
+        where FileManager.default.fileExists(atPath: caskroom) {
+            let found = Shell.run("/usr/bin/find",
+                                  [caskroom, "-maxdepth", "3", "-name", "*.app",
+                                   "-type", "d", "-prune"], timeout: 30)
+            roots += found.out.split(separator: "\n").map { ($0 as NSString).deletingLastPathComponent }
+        }
+        for dir in Set(roots) {
             for app in entriesPublic(dir) where app.hasSuffix(".app") {
                 let plist = app + "/Contents/Info.plist"
                 if let d = NSDictionary(contentsOfFile: plist),

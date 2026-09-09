@@ -82,12 +82,24 @@ final class Cleaner: ObservableObject {
         if !adminItems.isEmpty {
             currentStep = "Waiting for administrator authorisation…"
             var parts: [String] = []
+            // Elevated removal previously took whatever the scanners produced
+            // and interpolated it straight into a root `rm -rf`, with neither a
+            // deny check nor correct quoting. Both happen here now, before the
+            // password prompt, and a path that fails is dropped rather than
+            // weakening the batch.
+            var refusedAdmin: [(String, String)] = []
             let paths = adminItems.compactMap { item -> String? in
-                if case .removePathAdmin(let p) = item.action { return p }
-                return nil
+                guard case .removePathAdmin(let p) = item.action else { return nil }
+                if let refusal = SafePath.validate(p) {
+                    refusedAdmin.append((item.name, refusal.reason)); return nil
+                }
+                if SafePath.isSymlink(p) {
+                    refusedAdmin.append((item.name, "refused: symlink, not removed as root")); return nil
+                }
+                return p
             }
             if !paths.isEmpty {
-                parts.append("/bin/rm -rf " + paths.map { "'\($0)'" }.joined(separator: " "))
+                parts.append("/bin/rm -rf " + paths.map(SafePath.shellQuote).joined(separator: " "))
             }
             for item in adminItems {
                 if case .adminShell(let cmd) = item.action { parts.append(cmd) }
@@ -99,9 +111,20 @@ final class Cleaner: ObservableObject {
                 }
             }
             for item in adminItems {
+                // An item dropped by validation was never in the script, so it
+                // must not inherit the batch's success.
+                if let refusal = refusedAdmin.first(where: { $0.0 == item.name }) {
+                    outcomes.append(CleanOutcome(itemID: item.id, name: item.name,
+                                                 bytes: item.bytes, ok: false, message: refusal.1))
+                    OperationLog.record(action: item.action, name: item.name,
+                                        bytes: item.bytes, ok: false, message: refusal.1)
+                    continue
+                }
+                let msg = res.ok ? nil : (res.err.isEmpty ? "authorisation cancelled" : res.err)
                 outcomes.append(CleanOutcome(
-                    itemID: item.id, name: item.name, bytes: item.bytes, ok: res.ok,
-                    message: res.ok ? nil : (res.err.isEmpty ? "authorisation cancelled" : res.err)))
+                    itemID: item.id, name: item.name, bytes: item.bytes, ok: res.ok, message: msg))
+                OperationLog.record(action: item.action, name: item.name,
+                                    bytes: item.bytes, ok: res.ok, message: msg)
                 if res.ok { freedBytes += item.bytes }
             }
             done += 1
@@ -109,6 +132,8 @@ final class Cleaner: ObservableObject {
         }
 
         // Prefer the real delta from the filesystem over the sum of estimates.
+        // Trashed items are still on the volume, so they are not in this delta
+        // and are reported on their own.
         let after = VolumeInfo.current().free
         if after > before { freedBytes = after - before }
 
@@ -136,9 +161,7 @@ final class Cleaner: ObservableObject {
         switch action {
 
         case .removePath(let p):
-            guard !Settings.hardExclusions.contains(where: { p == $0 || p.hasPrefix($0 + "/") }) else {
-                return (false, "refused: protected location")
-            }
+            if let refusal = SafePath.validate(p) { return (false, refusal.reason) }
             do {
                 try FileManager.default.removeItem(atPath: p)
                 return (true, nil)
@@ -148,9 +171,7 @@ final class Cleaner: ObservableObject {
             }
 
         case .trashPath(let p):
-            guard !Settings.hardExclusions.contains(where: { p == $0 || p.hasPrefix($0 + "/") }) else {
-                return (false, "refused: protected location")
-            }
+            if let refusal = SafePath.validate(p) { return (false, refusal.reason) }
             do {
                 try FileManager.default.trashItem(at: URL(fileURLWithPath: p), resultingItemURL: nil)
                 return (true, nil)
