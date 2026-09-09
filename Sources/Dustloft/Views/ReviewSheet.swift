@@ -91,9 +91,9 @@ struct ReviewSheet: View {
                         Card(padding: DS.s4) {
                             Toggle(isOn: $acknowledgePermanent) {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("I understand these \(permanent.count) item\(permanent.count == 1 ? "" : "s") cannot be recovered")
+                                    Text("I understand these \(permanent.count) item\(permanent.count == 1 ? "" : "s") are not regenerable")
                                         .font(DS.body().weight(.semibold)).foregroundStyle(DS.text)
-                                    Text("There is no undo and no backup. Check anything you might still want before continuing.")
+                                    Text("Nothing rebuilds these, so they go to the Trash rather than being deleted outright. They stay recoverable until you empty it.")
                                         .font(DS.caption()).foregroundStyle(DS.textDim)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
@@ -247,7 +247,17 @@ struct ReviewSheet: View {
                     .font(.system(size: 44)).foregroundStyle(DS.safe)
                 Text(Bytes.fmt(cleaner.freedBytes))
                     .font(DS.mono(34, .bold)).foregroundStyle(DS.text)
-                Text("dustlofted").font(DS.body()).foregroundStyle(DS.textDim)
+                Text("reclaimed").font(DS.body()).foregroundStyle(DS.textDim)
+                // Trashed items still occupy the disk, so the volume delta
+                // above does not count them. Saying so is the difference
+                // between a clear result and an apparent bug.
+                if cleaner.trashedBytes > 0 {
+                    Text("\(Bytes.fmt(cleaner.trashedBytes)) moved to the Trash — still recoverable, and still using the space until you empty it")
+                        .font(DS.caption()).foregroundStyle(DS.warn)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, DS.s5)
+                }
             }
             .padding(.top, DS.s7).padding(.bottom, DS.s5)
 

@@ -27,7 +27,7 @@ Dustloft sorts everything it finds into three tiers:
 |---|---|
 | **Regenerable** | Comes back on its own — caches, build output, dependencies, Docker images |
 | **Needs admin** | Safe to remove, but macOS asks for your password once |
-| **Permanent** | Cannot be recovered. Never bulk-selected; needs a separate confirmation |
+| **Permanent** | Nothing rebuilds it. Never bulk-selected, needs a separate confirmation, and is moved to the Trash rather than deleted outright |
 
 And it refuses, by design, to:
 
@@ -36,6 +36,10 @@ And it refuses, by design, to:
 - remove Docker volumes
 - touch your MySQL data directory
 - claim it can reclaim "purgeable" space, which no third-party app can reliably free
+
+Every removal is appended to `~/Library/Logs/Dustloft/operations.log` — timestamp,
+action, size and full path, tab separated. It stays on your machine; there is no
+telemetry and nothing is uploaded.
 
 ## Install
 

@@ -244,4 +244,45 @@ extension DustloftTests {
         XCTAssertEqual(out["docker"]?.count, 1)
         XCTAssertEqual(out["ollama"]?.count, 1)
     }
+
+    // MARK: recoverability — permanent items are moved, not unlinked
+
+    private func item(_ path: String, _ tier: SafetyTier) -> ScanItem {
+        ScanItem(name: "x", path: path, bytes: 1, detail: nil,
+                 action: .removePath(path), tier: tier)
+    }
+
+    func test_permanentItemsGoToTheTrash() {
+        let a = Cleaner.effectiveAction(for: item("/tmp/photos", .permanent))
+        guard case .trashPath(let p) = a else {
+            return XCTFail("permanent items must be trashed, got \(a)")
+        }
+        XCTAssertEqual(p, "/tmp/photos")
+    }
+
+    func test_regenerableItemsAreStillDeletedOutright() {
+        // Trashing these would report zero bytes freed until the user empties
+        // the Trash, which is the app's main use case.
+        let a = Cleaner.effectiveAction(for: item("/tmp/node_modules", .regenerable))
+        guard case .removePath = a else {
+            return XCTFail("regenerable items must be deleted, got \(a)")
+        }
+    }
+
+    func test_adminItemsAreUnchanged() {
+        let it = ScanItem(name: "x", path: "/Library/x", bytes: 1, detail: nil,
+                          action: .removePathAdmin("/Library/x"), tier: .admin)
+        guard case .removePathAdmin = Cleaner.effectiveAction(for: it) else {
+            return XCTFail("admin items must keep their elevated action")
+        }
+    }
+
+    func test_gitIsNeverConvertedToADeletion() {
+        let it = ScanItem(name: "repo", path: "/tmp/r/.git", bytes: 1, detail: nil,
+                          action: .gitGC("/tmp/r"), tier: .regenerable)
+        guard case .gitGC = Cleaner.effectiveAction(for: it) else {
+            return XCTFail("git repositories must only ever be repacked")
+        }
+    }
+
 }

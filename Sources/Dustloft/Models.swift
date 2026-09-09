@@ -54,6 +54,7 @@ enum SafetyTier: String, CaseIterable, Codable {
 
 enum CleanAction: Hashable, Codable {
     case removePath(String)          // rm -rf
+    case trashPath(String)           // moved to ~/.Trash, recoverable
     case removePathAdmin(String)     // rm -rf, via admin prompt
     case ollamaModel(String)         // ollama rm <name>
     case dockerPrune                 // docker system prune -a  (never --volumes)

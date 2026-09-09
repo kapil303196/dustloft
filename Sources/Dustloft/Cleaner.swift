@@ -19,6 +19,10 @@ final class Cleaner: ObservableObject {
     @Published var currentStep = ""
     @Published var outcomes: [CleanOutcome] = []
     @Published var freedBytes: Int64 = 0
+    /// Permanent-tier items go to the Trash instead of being unlinked, so they
+    /// never show up in the volume delta. Reported separately or a person who
+    /// cleaned 92 GB of media would be told they freed nothing.
+    @Published var trashedBytes: Int64 = 0
     @Published var finished = false
 
     /// Ids of everything that was actually removed.
@@ -32,6 +36,7 @@ final class Cleaner: ObservableObject {
         finished = false
         outcomes = []
         freedBytes = 0
+        trashedBytes = 0
         progress = 0
 
         let before = VolumeInfo.current().free
@@ -56,14 +61,20 @@ final class Cleaner: ObservableObject {
 
         for item in normal {
             currentStep = item.name
+            let action = Cleaner.effectiveAction(for: item)
             let res: (Bool, String?) = await withCheckedContinuation { cont in
                 DispatchQueue.global(qos: .userInitiated).async {
-                    cont.resume(returning: Cleaner.perform(item.action))
+                    cont.resume(returning: Cleaner.perform(action))
                 }
             }
             outcomes.append(CleanOutcome(itemID: item.id, name: item.name,
                                          bytes: item.bytes, ok: res.0, message: res.1))
-            if res.0 { freedBytes += item.bytes }
+            OperationLog.record(action: action, name: item.name,
+                                bytes: item.bytes, ok: res.0, message: res.1)
+            if res.0 {
+                if case .trashPath = action { trashedBytes += item.bytes }
+                else { freedBytes += item.bytes }
+            }
             done += 1
             progress = done / total
         }
@@ -107,6 +118,18 @@ final class Cleaner: ObservableObject {
         finished = true
     }
 
+    /// Anything unrecoverable is moved to the Trash rather than unlinked.
+    /// The user has already confirmed each permanent item individually; routing
+    /// it here makes that decision reversible for as long as the Trash is left
+    /// alone. Regenerable and admin items are deleted outright — they come
+    /// back on their own, so reversibility would only cost disk space.
+    nonisolated static func effectiveAction(for item: ScanItem) -> CleanAction {
+        if case .removePath(let p) = item.action, item.tier == .permanent {
+            return .trashPath(p)
+        }
+        return item.action
+    }
+
     // MARK: - Action execution (background thread only)
 
     nonisolated private static func perform(_ action: CleanAction) -> (Bool, String?) {
@@ -122,6 +145,20 @@ final class Cleaner: ObservableObject {
             } catch {
                 let r = Shell.run("/bin/rm", ["-rf", p], timeout: 900)
                 return r.ok ? (true, nil) : (false, r.err.isEmpty ? "could not remove" : r.err)
+            }
+
+        case .trashPath(let p):
+            guard !Settings.hardExclusions.contains(where: { p == $0 || p.hasPrefix($0 + "/") }) else {
+                return (false, "refused: protected location")
+            }
+            do {
+                try FileManager.default.trashItem(at: URL(fileURLWithPath: p), resultingItemURL: nil)
+                return (true, nil)
+            } catch {
+                // Deliberately no rm -rf fallback. This item was routed here
+                // because it cannot be recovered; quietly deleting it outright
+                // would remove the one guarantee the routing exists to provide.
+                return (false, "could not move to Trash")
             }
 
         case .removePathAdmin, .adminShell:

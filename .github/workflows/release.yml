@@ -3,6 +3,13 @@ name: Build DMG
 on:
   push:
     branches: [main]
+    # The marketing site ships through Vercel, not through this workflow.
+    # Without this, editing a blog post cuts a release and every existing
+    # user is prompted to update to a byte-identical build.
+    paths-ignore:
+      - 'site/**'
+      - '**.md'
+      - 'LICENSE'
   workflow_dispatch:
 
 permissions:

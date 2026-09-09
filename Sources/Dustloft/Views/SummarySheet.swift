@@ -22,7 +22,7 @@ struct SummarySheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: DS.s2) {
-                Text("What can be dustlofted").font(DS.title()).foregroundStyle(DS.text)
+                Text("What can be reclaimed").font(DS.title()).foregroundStyle(DS.text)
                 Text("\(Bytes.fmt(engine.totalFound)) found across \(rows.count) categor\(rows.count == 1 ? "y" : "ies") · \(Bytes.fmt(pickedTotal)) selected so far")
                     .font(DS.body()).foregroundStyle(DS.textDim)
             }

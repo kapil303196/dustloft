@@ -426,9 +426,12 @@ enum Scanners {
             return ScanItem(
                 name: (p as NSString).lastPathComponent,
                 path: p, bytes: size,
-                detail: admin ? "owned by root" : nil,
+                detail: admin ? "owned by root" : "already deleted — emptying is final",
                 action: admin ? .removePathAdmin(p) : .removePath(p),
-                tier: admin ? .admin : .regenerable
+                // Nothing rebuilds a trashed file. Calling this regenerable
+                // would let Quick Clean empty the Trash, which is precisely
+                // the safety net everything else here relies on.
+                tier: admin ? .admin : .permanent
             )
         }
     }
