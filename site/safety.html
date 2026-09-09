@@ -1,0 +1,89 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>What Dustloft refuses to do — Dustloft</title>
+<meta name="description" content="The complete list of locations Dustloft will never delete, the three safety tiers, and the reasoning behind each rule. Every refusal is enforced in code and covered by tests.">
+<link rel="canonical" href="https://dustloft.com/safety">
+<meta property="og:title" content="What Dustloft refuses to do"><meta property="og:description" content="The complete list of locations Dustloft will never delete, the three safety tiers, and the reasoning behind each rule. Every refusal is enforced in code and covered by tests.">
+<meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#141013">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<meta property="og:site_name" content="Dustloft">
+<meta property="og:locale" content="en_US">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<meta property="og:url" content="https://dustloft.com/safety">
+<meta property="og:image" content="https://dustloft.com/img/overview.png">
+<meta name="twitter:image" content="https://dustloft.com/img/overview.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com"}, {"@type": "ListItem", "position": 2, "name": "Safety", "item": "https://dustloft.com/safety"}]}</script>
+<link rel="icon" href="/img/mark-v3.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/blog/_shared.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "What Dustloft refuses to do", "description": "The complete list of locations Dustloft will never delete, the three safety tiers, and the reasoning behind each rule. Every refusal is enforced in code and covered by tests.", "url": "https://dustloft.com/safety", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.com"}, "datePublished": "2026-09-10", "dateModified": "2026-09-10", "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is Dustloft safe to use?", "acceptedAnswer": {"@type": "Answer", "text": "Its safety rules are enforced in code rather than left to the user. It never deletes a .git directory, never touches Dropbox or iCloud Drive, never removes Docker named volumes, and never bulk-selects anything unrecoverable. The source is public and the rules are covered by tests."}}, {"@type": "Question", "name": "Can Dustloft delete something I cannot get back?", "acceptedAnswer": {"@type": "Answer", "text": "Only if you select that specific item deliberately. Anything unrecoverable is classified permanent, which excludes it from one-click cleaning and from bulk selection, and requires its own separate confirmation."}}, {"@type": "Question", "name": "Does Dustloft send any data anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. There is no telemetry, no analytics and no account. Scanning happens entirely on your machine and nothing about your disk leaves it."}}]}</script>
+<script>
+(function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+})(window, document, "clarity", "script", "yfsb7st26m");
+</script>
+</head><body>
+<header><div class="wrap">
+<a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
+<nav><a href="/blog/">Guides</a><a href="/safety">Safety</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
+</div></header>
+<article><div class="wrap">
+<h1>What Dustloft refuses to do</h1>
+<p class="meta">Safety · 6 min read · Updated September 2026</p>
+<div class="answer"><p><strong>Short answer:</strong> Dustloft sorts every finding into regenerable, needs-admin or permanent, and hard-refuses a fixed list of locations regardless of what you select: Dropbox, iCloud Drive, other cloud-sync folders, Docker named volumes and any .git directory. These are compiled-in rules, not preferences, and they cannot be overridden from the interface.</p></div>
+
+<p>Most cleaning tools are judged on how much they free. That number is the easiest thing to optimise and the reason the category has a bad reputation — the fastest way to a large figure is to delete something that mattered.</p>
+<p>Dustloft is built the other way round. What follows is the complete set of things it will not do, all of them enforced in code rather than left to a setting.</p>
+
+<h2>The three tiers</h2>
+<p>Every item found is classified before it is ever shown to you, and the classification drives how much friction stands between it and deletion.</p>
+<table><thead><tr><th>Tier</th><th>Definition</th><th>How it is handled</th></tr></thead><tbody>
+<tr><td><strong>Regenerable</strong></td><td>Rebuilds itself the next time it is needed</td><td>Eligible for one-click cleaning</td></tr>
+<tr><td><strong>Needs admin</strong></td><td>Safe to remove, but macOS will ask for your password</td><td>Batched into a single administrator prompt</td></tr>
+<tr><td><strong>Permanent</strong></td><td>Cannot be recovered</td><td>Never bulk-selected. Each item confirmed on its own</td></tr>
+</tbody></table>
+<p>Quick clean touches the first tier only. It will never include something needing your judgement, which is what makes it safe to press without reading.</p>
+
+<h2>Locations it will never delete</h2>
+<p>These paths are refused at the point of execution. Even if an item somehow reached a clean list, the deletion is rejected:</p>
+<table><thead><tr><th>Location</th><th>Why</th></tr></thead><tbody>
+<tr><td><code>~/Dropbox</code></td><td>A local delete propagates to every device and to anyone sharing the folder</td></tr>
+<tr><td><code>~/Library/Mobile Documents</code> (iCloud Drive)</td><td>Same — removing a synced file removes it everywhere</td></tr>
+<tr><td><code>~/Library/CloudStorage</code> (OneDrive, Google Drive, Box)</td><td>Same, for every other sync provider</td></tr>
+<tr><td>Any <code>.git</code> directory</td><td>History has no rebuild path. Only <code>git gc</code> is ever offered</td></tr>
+<tr><td>Docker named volumes</td><td>Databases and application state live here, not disposable layers</td></tr>
+</tbody></table>
+
+<h2>Rules that go further than the list</h2>
+<p><strong>Docker is pruned, never wiped.</strong> The command is <code>docker system prune -a</code>, which removes unused images and stopped containers. The <code>--volumes</code> flag is never passed under any circumstance.</p>
+<p><strong>Git repositories are repacked, never removed.</strong> The only action offered is <code>git gc</code>. Before that, every repository is checked against its remote with <code>git ls-remote</code>, and one whose history exists nowhere else is flagged in red as <em>only copy — nothing pushed</em>.</p>
+<p><strong>MySQL data is advisory only.</strong> Binary logs are reported with the correct command to purge them through the server, and Dustloft will not run it. Purging outside the server risks desynchronising <code>binlog.index</code>, and your databases are never touched.</p>
+<p><strong>Project scans stay inside project roots.</strong> Dependency and build-output scans only ever run inside directories you have configured, never across your home folder or the whole disk.</p>
+<p><strong>Published packages are not build output.</strong> A <code>dist</code> or <code>build</code> folder inside <code>node_modules</code>, <code>.venv</code>, <code>site-packages</code> or <code>vendor</code> is skipped, because it is the library itself rather than something a rebuild recreates.</p>
+<p><strong>The active runtime is never offered.</strong> Node version cleanup excludes whichever version is currently in use.</p>
+<p><strong>Time Machine snapshots are thinned, not deleted.</strong> Local snapshots are thinned with <code>tmutil</code>; backups on external drives are never touched.</p>
+
+<h2>Claims it will not make</h2>
+<blockquote><p><strong>It does not report purgeable space.</strong> Purgeable is released by macOS on its own schedule and no third-party application can free it on demand. Reporting it would be claiming credit for something outside the app's control. <a href="/blog/purgeable-space-mac">The full explanation is here.</a></p></blockquote>
+<blockquote><p><strong>It measures real disk usage, not apparent size.</strong> A sparse Docker image that reports 494 GB is shown at the 9.3 GB it actually occupies, because the alternative is a headline number that is not true.</p></blockquote>
+<blockquote><p><strong>It collects nothing.</strong> No telemetry, no analytics, no account. Scanning happens locally and nothing about your disk leaves the machine.</p></blockquote>
+
+<h2>Why these particular rules</h2>
+<p>They are not hypothetical. The list was written after a manual cleanup that freed a great deal of space and came close to destroying a git repository whose history existed nowhere else — the remote was configured, so deletion looked obviously safe, and nothing had ever been pushed to it. Every rule above exists because something nearly went wrong.</p>
+<p>The source is public and the safety rules are covered by tests, so none of this has to be taken on trust: <a href="https://github.com/kapil303196/dustloft">read the code</a>.</p>
+<div class="cta">
+<h3>See exactly what is on your own disk</h3>
+<p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
+<a class="btn" href="/#install">Install Dustloft</a>
+</div>
+</div></article>
+<footer><div class="wrap">Dustloft — MIT licensed. No telemetry. ·
+<a href="/">Home</a> · <a href="/blog/">All guides</a> ·
+<a href="https://github.com/kapil303196/dustloft">Source</a><br><br>
+Made with ♥ in India by <a href="https://logicspark.io">Logicspark</a></div></footer>
+</body></html>

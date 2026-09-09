@@ -30,7 +30,7 @@
 </head><body>
 <header><div class="wrap">
 <a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
-<nav><a href="/blog/">Guides</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
+<nav><a href="/blog/">Guides</a><a href="/safety">Safety</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
 </div></header>
 <article><div class="wrap">
 <h1>Why is System Data so large on your Mac?</h1>
@@ -42,7 +42,7 @@
 <h2>What is actually inside System Data</h2>
 <p>On a 512 GB MacBook Pro that reported 96% full, the breakdown looked like this. None of it was visible in Finder without deliberately hunting for it.</p>
 <table><thead><tr><th>What it was</th><th>Where it lived</th><th>Size</th></tr></thead><tbody>
-<tr><td>Messaging app media</td><td><code>~/Library/Group Containers/</code></td><td>92 GB</td></tr>
+<tr><td><a href="/blog/whatsapp-messages-media-mac">Messaging app media</a></td><td><code>~/Library/Group Containers/</code></td><td>92 GB</td></tr>
 <tr><td>Dependency folders</td><td><code>node_modules</code> across projects</td><td>46 GB</td></tr>
 <tr><td>Build output</td><td>42 stale <code>.next</code> caches</td><td>20 GB</td></tr>
 <tr><td>Local AI models</td><td><code>~/.ollama/models</code></td><td>16 GB</td></tr>
@@ -69,7 +69,7 @@
 <h2>What not to do</h2>
 <p>Two pieces of advice circulate widely and are both wrong:</p>
 <blockquote><p><strong>“Delete everything in ~/Library/Caches.”</strong> Most of it is small and it will be rebuilt within minutes. The gigabytes are almost never there — they are in <code>Application Support</code> and <code>Containers</code>, which are not caches and hold real data.</p></blockquote>
-<blockquote><p><strong>“Reclaim your purgeable space.”</strong> Purgeable space is managed by macOS itself. No third-party application can reliably free it, and any tool claiming otherwise is overpromising.</p></blockquote>
+<blockquote><p><strong>“Reclaim your purgeable space.”</strong> Purgeable space is managed by macOS itself. No third-party application can reliably free it, and any tool claiming otherwise is overpromising. <a href="/blog/purgeable-space-mac">Why that is, in full</a>.</p></blockquote>
 
 <h2>How to find out what yours is</h2>
 <p>The numbers above are from one machine. Yours will differ. The next guide walks through <a href="/blog/how-to-clear-system-data-mac">clearing System Data safely</a>, and if you would rather not use Terminal, <a href="/">Dustloft</a> does the same measurement and shows you every item with its real size before anything is deleted.</p><div class="cta">

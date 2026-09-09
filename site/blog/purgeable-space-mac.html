@@ -1,0 +1,74 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>What is purgeable space on a Mac, and can you actually free it? — Dustloft</title>
+<meta name="description" content="Purgeable space is disk macOS has promised itself it can reclaim on demand. No third-party cleaner can free it directly. Here is what it really contains and what genuinely moves it.">
+<link rel="canonical" href="https://dustloft.com/blog/purgeable-space-mac">
+<meta property="og:title" content="What is purgeable space on a Mac, and can you actually free it?"><meta property="og:description" content="Purgeable space is disk macOS has promised itself it can reclaim on demand. No third-party cleaner can free it directly. Here is what it really contains and what genuinely moves it.">
+<meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#141013">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<meta property="og:site_name" content="Dustloft">
+<meta property="og:locale" content="en_US">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<meta property="og:url" content="https://dustloft.com/blog/purgeable-space-mac">
+<meta property="og:image" content="https://dustloft.com/img/overview.png">
+<meta name="twitter:image" content="https://dustloft.com/img/overview.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Guide", "item": "https://dustloft.com/blog/purgeable-space-mac"}]}</script>
+<link rel="icon" href="/img/mark-v3.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/blog/_shared.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "What is purgeable space on a Mac, and can you actually free it?", "description": "Purgeable space is disk macOS has promised itself it can reclaim on demand. No third-party cleaner can free it directly. Here is what it really contains and what genuinely moves it.", "url": "https://dustloft.com/blog/purgeable-space-mac", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.com"}, "datePublished": "2026-09-10", "dateModified": "2026-09-10", "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Can a cleaning app free purgeable space on a Mac?", "acceptedAnswer": {"@type": "Answer", "text": "No. Purgeable space is managed by macOS itself and released when the system decides a write needs the room. Third-party applications have no supported way to trigger that release, so any tool advertising purgeable-space cleaning is overstating what it does."}}, {"@type": "Question", "name": "Why does my Mac show free space that I cannot use?", "acceptedAnswer": {"@type": "Answer", "text": "Finder reports available space as free plus purgeable. A copy or install can appear to fail while that combined figure still looks healthy, because macOS has not yet released the purgeable portion. The space is real, but it arrives only when the system reclaims it."}}, {"@type": "Question", "name": "How do I actually get the space back?", "acceptedAnswer": {"@type": "Answer", "text": "Reduce what is being held rather than trying to force a release: thin Time Machine local snapshots with tmutil, remove caches and build output that regenerate, and clear large files you no longer need. That shrinks the underlying storage rather than shuffling the label."}}]}</script>
+<script>
+(function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+})(window, document, "clarity", "script", "yfsb7st26m");
+</script>
+</head><body>
+<header><div class="wrap">
+<a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
+<nav><a href="/blog/">Guides</a><a href="/safety">Safety</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
+</div></header>
+<article><div class="wrap">
+<h1>What is purgeable space on a Mac, and can you actually free it?</h1>
+<p class="meta">Guide · 5 min read · Updated September 2026</p>
+<div class="answer"><p><strong>Short answer:</strong> Purgeable space is storage macOS has already earmarked as reclaimable — old snapshots, cached iCloud files, Photos originals it can re-download. macOS releases it automatically when a write needs the room. No third-party app can free it on demand, and any cleaner advertising that it can is overpromising.</p></div>
+
+<p>Open <strong>About This Mac → Storage</strong>, or run <code>df -h</code>, and the numbers rarely agree. Finder cheerfully reports 80 GB available while an installer refuses to run. The gap is nearly always purgeable space.</p>
+
+<h2>What purgeable space actually is</h2>
+<p>Purgeable is not a folder and not a category. It is a promise. macOS marks certain files as things it is willing to destroy or re-download the moment a write needs the room, then counts them as available even though they are still occupying blocks on the disk.</p>
+<p>Typically that promise covers:</p>
+<table><thead><tr><th>What macOS marks purgeable</th><th>Why it can let go of it</th></tr></thead><tbody>
+<tr><td>Time Machine local snapshots</td><td>Point-in-time copies kept on the internal disk; the real backup lives on your external drive</td></tr>
+<tr><td>iCloud Drive files already uploaded</td><td>The copy in the cloud is authoritative, so the local one can be evicted</td></tr>
+<tr><td>Photos originals with iCloud Photos on</td><td>Full-resolution versions can be fetched again on demand</td></tr>
+<tr><td>Some system and font caches</td><td>Rebuilt automatically the next time they are needed</td></tr>
+</tbody></table>
+
+<h2>Why no cleaner can free it for you</h2>
+<p>The release is a decision macOS makes, not an operation it exposes. There is no supported call an application can make that means "purge now". A tool that claims to free purgeable space is either waiting for the system to act and taking the credit, or deleting something else and attributing the change to purgeable.</p>
+<blockquote><p><strong>Dustloft will not report a purgeable figure at all.</strong> It measures only space it can actually account for and act on. If a number cannot be tied to a real path, it does not appear.</p></blockquote>
+
+<h2>What genuinely moves the number</h2>
+<p>Since you cannot force the release, the working approach is to shrink what is being held in the first place.</p>
+<p><strong>Thin local snapshots.</strong> These are the single largest purgeable contributor on most Macs. <code>tmutil listlocalsnapshots /</code> shows what exists. Thinning them frees whatever they were pinning, and your external Time Machine backups are untouched.</p>
+<p><strong>Remove things that regenerate.</strong> Package caches, build output and dependency folders occupy ordinary non-purgeable space and come back on their own. Clearing them is the fastest honest win.</p>
+<p><strong>Stop treating the combined figure as free.</strong> If <code>df -h</code> and Finder disagree, trust <code>df -h</code>.</p>
+
+<h2>Where the rest of your space went</h2>
+<p>Purgeable is usually a smaller share of the problem than people expect. The bigger share sits in <a href="/blog/why-is-system-data-so-large-on-mac">what macOS labels System Data</a> — genuinely occupied storage with no interface to inspect it. If you want the walkthrough for clearing that safely, <a href="/blog/how-to-clear-system-data-mac">start here</a>.</p>
+<div class="cta">
+<h3>See exactly what is on your own disk</h3>
+<p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
+<a class="btn" href="/#install">Install Dustloft</a>
+</div>
+</div></article>
+<footer><div class="wrap">Dustloft — MIT licensed. No telemetry. ·
+<a href="/">Home</a> · <a href="/blog/">All guides</a> ·
+<a href="https://github.com/kapil303196/dustloft">Source</a><br><br>
+Made with ♥ in India by <a href="https://logicspark.io">Logicspark</a></div></footer>
+</body></html>

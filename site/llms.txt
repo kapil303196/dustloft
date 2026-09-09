@@ -32,6 +32,16 @@ no subscription, no account.
 - [Free CleanMyMac alternatives](https://dustloft.com/blog/free-cleanmymac-alternatives): Honest comparison of the free tools and what each is good at.
 - [Docker.raw taking up space on Mac](https://dustloft.com/blog/docker-raw-taking-up-space-mac): Why apparent size and allocated size differ for sparse files.
 - [Find large files on Mac using Terminal](https://dustloft.com/blog/find-large-files-mac-terminal): The du, df and mdfind commands that work, and the glob mistake that hides tens of GB.
+- [What is purgeable space on a Mac](https://dustloft.com/blog/purgeable-space-mac): Why no third-party app can free it on demand, and what genuinely reduces it.
+- [Is it safe to delete ~/Library/Caches?](https://dustloft.com/blog/is-it-safe-to-delete-library-caches): Safe but rarely useful; the large folders are Application Support and Containers.
+- [WhatsApp and Messages media on Mac](https://dustloft.com/blog/whatsapp-messages-media-mac): Received media lives in Group Containers, is real data rather than cache, and does not regenerate.
+- [node_modules and build output](https://dustloft.com/blog/node-modules-taking-up-space-mac): Measuring dependency trees, and why a dist folder inside node_modules is the package itself.
+- [Xcode DerivedData, simulators and runtimes](https://dustloft.com/blog/xcode-derived-data-simulators): The four Xcode paths, which need admin, and why they survive uninstalling Xcode.
+- [Git repositories taking up space](https://dustloft.com/blog/git-repositories-taking-up-space): Repack with git gc; a configured remote is not proof anything was pushed.
+
+## Reference
+
+- [What Dustloft refuses to do](https://dustloft.com/safety): The complete list of protected locations, the three safety tiers, and the reasoning behind each rule.
 
 ## Notable technical findings documented here
 
@@ -41,3 +51,10 @@ no subscription, no account.
   `du` reports the truth, `ls -lh` does not.
 - A GitHub remote being configured does not mean a repository is backed up.
   `git ls-remote origin` returning zero refs means nothing was ever pushed.
+- Simulator runtimes under /Library/Developer/CoreSimulator are installed outside
+  the Xcode app bundle, so they survive deleting Xcode and are then orphaned.
+- WhatsApp keeps received media in
+  ~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/Message/Media.
+  It is data, not cache: nothing regenerates it.
+- Purgeable space is released by macOS on its own schedule. No supported API lets
+  a third-party app trigger that release.

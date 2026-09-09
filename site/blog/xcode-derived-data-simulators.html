@@ -1,0 +1,79 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Xcode leftovers: DerivedData, simulators and runtimes you can safely remove — Dustloft</title>
+<meta name="description" content="Xcode keeps build indexes, simulator devices and installed runtimes long after you need them, and some survive uninstalling Xcode entirely. Here is each path, what it costs and whether it is safe to delete.">
+<link rel="canonical" href="https://dustloft.com/blog/xcode-derived-data-simulators">
+<meta property="og:title" content="Xcode leftovers: DerivedData, simulators and runtimes you can safely remove"><meta property="og:description" content="Xcode keeps build indexes, simulator devices and installed runtimes long after you need them, and some survive uninstalling Xcode entirely. Here is each path, what it costs and whether it is safe to delete.">
+<meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#141013">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<meta property="og:site_name" content="Dustloft">
+<meta property="og:locale" content="en_US">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<meta property="og:url" content="https://dustloft.com/blog/xcode-derived-data-simulators">
+<meta property="og:image" content="https://dustloft.com/img/overview.png">
+<meta name="twitter:image" content="https://dustloft.com/img/overview.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Guide", "item": "https://dustloft.com/blog/xcode-derived-data-simulators"}]}</script>
+<link rel="icon" href="/img/mark-v3.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/blog/_shared.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Xcode leftovers: DerivedData, simulators and runtimes you can safely remove", "description": "Xcode keeps build indexes, simulator devices and installed runtimes long after you need them, and some survive uninstalling Xcode entirely. Here is each path, what it costs and whether it is safe to delete.", "url": "https://dustloft.com/blog/xcode-derived-data-simulators", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.com"}, "datePublished": "2026-09-10", "dateModified": "2026-09-10", "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is it safe to delete DerivedData?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. DerivedData holds build products, indexes and module caches that Xcode regenerates on the next build. The only cost is a slower first build and a rebuilt symbol index."}}, {"@type": "Question", "name": "Can I delete Xcode simulator devices?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, though each deleted device loses whatever was installed inside it, including app data and any state you had set up for testing. Xcode recreates the devices themselves on demand."}}, {"@type": "Question", "name": "Why do I still have Xcode files after uninstalling Xcode?", "acceptedAnswer": {"@type": "Answer", "text": "Simulator runtimes and caches under /Library/Developer/CoreSimulator are installed outside the Xcode application bundle, so dragging Xcode to the Trash leaves them in place. They are orphaned at that point and safe to remove."}}]}</script>
+<script>
+(function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+})(window, document, "clarity", "script", "yfsb7st26m");
+</script>
+</head><body>
+<header><div class="wrap">
+<a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
+<nav><a href="/blog/">Guides</a><a href="/safety">Safety</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
+</div></header>
+<article><div class="wrap">
+<h1>Xcode leftovers: DerivedData, simulators and runtimes you can safely remove</h1>
+<p class="meta">Guide · 6 min read · Updated September 2026</p>
+<div class="answer"><p><strong>Short answer:</strong> Xcode stores build artefacts in ~/Library/Developer/Xcode/DerivedData and simulator devices in ~/Library/Developer/CoreSimulator/Devices, both of which rebuild themselves. Installed simulator runtimes live under /Library/Developer/CoreSimulator and need an administrator prompt. All of it can survive uninstalling Xcode, which is how machines without Xcode still carry tens of gigabytes of it.</p></div>
+
+<p>Xcode is the most reliable way to lose 40 GB without noticing. It writes to four locations, two in your home folder and two at the system level, and none of them are pruned automatically.</p>
+
+<h2>The four paths, and what each one costs you</h2>
+<table><thead><tr><th>Path</th><th>What it holds</th><th>Tier</th></tr></thead><tbody>
+<tr><td><code>~/Library/Developer/Xcode/DerivedData</code></td><td>Build products, indexes, module caches</td><td>Regenerable</td></tr>
+<tr><td><code>~/Library/Developer/CoreSimulator/Devices</code></td><td>Each simulated device and its installed apps</td><td>Regenerable</td></tr>
+<tr><td><code>/Library/Developer/CoreSimulator/Caches</code></td><td>Shared simulator caches</td><td>Needs admin</td></tr>
+<tr><td><code>/Library/Developer/CoreSimulator/Profiles/Runtimes</code></td><td>Installed iOS/watchOS/tvOS runtimes</td><td>Needs admin</td></tr>
+</tbody></table>
+<p>The first two are yours and delete without a password. The second two sit under <code>/Library</code> and macOS will ask for an administrator prompt.</p>
+
+<h2>The orphaned case worth checking</h2>
+<p>Runtimes and simulator caches are installed <em>outside</em> the Xcode application bundle. Drag Xcode to the Trash and they stay exactly where they are, permanently, with nothing left on the machine that will ever use them again.</p>
+<p>On the Mac these guides are written from, 13 GB of orphaned Xcode runtimes were still present. Dustloft checks whether <code>/Applications/Xcode.app</code> exists and labels those paths <em>orphaned — Xcode is not installed</em> when it does not, because that changes the decision entirely: there is no rebuild cost if nothing can rebuild it.</p>
+
+<h2>Removing them by hand</h2>
+<p>DerivedData is the safe first move and needs no password:</p>
+<pre><code>du -sh ~/Library/Developer/Xcode/DerivedData
+rm -rf ~/Library/Developer/Xcode/DerivedData</code></pre>
+<p>For simulator devices, prefer the tool over <code>rm</code>, so CoreSimulator's own bookkeeping stays consistent:</p>
+<pre><code>xcrun simctl delete unavailable</code></pre>
+<p>That removes devices whose runtime is already gone — the safest subset, and often the largest.</p>
+
+<h2>What not to delete</h2>
+<blockquote><p><strong>Do not remove <code>~/Library/Developer/Xcode/UserData</code>.</strong> It holds your code snippets, key bindings and breakpoints. It is small and it does not come back.</p></blockquote>
+<blockquote><p><strong>Be deliberate about <code>iOS DeviceSupport</code>.</strong> It is regenerable, but only by connecting and re-pairing each physical device, which is slow if you test on several.</p></blockquote>
+
+<h2>The rest of a developer machine</h2>
+<p>Xcode is rarely alone. <a href="/blog/node-modules-taking-up-space-mac">Dependency folders and build output</a> usually cost more, and <a href="/blog/docker-raw-taking-up-space-mac">Docker's disk image</a> is the other common surprise.</p>
+<div class="cta">
+<h3>See exactly what is on your own disk</h3>
+<p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
+<a class="btn" href="/#install">Install Dustloft</a>
+</div>
+</div></article>
+<footer><div class="wrap">Dustloft — MIT licensed. No telemetry. ·
+<a href="/">Home</a> · <a href="/blog/">All guides</a> ·
+<a href="https://github.com/kapil303196/dustloft">Source</a><br><br>
+Made with ♥ in India by <a href="https://logicspark.io">Logicspark</a></div></footer>
+</body></html>

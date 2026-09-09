@@ -1,0 +1,79 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Git repositories are taking up space. Repack them, do not delete them — Dustloft</title>
+<meta name="description" content="A .git directory can reach several gigabytes, and it is the one folder on a developer machine that is genuinely irreplaceable. Here is how to shrink one safely and how to check whether its history exists anywhere else.">
+<link rel="canonical" href="https://dustloft.com/blog/git-repositories-taking-up-space">
+<meta property="og:title" content="Git repositories are taking up space. Repack them, do not delete them"><meta property="og:description" content="A .git directory can reach several gigabytes, and it is the one folder on a developer machine that is genuinely irreplaceable. Here is how to shrink one safely and how to check whether its history exists anywhere else.">
+<meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#141013">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<meta property="og:site_name" content="Dustloft">
+<meta property="og:locale" content="en_US">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<meta property="og:url" content="https://dustloft.com/blog/git-repositories-taking-up-space">
+<meta property="og:image" content="https://dustloft.com/img/overview.png">
+<meta name="twitter:image" content="https://dustloft.com/img/overview.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Guide", "item": "https://dustloft.com/blog/git-repositories-taking-up-space"}]}</script>
+<link rel="icon" href="/img/mark-v3.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/blog/_shared.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Git repositories are taking up space. Repack them, do not delete them", "description": "A .git directory can reach several gigabytes, and it is the one folder on a developer machine that is genuinely irreplaceable. Here is how to shrink one safely and how to check whether its history exists anywhere else.", "url": "https://dustloft.com/blog/git-repositories-taking-up-space", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.com"}, "datePublished": "2026-09-10", "dateModified": "2026-09-10", "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is it safe to delete a .git folder?", "acceptedAnswer": {"@type": "Answer", "text": "Only if the history exists elsewhere and you have verified that, not assumed it. Deleting .git destroys every commit, branch and tag in that repository, and no cleaning tool should ever offer it as a space-saving action."}}, {"@type": "Question", "name": "How do I make a .git directory smaller?", "acceptedAnswer": {"@type": "Answer", "text": "Run git gc --prune=now inside the repository. It repacks loose objects and drops unreachable ones, often cutting the directory substantially, and no reachable history is lost."}}, {"@type": "Question", "name": "Does having a GitHub remote mean my code is backed up?", "acceptedAnswer": {"@type": "Answer", "text": "No. A remote is a configured address, not proof that anything was pushed to it. Run git ls-remote origin — if it returns no refs, the remote is empty and your local clone is the only copy that exists."}}]}</script>
+<script>
+(function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+})(window, document, "clarity", "script", "yfsb7st26m");
+</script>
+</head><body>
+<header><div class="wrap">
+<a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
+<nav><a href="/blog/">Guides</a><a href="/safety">Safety</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
+</div></header>
+<article><div class="wrap">
+<h1>Git repositories are taking up space. Repack them, do not delete them</h1>
+<p class="meta">Guide · 6 min read · Updated September 2026</p>
+<div class="answer"><p><strong>Short answer:</strong> Run git gc to repack loose objects — it can reclaim most of a bloated .git without losing a single commit. Never delete a .git directory to save space until you have confirmed the history exists somewhere else, and a configured remote is not the same as confirming it.</p></div>
+
+<p>Repository history is the one thing on a developer's disk with no rebuild path. Caches come back. Dependencies reinstall. Commits do not.</p>
+<p>They also get large. A repository with years of history, large binaries, or a lot of churn can carry a <code>.git</code> directory of several gigabytes. On the machine these guides are written from, one project's <code>.git</code> was 2.2 GB.</p>
+
+<h2>Repack first — it usually is enough</h2>
+<p>Git accumulates loose objects as you work and only consolidates them periodically. Forcing that consolidation is safe and often dramatic:</p>
+<pre><code>du -sh .git
+git gc --prune=now
+du -sh .git</code></pre>
+<p>Every reachable commit, branch and tag survives. What goes is redundancy: loose objects that are already inside a pack, and unreachable objects left behind by rebases and amended commits.</p>
+<p>This is the only action Dustloft will ever offer on a repository. It scans for <code>.git</code> directories over 100 MB — below that, repacking is not worth the interruption — and the sole action attached to them is <code>git gc</code>. Deletion is not on the menu at any size.</p>
+
+<h2>The check that actually matters</h2>
+<p>Before any repository is deleted, the real question is whether its history exists anywhere but this disk. Almost everyone answers it wrong, because they check for a remote rather than checking the remote.</p>
+<blockquote><p><strong>A configured remote is an address, not a backup.</strong> <code>git remote get-url origin</code> succeeding tells you a URL is written in the config. It tells you nothing about whether a single commit ever reached it.</p></blockquote>
+<p>The question that gives a real answer:</p>
+<pre><code>git ls-remote origin</code></pre>
+<p>Refs come back, the history exists elsewhere. Nothing comes back, the remote is empty and your working copy is the only copy in the world — regardless of what the config says.</p>
+<p>This is the check that produced Dustloft. A repository with a GitHub remote configured looked obviously safe to delete during a manual cleanup. Nothing had ever been pushed. That near-miss is why the app runs <code>ls-remote</code> against every repository it finds, counts the refs, and marks a repository <em>only copy — nothing pushed</em> in red when the count is zero.</p>
+
+<h2>Before deleting any project folder</h2>
+<table><thead><tr><th>Check</th><th>Command</th><th>Wrong answer means</th></tr></thead><tbody>
+<tr><td>Does the history exist remotely?</td><td><code>git ls-remote origin</code></td><td>No refs — this is the only copy</td></tr>
+<tr><td>Is anything uncommitted?</td><td><code>git status --porcelain</code></td><td>Output — unsaved work</td></tr>
+<tr><td>Are there unpushed commits?</td><td><code>git log --branches --not --remotes</code></td><td>Output — local-only commits</td></tr>
+<tr><td>Any stashes?</td><td><code>git stash list</code></td><td>Output — stashes are not pushed</td></tr>
+</tbody></table>
+
+<h2>Shrink the project, keep the history</h2>
+<p>Most of a project folder's size is usually not the repository at all. <a href="/blog/node-modules-taking-up-space-mac">Dependencies and build output</a> are typically far larger than <code>.git</code>, fully regenerable, and the right thing to remove first.</p>
+<div class="cta">
+<h3>See exactly what is on your own disk</h3>
+<p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
+<a class="btn" href="/#install">Install Dustloft</a>
+</div>
+</div></article>
+<footer><div class="wrap">Dustloft — MIT licensed. No telemetry. ·
+<a href="/">Home</a> · <a href="/blog/">All guides</a> ·
+<a href="https://github.com/kapil303196/dustloft">Source</a><br><br>
+Made with ♥ in India by <a href="https://logicspark.io">Logicspark</a></div></footer>
+</body></html>
