@@ -309,6 +309,28 @@ final class MetricsTests: XCTestCase {
         XCTAssertNil(Cleaner.fileSizeNow(dir.path + "/missing"))
     }
 
+    /// The review sheet's "stays recoverable" promise is derived from this, and
+    /// there are two ways for a permanent item to miss the Trash: being in it
+    /// already, and needing an administrator — because run() partitions by
+    /// action, so an admin item never reaches the Trash routing at all.
+    func test_bothWaysAPermanentItemSkipsTheTrash() {
+        let home = NSHomeDirectory()
+
+        let media = ScanItem(name: "holiday.mov", path: home + "/Movies/holiday.mov",
+                             bytes: 1, detail: "", action: .removePath(home + "/Movies/holiday.mov"),
+                             tier: .permanent)
+        guard case .trashPath = Cleaner.effectiveAction(for: media) else {
+            return XCTFail("an ordinary permanent item should be routed to the Trash")
+        }
+
+        let rootOwned = ScanItem(name: "Old.app", path: "/Applications/Old.app", bytes: 1,
+                                 detail: "", action: .removePathAdmin("/Applications/Old.app"),
+                                 tier: .permanent)
+        guard case .removePathAdmin = Cleaner.effectiveAction(for: rootOwned) else {
+            return XCTFail("an admin item is unlinked by the batch, never trashed")
+        }
+    }
+
     // MARK: The off switch
 
     func test_environmentSwitchRecognisesOffAndFailsClosed() {

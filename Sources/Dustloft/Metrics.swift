@@ -198,6 +198,12 @@ final class Metrics: ObservableObject {
         guard !noticeShown else { return }
         noticeShown = true
         defaults.set(true, forKey: Key.noticeShown)
+        // The gate has only just opened, and on a first run nothing else will
+        // ask again this session: the launch path returns early to show the
+        // welcome sheet, before it reaches reportIfNeeded. Without this, an
+        // install where someone looks once and never reopens the app is never
+        // counted at all — which is the single thing this was built to count.
+        reportIfNeeded()
     }
 
     static var appVersion: String {

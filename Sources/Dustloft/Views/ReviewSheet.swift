@@ -13,30 +13,37 @@ struct ReviewSheet: View {
     /// leaves the section on screen so it can be ticked back on.
     @State private var frozen: [(String, [UUID])] = []
 
-    /// Items already in the Trash, which emptying really does unlink.
-    private var permanentInTrash: [ScanItem] {
+    /// Permanent rows that will not end up in the Trash.
+    ///
+    /// Asked of `effectiveAction`, not of the path, because there are two ways
+    /// to miss the Trash and only one of them is about where the file is. An
+    /// item already in the Trash has nowhere further to go — but so does one
+    /// needing an administrator, because `Cleaner.run` partitions by action
+    /// rather than tier, so those never reach the Trash routing at all and are
+    /// unlinked by the batched root `rm`. Both are final; only the predicate
+    /// that asks what will actually be run catches both.
+    private var permanentDeletedOutright: [ScanItem] {
         permanent.filter {
-            Cleaner.targetPath(of: $0.action).map(Cleaner.isInsideTrash) ?? false
+            if case .trashPath = Cleaner.effectiveAction(for: $0) { return false }
+            return true
         }
     }
 
-    /// The promise has to match what will actually happen to the ticked rows.
-    ///
-    /// "They stay recoverable until you empty it" is true of a file being moved
-    /// to the Trash and false of a file already in it — and emptying the Trash
-    /// is a thing this app is for, so the sentence cannot simply be the first
-    /// case for everyone.
+    /// The promise has to match what is about to happen to the ticked rows.
+    /// "They stay recoverable until you empty it" is true of a file on its way
+    /// to the Trash and false of everything above, so it cannot simply be said
+    /// to everyone.
     private var permanentWarning: String {
-        let inTrash = permanentInTrash.count
-        if inTrash == 0 {
+        let final = permanentDeletedOutright.count
+        if final == 0 {
             return "Nothing rebuilds these, so they go to the Trash rather than being deleted outright. They stay recoverable until you empty it."
         }
-        if inTrash == permanent.count {
-            return inTrash == 1
-                ? "This is already in the Trash, so there is nowhere further for it to go: emptying it deletes it for good, right now."
-                : "These are already in the Trash, so there is nowhere further for them to go: emptying it deletes them for good, right now."
+        if final == permanent.count {
+            return final == 1
+                ? "This cannot be moved to the Trash — it is either already there or owned by the system. Ticking this deletes it for good, right now."
+                : "These cannot be moved to the Trash — they are either already there or owned by the system. Ticking this deletes them for good, right now."
         }
-        return "Nothing rebuilds these. Those not already in the Trash are moved there and stay recoverable until you empty it — but \(inTrash) of them \(inTrash == 1 ? "is" : "are") in the Trash already, and \(inTrash == 1 ? "it is" : "those are") deleted for good, right now."
+        return "Nothing rebuilds these. Most are moved to the Trash and stay recoverable until you empty it — but \(final) of them cannot be, being already there or owned by the system, and \(final == 1 ? "that one is" : "those are") deleted for good, right now."
     }
 
     /// Selected rows, grouped by the section they came from and ordered with
