@@ -121,6 +121,10 @@ final class Cleaner: ObservableObject {
             // password prompt, and a path that fails is dropped rather than
             // weakening the batch.
             var refusedAdmin: [(String, String)] = []
+            // Captured before the prompt. Afterwards, absence alone cannot tell
+            // "this run removed it" from "it was already gone", and the second
+            // would credit a scan-time estimate to a run that did nothing.
+            var existedBefore: Set<String> = []
             let paths = adminItems.compactMap { item -> String? in
                 guard case .removePathAdmin(let p) = item.action else { return nil }
                 if let refusal = SafePath.validate(p) {
@@ -129,6 +133,7 @@ final class Cleaner: ObservableObject {
                 if SafePath.isSymlink(p) {
                     refusedAdmin.append((item.name, "refused: symlink, not removed as root")); return nil
                 }
+                if Cleaner.entryExists(p) { existedBefore.insert(p) }
                 return p
             }
             if !paths.isEmpty {
@@ -148,8 +153,13 @@ final class Cleaner: ObservableObject {
             // line of the batch executed. Everything else means the script did
             // run, and per-item truth has to come from somewhere better than
             // the exit status of whichever command was last.
+            // "-128" on its own appears inside perfectly ordinary output — a
+            // path called chunk-1284 is enough — and matching it loosely would
+            // turn any failing command in the batch into "cancelled", which
+            // skips the ground-truth check below and discards every successful
+            // removal with it. The parenthesised form is osascript's.
             let lowered = res.err.lowercased()
-            let cancelled = !res.ok && (res.err.contains("-128")
+            let cancelled = !res.ok && (lowered.contains("(-128)")
                                         || lowered.contains("user canceled")
                                         || lowered.contains("user cancelled"))
 
@@ -165,25 +175,6 @@ final class Cleaner: ObservableObject {
                 }
                 let ok: Bool
                 let msg: String?
-                if cancelled {
-                    // Nothing in the batch ran, so nothing in it succeeded —
-                    // whatever the filesystem happens to look like.
-                    ok = false
-                    msg = "authorisation cancelled"
-                } else if case .removePathAdmin(let path) = item.action {
-                    // The path is the ground truth, in both directions. The
-                    // batch is `rm -rf … ; cmd1 ; cmd2` and a shell reports the
-                    // LAST command's status, so a failing mdutil marks a
-                    // perfectly successful rm as failed exactly as readily as
-                    // the reverse. Asking the filesystem is the only answer
-                    // that does not depend on which command happened to be last.
-                    ok = !FileManager.default.fileExists(atPath: path)
-                    msg = ok ? nil : (res.ok ? "still present after the administrator step"
-                                             : (res.err.isEmpty ? "could not remove" : res.err))
-                } else {
-                    ok = res.ok
-                    msg = res.ok ? nil : (res.err.isEmpty ? "could not run" : res.err)
-                }
                 // A shell command has no path to check afterwards, so it keeps
                 // the batch's exit status — which, for `a ; b`, is b's. The two
                 // that reach here (`tmutil thinlocalsnapshots`, `mdutil -E`)
@@ -193,6 +184,34 @@ final class Cleaner: ObservableObject {
                 // published. Shown and logged as before; not counted.
                 var counts = true
                 if case .adminShell = item.action { counts = false }
+
+                if cancelled {
+                    // Nothing in the batch ran, so nothing in it succeeded —
+                    // whatever the filesystem happens to look like.
+                    ok = false
+                    msg = "authorisation cancelled"
+                } else if case .removePathAdmin(let path) = item.action {
+                    if !existedBefore.contains(path) {
+                        // Gone before the prompt. The row should still clear,
+                        // but this run did not reclaim it.
+                        ok = true
+                        msg = "already gone"
+                        counts = false
+                    } else {
+                        // The path is the ground truth, in both directions. The
+                        // batch is `rm -rf … ; cmd1 ; cmd2` and a shell reports
+                        // the LAST command's status, so a failing mdutil marks a
+                        // perfectly successful rm as failed exactly as readily
+                        // as the reverse. Asking the filesystem is the only
+                        // answer that does not depend on what came last.
+                        ok = !Cleaner.entryExists(path)
+                        msg = ok ? nil : (res.ok ? "still present after the administrator step"
+                                                 : (res.err.isEmpty ? "could not remove" : res.err))
+                    }
+                } else {
+                    ok = res.ok
+                    msg = res.ok ? nil : (res.err.isEmpty ? "could not run" : res.err)
+                }
                 outcomes.append(CleanOutcome(
                     itemID: item.id, name: item.name, bytes: item.bytes, ok: ok,
                     message: msg, countsAsCleaned: counts))
@@ -229,6 +248,15 @@ final class Cleaner: ObservableObject {
         return item.action
     }
 
+    /// Whether there is an entry at this path at all.
+    ///
+    /// `fileExists` follows symlinks, so it answers "no" for a dangling one —
+    /// which is a real directory entry that really does need removing. This
+    /// uses lstat semantics instead.
+    nonisolated static func entryExists(_ path: String) -> Bool {
+        (try? FileManager.default.attributesOfItem(atPath: path)) != nil
+    }
+
     // MARK: - Action execution (background thread only)
 
     /// The third element is what was *actually* reclaimed, when that can be
@@ -239,6 +267,11 @@ final class Cleaner: ObservableObject {
 
         case .removePath(let p):
             if let refusal = SafePath.validate(p) { return (false, refusal.reason, nil) }
+            // Gone since the scan — emptied by hand, or by the app that owns
+            // it. `rm -rf` exits 0 on a path that is not there, so without this
+            // the scan-time estimate would be banked as space this run
+            // reclaimed. It is still a success: the row should disappear.
+            guard entryExists(p) else { return (true, "already gone", 0) }
             do {
                 try FileManager.default.removeItem(atPath: p)
                 return (true, nil, nil)

@@ -39,6 +39,14 @@ export function human(bytes) {
 }
 
 export default async function handler(req, res) {
+  // Set first, so they are present on the 405 and the 401 too. Without them a
+  // cross-origin caller gets an opaque browser error in place of a readable
+  // reason, which is the one thing an error response is for.
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  // The response varies by credential, and a shared CDN cache that ignored
+  // that would hand the gated payload to the next anonymous caller.
+  res.setHeader('Vary', 'Authorization');
+
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     res.setHeader('Allow', 'GET');
     return res.status(405).json({ error: 'method not allowed' });
@@ -52,11 +60,6 @@ export default async function handler(req, res) {
     const presented = auth.startsWith('Bearer ') ? auth.slice(7) : '';
     if (presented !== gate) return res.status(401).json({ error: 'unauthorized' });
   }
-
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  // The response varies by credential, and a shared CDN cache that ignored
-  // that would hand the gated payload to the next anonymous caller.
-  res.setHeader('Vary', 'Authorization');
 
   if (!configured) {
     res.setHeader('Cache-Control', 'no-store');

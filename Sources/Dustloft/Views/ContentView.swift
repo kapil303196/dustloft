@@ -89,8 +89,12 @@ struct RootView: View {
             // Ask once, on first run only. After that a dismissible banner
             // carries the message — never a sheet on every launch.
             if !hasSeenWelcome {
-                hasSeenWelcome = true
+                // Order matters. The metrics notice is gated on both of these,
+                // and setting the persisted one first would leave a frame in
+                // which the card could appear — and mark itself as shown —
+                // underneath the sheet that is covering it.
                 showWelcome = true
+                hasSeenWelcome = true
                 return
             }
             // Cached results are shown straight away; a fresh scan only starts
@@ -167,7 +171,12 @@ struct RootView: View {
                     UpdateBanner(updater: updater).padding(.bottom, DS.s4)
                 }
 
-                if !metrics.noticeSeen && !metrics.isSuppressedByEnvironment {
+                // Not while the first-run sheet is covering the window. The
+                // card marks itself as shown when it appears, and that mark is
+                // what permits anything to be sent at all — so it has to mean
+                // "was on screen", not "was in the view tree behind a modal".
+                if hasSeenWelcome && !showWelcome
+                    && !metrics.noticeSeen && !metrics.isSuppressedByEnvironment {
                     MetricsNotice(metrics: metrics).padding(.bottom, DS.s4)
                 }
 

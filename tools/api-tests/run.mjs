@@ -213,9 +213,17 @@ await t('a token-gated reply is never publicly cacheable', async () => {
 
 await t('stats honours a token when one is set', async () => {
   process.env.DUSTLOFT_STATS_TOKEN = 'sekrit';
-  assert.equal((await get()).code, 401);
+  const refused = await get();
+  assert.equal(refused.code, 401);
+  // A refusal a browser cannot read is an opaque network error, not a reason.
+  assert.equal(refused.headers['access-control-allow-origin'], '*');
   assert.equal((await get({ headers: { authorization: 'Bearer sekrit' } })).code, 200);
   delete process.env.DUSTLOFT_STATS_TOKEN;
+
+  const { req, res } = mock('POST');
+  await stats(req, res);
+  assert.equal(res.code, 405);
+  assert.equal(res.headers['access-control-allow-origin'], '*');
 });
 
 console.log(`\n${n} checks passed against a real Redis.`);
