@@ -99,6 +99,18 @@ struct RootView: View {
             await updater.check(silent: true)
             metrics.reportIfNeeded()
         }
+        .task {
+            // The daily beat only happens if something asks on the day, and the
+            // only things that ask are launch and a clean. Without this, an app
+            // left open for a week reports once, and "about once a day" — which
+            // the notice, the README and the privacy page all say — is false.
+            // reportIfNeeded is throttled, so an hourly nudge costs nothing.
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 3_600 * 1_000_000_000)
+                if Task.isCancelled { break }
+                metrics.reportIfNeeded()
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .dustloftCheckUpdates)) { _ in
             Task { await updater.check() }
         }

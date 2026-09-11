@@ -19,7 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/blog/_shared.css">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "What Dustloft sends", "description": "The exact message Dustloft sends, field by field, and how to switch it off.", "url": "https://dustloft.com/privacy", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.com"}, "datePublished": "2026-09-11", "dateModified": "2026-09-11", "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What does Dustloft send?", "acceptedAnswer": {"@type": "Answer", "text": "One line, about once a day, with three fields: a random identifier the app generated for itself, the total number of bytes that copy has reclaimed, and its version number. Nothing else."}}, {"@type": "Question", "name": "Can Dustloft see my files?", "acceptedAnswer": {"@type": "Answer", "text": "It reads your disk to measure it, and none of that leaves the machine. No file name, no path and no directory listing is ever sent, and the log of what was removed is written to your own disk and uploaded nowhere."}}, {"@type": "Question", "name": "How do I switch it off?", "acceptedAnswer": {"@type": "Answer", "text": "The card shown on first run has a Turn it off button, and the switch stays in the Overview footer afterwards. To disable it before the app is ever launched, run launchctl setenv DUSTLOFT_NO_METRICS 1. Turning it off stops it permanently; there is no final report."}}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What does Dustloft send?", "acceptedAnswer": {"@type": "Answer", "text": "One line, about once a day, with three fields: a random identifier the app generated for itself, the total number of bytes that copy has reclaimed, and its version number. Nothing else."}}, {"@type": "Question", "name": "Can Dustloft see my files?", "acceptedAnswer": {"@type": "Answer", "text": "It reads your disk to measure it, and none of that leaves the machine. No file name, no path and no directory listing is ever sent, and the log of what was removed is written to your own disk and uploaded nowhere."}}, {"@type": "Question", "name": "How do I switch it off?", "acceptedAnswer": {"@type": "Answer", "text": "The card shown on first run has a Turn it off button, and the switch stays in the Overview footer afterwards. To disable it before the app is ever launched, run launchctl setenv DUSTLOFT_NO_METRICS 1. Turning it off stops it permanently; there is no final report."}}, {"@type": "Question", "name": "Does the Dustloft website track visitors?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, separately from the app. dustloft.com loads Microsoft Clarity, which records page usage and session replays and sets cookies, governed by Microsoft's privacy statement. It is website analytics and has nothing to do with the app: installing Dustloft does not opt you into it, and visiting the site sends nothing to the app's counter."}}]}</script>
 <script>
 (function(c,l,a,r,i,t,y){
     c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -36,7 +36,7 @@
 <h1>What Dustloft sends</h1>
 <p class="meta">Privacy · 3 min read · Updated September 2026</p>
 
-<div class="answer"><p><strong>Short answer:</strong> one line, about once a day, containing a random identifier, a byte total and a version number. Nothing about the contents of your disk ever leaves it — no file name, no path, no directory listing, no account, no email address. You can switch it off in the app, or before the app is ever launched.</p></div>
+<div class="answer"><p><strong>Short answer:</strong> the app sends one line, about once a day, containing a random identifier, a byte total and a version number. Nothing about the contents of your disk ever leaves it — no file name, no path, no directory listing, no account, no email address. You can switch it off in the app, or before the app is ever launched. This website is a separate matter and <a href="#website">has its own section below</a>.</p></div>
 
 <h2>The entire message</h2>
 
@@ -82,6 +82,14 @@
 
 <p>When that is set, the app never generates an identifier at all.</p>
 
+<h2 id="website">This website is a separate thing</h2>
+
+<p>Everything above is about the app. This site is not the app, and it would be sleight of hand to describe one and let you assume the other.</p>
+
+<p>dustloft.com loads <a href="https://learn.microsoft.com/en-us/clarity/setup-and-installation/about-clarity" rel="nofollow">Microsoft Clarity</a>, which records how pages are used — clicks, scrolling, and session replays — and which sets cookies and processes your IP address on Microsoft's side. It runs on every page here, this one included. What it collects is governed by <a href="https://privacy.microsoft.com/privacystatement" rel="nofollow">Microsoft's privacy statement</a>, not by anything on this page.</p>
+
+<p>That is ordinary website analytics and it is worth saying plainly rather than burying: <strong>the app's promises above do not extend to this website, and the website's analytics do not extend to the app.</strong> Installing Dustloft does not opt you into Clarity; visiting this page does not send anything to the app's counter. Browser-level tracking protection, or any content blocker, stops Clarity here without affecting the app at all.</p>
+
 <h2>The other network request</h2>
 
 <p>On launch, Dustloft asks the GitHub Releases API whether a newer version exists. That request goes to GitHub, not to us, and carries nothing but the request itself.</p>
@@ -96,7 +104,7 @@
 <a class="btn" href="/#install">Install Dustloft</a>
 </div>
 </div></article>
-<footer><div class="wrap">Dustloft — MIT licensed. No ads, no account, no personal data. ·
+<footer><div class="wrap">Dustloft — MIT licensed. No ads, no accounts, no subscription. ·
 <a href="/">Home</a> · <a href="/blog/">All guides</a> · <a href="/stats">Stats</a> ·
 <a href="https://github.com/kapil303196/dustloft">Source</a><br><br>
 Made with ♥ in India by <a href="https://logicspark.io">Logicspark</a></div></footer>

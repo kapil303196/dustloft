@@ -19,12 +19,14 @@ process.env.DUSTLOFT_IP_SALT = 'fixed-salt-for-tests';
 // port nothing else was listening on, and is shut down again afterwards.
 await shim.client.cmd(['FLUSHALL']);
 
-const { default: ping } = await import('../../site/api/ping.mjs');
+const { default: ping, clientIP } = await import('../../site/api/ping.mjs');
 const { default: stats } = await import('../../site/api/stats.mjs');
 
 function mock(method, body, { ip = '203.0.113.7', headers = {} } = {}) {
-  // Spread last so a test can replace the forwarding headers outright.
-  const req = { method, body, headers: { 'x-real-ip': ip, ...headers } };
+  // Spread last so a test can replace the forwarding headers outright; an
+  // explicit undefined ip drops the platform header so the fallback is used.
+  const base = ip === undefined ? {} : { 'x-real-ip': ip };
+  const req = { method, body, headers: { ...base, ...headers } };
   const res = {
     code: 0, payload: undefined, headers: {},
     setHeader(k, v) { this.headers[k.toLowerCase()] = v; return this; },
@@ -146,19 +148,41 @@ await t('every rate-limit bucket carries a TTL', async () => {
   }
 });
 
+await t('the address comes from the platform, or the last hop — never the first', () => {
+  // The leftmost x-forwarded-for entry is whatever the caller wrote, so these
+  // assertions are the whole defence: flip the fallback to hops[0] and the
+  // last one here fails.
+  assert.equal(clientIP({ headers: { 'x-vercel-forwarded-for': '203.0.113.9',
+                                     'x-real-ip': '198.51.100.1',
+                                     'x-forwarded-for': '10.0.0.1, 198.51.100.1' } }), '203.0.113.9');
+  assert.equal(clientIP({ headers: { 'x-real-ip': '198.51.100.1',
+                                     'x-forwarded-for': '10.0.0.1, 198.51.100.1' } }), '198.51.100.1');
+  assert.equal(clientIP({ headers: { 'x-forwarded-for': '10.0.0.1, 198.51.100.1' } }), '198.51.100.1');
+  assert.equal(clientIP({ headers: { 'x-forwarded-for': ' 198.51.100.1 ' } }), '198.51.100.1');
+  assert.equal(clientIP({ headers: {} }), '');
+});
+
 await t('a forged x-forwarded-for does not dodge the limiter', async () => {
   await shim.client.cmd(['FLUSHALL']);
   let limited = 0;
   for (let i = 0; i < 40; i++) {
-    // The leftmost entry is whatever the caller wrote. Trusting it would let
-    // one host randomise the header and never be limited at all.
+    // No platform header at all, so the fallback is what has to hold: one host
+    // randomising the part it controls must still land in the same bucket.
     const r = await post(
       { id: A, cleaned: 10 },
-      { headers: { 'x-forwarded-for': `10.0.0.${i}, 198.51.100.77`, 'x-real-ip': '198.51.100.77' } }
+      { headers: { 'x-forwarded-for': `10.0.0.${i}, 198.51.100.77` }, ip: undefined }
     );
     if (r.code === 429) limited++;
   }
   assert.ok(limited >= 5, `expected throttling, got ${limited}`);
+});
+
+await t('a raw Buffer body is decoded, not rejected', async () => {
+  await shim.client.cmd(['FLUSHALL']);
+  const { req, res } = mock('POST', Buffer.from(JSON.stringify({ id: A, cleaned: 77 })));
+  await ping(req, res);
+  assert.equal(res.code, 204);
+  assert.equal((await get()).payload.cleaned.bytes, 77);
 });
 
 await t('a token-gated reply is never publicly cacheable', async () => {

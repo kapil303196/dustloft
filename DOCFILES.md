@@ -111,6 +111,14 @@ not survive being split across round trips.
 The client cap `MetricsRules.maxCleaned` and the server's `MAX_CLEANED` are the
 same number on purpose. Move one and move the other.
 
+**The website is not the app.** dustloft.com loads Microsoft Clarity on every
+page, including `/privacy`. That is ordinary site analytics and is nothing to do
+with the app's counter, but a page describing one while silently doing the other
+is sleight of hand — so `site/privacy.html` has a section naming it. If Clarity
+is ever removed, or added to, that section moves with it. (Running a session
+recorder on the page that explains your privacy is a fair thing to object to;
+removing the tag from `privacy.html` alone is a one-block deletion.)
+
 If this section and the code ever disagree, so do `README.md` and
 `site/privacy.html`, and all four need fixing together.
 

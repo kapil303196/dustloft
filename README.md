@@ -87,6 +87,11 @@ launchctl setenv DUSTLOFT_NO_METRICS 1
 
 Turning it off stops it permanently — there is no final report on the way out.
 
+**The website is a separate matter.** dustloft.com runs Microsoft Clarity, which
+is ordinary website analytics and has nothing to do with the app — installing
+Dustloft does not opt you into it. It is described on
+[the privacy page](https://dustloft.com/privacy).
+
 The code is worth more than the paragraph: [`Sources/Dustloft/Metrics.swift`](Sources/Dustloft/Metrics.swift)
 is the entire client, and the payload is pinned by a test that fails if a fourth
 field is ever added.

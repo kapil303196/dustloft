@@ -24,7 +24,9 @@ const int = (v) => {
   return Number.isFinite(n) ? n : 0;
 };
 
-/** Binary units, to match what macOS and the app itself show. */
+/** Decimal units — 1 kB is 1000 bytes — because that is what macOS reports and
+ *  what ByteCountFormatter(.file) gives the app. Do not "fix" this to 1024: the
+ *  site would then disagree with every figure Dustloft shows. */
 export function human(bytes) {
   const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
   let n = Math.abs(bytes);

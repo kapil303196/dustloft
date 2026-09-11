@@ -37,7 +37,7 @@ const IP_SALT = process.env.DUSTLOFT_IP_SALT || randomBytes(32).toString('hex');
  * flooding the endpoint. It cannot stop someone minting fresh UUIDs to inflate
  * the install count, and nothing short of an account could.
  */
-function clientIP(req) {
+export function clientIP(req) {
   const first = (value) => {
     if (Array.isArray(value)) return value.length ? String(value[0]).trim() : '';
     return typeof value === 'string' ? value.trim() : '';
@@ -56,8 +56,11 @@ function clientIP(req) {
  *  when the client sends none. Both shapes are handled so a malformed request
  *  is a 400 rather than a crash. */
 async function readBody(req) {
-  if (req.body && typeof req.body === 'object') return req.body;
+  // Order matters: a Buffer is an object, so checking for one first is what
+  // stops a raw body being handed back unparsed and rejected as malformed.
+  if (Buffer.isBuffer(req.body)) return JSON.parse(req.body.toString('utf8'));
   if (typeof req.body === 'string') return JSON.parse(req.body);
+  if (req.body && typeof req.body === 'object' && !Array.isArray(req.body)) return req.body;
   const chunks = [];
   let size = 0;
   for await (const chunk of req) {
