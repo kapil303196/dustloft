@@ -15,26 +15,26 @@ final class MetricsTests: XCTestCase {
 
     func test_reportsOnceWhenNothingHasEverBeenSent() {
         XCTAssertTrue(MetricsRules.shouldReport(
-            now: epoch, lastReport: nil, reportedTotal: 0, currentTotal: 0, everReported: true))
+            now: epoch, lastAttempt: nil, lastSuccess: nil, reportedTotal: 0, currentTotal: 0, consecutiveFailures: 0))
     }
 
     func test_doesNotReportAgainImmediatelyAfterCleaning() {
         // Two cleans a few seconds apart must not become two reports.
         XCTAssertFalse(MetricsRules.shouldReport(
             now: epoch.addingTimeInterval(5),
-            lastReport: epoch, reportedTotal: 100, currentTotal: 900, everReported: true))
+            lastAttempt: epoch, lastSuccess: epoch, reportedTotal: 100, currentTotal: 900, consecutiveFailures: 0))
     }
 
     func test_reportsOnceTheTotalMovesAndTheFloorHasPassed() {
         XCTAssertTrue(MetricsRules.shouldReport(
             now: epoch.addingTimeInterval(120),
-            lastReport: epoch, reportedTotal: 100, currentTotal: 900, everReported: true))
+            lastAttempt: epoch, lastSuccess: epoch, reportedTotal: 100, currentTotal: 900, consecutiveFailures: 0))
     }
 
     func test_staysSilentWhenNothingChanged() {
         XCTAssertFalse(MetricsRules.shouldReport(
             now: epoch.addingTimeInterval(3600),
-            lastReport: epoch, reportedTotal: 900, currentTotal: 900, everReported: true))
+            lastAttempt: epoch, lastSuccess: epoch, reportedTotal: 900, currentTotal: 900, consecutiveFailures: 0))
     }
 
     /// Without this an install that updates but never cleans again would keep
@@ -42,38 +42,85 @@ final class MetricsTests: XCTestCase {
     func test_heartbeatReportsEvenWithNoChange() {
         XCTAssertTrue(MetricsRules.shouldReport(
             now: epoch.addingTimeInterval(24 * 60 * 60),
-            lastReport: epoch, reportedTotal: 900, currentTotal: 900, everReported: true))
+            lastAttempt: epoch, lastSuccess: epoch, reportedTotal: 900, currentTotal: 900, consecutiveFailures: 0))
     }
 
-    /// The stamp is written on the attempt, so a first report that failed —
-    /// offline at launch, or a 503 — would otherwise put the install behind the
-    /// daily beat, making it not exist for a day and never at all if the app is
-    /// not reopened. Counting installs is the whole point.
-    func test_aFirstReportThatFailedIsRetriedSoon() {
-        let pending = { (seconds: TimeInterval) in
+    // MARK: Offline
+
+    /// A first report that never landed — offline at launch, or a 503 — must
+    /// keep being retried. Until it lands the install does not exist, and
+    /// counting installs is the whole point.
+    func test_aFirstReportThatNeverLandedKeepsBeingRetried() {
+        let pending = { (seconds: TimeInterval, failures: Int) in
             MetricsRules.shouldReport(
-                now: self.epoch.addingTimeInterval(seconds), lastReport: self.epoch,
-                reportedTotal: 0, currentTotal: 0, everReported: false)
+                now: self.epoch.addingTimeInterval(seconds),
+                lastAttempt: self.epoch, lastSuccess: nil,
+                reportedTotal: 0, currentTotal: 0, consecutiveFailures: failures)
         }
-        XCTAssertFalse(pending(5), "not instantly, or a dead endpoint gets hammered")
-        XCTAssertTrue(pending(120))
-        XCTAssertTrue(pending(3600))
-
-        // Once one has got through, the ordinary daily beat takes over.
-        XCTAssertFalse(MetricsRules.shouldReport(
-            now: epoch.addingTimeInterval(3600), lastReport: epoch,
-            reportedTotal: 0, currentTotal: 0, everReported: true))
+        XCTAssertFalse(pending(5, 1), "not instantly, or a dead endpoint gets hammered")
+        XCTAssertTrue(pending(300, 1))
+        XCTAssertTrue(pending(24 * 60 * 60, 30), "never gives up altogether")
     }
 
-    /// A clock corrected backwards by months would otherwise freeze reporting
-    /// until real time caught up with the stale stamp.
-    func test_clockMovingBackwardsDoesNotWedgeIt() {
+    /// The point of two clocks. A machine offline for a week fails an attempt
+    /// a day, and if the daily beat ran off the attempt it would be pushed a
+    /// day further away every time — so it would never be due, exactly while
+    /// disconnected. Measured from the last success, it is overdue instead.
+    func test_failedAttemptsDoNotPushTheDailyBeatAway() {
+        let week: TimeInterval = 7 * 24 * 60 * 60
+        let now = epoch.addingTimeInterval(week)
+
         XCTAssertTrue(MetricsRules.shouldReport(
-            now: epoch.addingTimeInterval(-99_999),
-            lastReport: epoch, reportedTotal: 900, currentTotal: 900, everReported: true))
+            now: now,
+            // Tried a moment ago and failed; last landed a week back.
+            lastAttempt: now.addingTimeInterval(-7_200), lastSuccess: epoch,
+            reportedTotal: 900, currentTotal: 900, consecutiveFailures: 40))
+    }
+
+    /// Retries slow down while something is wrong, and stop slowing down at a
+    /// bound — so a machine that has been offline for days is never more than
+    /// that far from reporting once it is back, even before the path monitor
+    /// clears the count.
+    func test_backoffDoublesAndThenStops() {
+        XCTAssertEqual(MetricsRules.retryDelay(consecutiveFailures: 0), 60)
+        XCTAssertEqual(MetricsRules.retryDelay(consecutiveFailures: 1), 120)
+        XCTAssertEqual(MetricsRules.retryDelay(consecutiveFailures: 4), 960)
+        XCTAssertEqual(MetricsRules.retryDelay(consecutiveFailures: 99),
+                       MetricsRules.maxRetryInterval)
+        // Unbounded shifting is undefined behaviour, not merely a large number.
+        XCTAssertEqual(MetricsRules.retryDelay(consecutiveFailures: .max),
+                       MetricsRules.maxRetryInterval)
+    }
+
+    /// Bytes cleaned while disconnected are not lost: the total is cumulative,
+    /// so whatever failed to send is carried by whatever lands next.
+    @MainActor
+    func test_cleaningWhileOfflineIsCarriedByTheNextReport() throws {
+        let (defaults, name) = try scratchDefaults()
+        defer { defaults.removePersistentDomain(forName: name) }
+
+        // With no endpoint nothing is even attempted, which for the question
+        // this asks — what survives when nothing lands — is the same thing.
+        let offline = Metrics(defaults: defaults, endpoint: nil,
+                              suppressedByEnvironment: false, noticeGrace: 0)
+        offline.markNoticeShown()
+        offline.recordCleaned(30_000_000_000)
+        offline.recordCleaned(12_000_000_000)
+        XCTAssertEqual(offline.lifetimeCleaned, 42_000_000_000)
+
+        // Nothing was ever acknowledged, so nothing is treated as sent.
+        XCTAssertEqual(defaults.integer(forKey: "metrics.reportedTotal"), 0)
+        XCTAssertFalse(defaults.bool(forKey: "metrics.everReported"))
+
+        // A later launch still has the whole figure to send.
+        XCTAssertEqual(
+            Metrics(defaults: defaults, endpoint: nil,
+                    suppressedByEnvironment: false, noticeGrace: 0).lifetimeCleaned,
+            42_000_000_000)
     }
 
     // MARK: Accumulating
+
 
     func test_accumulateAddsAndIgnoresNonPositive() {
         XCTAssertEqual(MetricsRules.accumulate(10, 5), 15)

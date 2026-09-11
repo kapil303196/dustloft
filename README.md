@@ -79,6 +79,15 @@ restart. The figures all this feeds are public at
 **[dustloft.com/stats](https://dustloft.com/stats)**; there is no endpoint, there
 or anywhere, that returns a single install's row.
 
+**Offline.** Dustloft does not need a network for anything it actually does —
+scanning, measuring and cleaning are entirely local, and a report that cannot be
+sent fails silently without holding anything up. The total is cumulative rather
+than a stream of events, so nothing is lost by a report not landing: whatever
+one attempt could not send, the next one carries. The app also watches for the
+network coming back and reports then, so a laptop that reclaimed 40 GB on a
+plane is counted when it reconnects rather than whenever it next happens to be
+opened.
+
 **Turning it off.** The first-run card shows the message above with your real
 numbers in it, and has a "Turn it off" button. The switch stays in the Overview
 footer afterwards. To disable it before the app is ever launched:

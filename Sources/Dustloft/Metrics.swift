@@ -1,4 +1,5 @@
 import Foundation
+import Network
 
 /// The exact and entire contents of a report.
 ///
@@ -35,34 +36,60 @@ enum MetricsRules {
     /// Report this often even when nothing has changed, so that the version
     /// tally reflects installs that update but never clean anything again.
     static let heartbeat: TimeInterval = 24 * 60 * 60
-    /// How soon to try again while nothing has ever got through.
-    static let firstReportRetry: TimeInterval = 60
+    /// The longest two attempts are ever allowed to be apart, however many
+    /// have failed in a row. Low enough that a machine which has been offline
+    /// for days is never far from reporting once it is back; high enough that
+    /// an endpoint which is genuinely down is not being hammered by everyone.
+    static let maxRetryInterval: TimeInterval = 2 * 60 * 60
 
+    /// How long to wait before trying again, given how many attempts in a row
+    /// have failed. Doubling from `minInterval`, capped.
+    static func retryDelay(consecutiveFailures: Int,
+                           minInterval: TimeInterval = MetricsRules.minInterval,
+                           cap: TimeInterval = MetricsRules.maxRetryInterval) -> TimeInterval {
+        guard consecutiveFailures > 0 else { return minInterval }
+        // Clamped before shifting: 1 << 64 is undefined, and a machine left
+        // offline for a month would otherwise get there.
+        let doublings = min(consecutiveFailures, 20)
+        return min(minInterval * TimeInterval(1 << doublings), cap)
+    }
+
+    /// Whether to attempt a report now.
+    ///
+    /// Two clocks, not one, and the difference is the whole of how this
+    /// behaves offline. `lastAttempt` paces retries so a dead endpoint is not
+    /// hammered. `lastSuccess` drives the daily beat — measured from the last
+    /// report that actually landed, so a week with no connection does not
+    /// become a week of pushing the next one further away.
     static func shouldReport(now: Date,
-                             lastReport: Date?,
+                             lastAttempt: Date?,
+                             lastSuccess: Date?,
                              reportedTotal: Int64,
                              currentTotal: Int64,
-                             everReported: Bool,
+                             consecutiveFailures: Int,
                              minInterval: TimeInterval = MetricsRules.minInterval,
                              heartbeat: TimeInterval = MetricsRules.heartbeat,
-                             firstReportRetry: TimeInterval = MetricsRules.firstReportRetry) -> Bool {
-        guard let lastReport else { return true }
-        let elapsed = now.timeIntervalSince(lastReport)
+                             cap: TimeInterval = MetricsRules.maxRetryInterval) -> Bool {
+        guard let lastAttempt else { return true }
+        let sinceAttempt = now.timeIntervalSince(lastAttempt)
         // A clock that moved backwards would otherwise freeze reporting until
         // it caught up, which for a manually corrected clock can be months.
-        if elapsed < 0 { return true }
+        if sinceAttempt < 0 { return true }
 
-        // Nothing has ever got through. The stamp is written on the attempt,
-        // not on success — deliberately, so a dead endpoint is not hammered —
-        // but applying the daily beat to a *first* attempt that failed would
-        // mean a Mac that happened to be offline at first launch does not
-        // exist for a day, and never at all if the app is not reopened after
-        // it. Counting installs is the entire point, so this one retries on a
-        // short cycle instead.
-        if !everReported { return elapsed >= firstReportRetry }
+        let wait = retryDelay(consecutiveFailures: consecutiveFailures,
+                              minInterval: minInterval, cap: cap)
+        if sinceAttempt < wait { return false }
 
-        if elapsed >= heartbeat { return true }
-        return currentTotal > reportedTotal && elapsed >= minInterval
+        // Nothing has ever landed. Keep trying on that cycle: an install that
+        // was offline the first time it ran does not exist yet, and counting
+        // installs is the entire point.
+        guard let lastSuccess else { return true }
+
+        // Something the server has not been told about.
+        if currentTotal > reportedTotal { return true }
+
+        let sinceSuccess = now.timeIntervalSince(lastSuccess)
+        return sinceSuccess < 0 || sinceSuccess >= heartbeat
     }
 
     /// Saturating, because a total that wrapped past Int64 would be reported as
@@ -136,7 +163,13 @@ final class Metrics: ObservableObject {
         static let installID     = "metrics.installID"
         static let cleanedTotal  = "metrics.cleanedTotal"
         static let reportedTotal = "metrics.reportedTotal"
-        static let lastReportAt  = "metrics.lastReportAt"
+        /// When the last attempt was made, landed or not. Named for what it
+        /// was in 1.0.44 so an install updating from it keeps its pacing.
+        static let lastAttemptAt = "metrics.lastReportAt"
+        /// When a report last actually landed. The daily beat runs off this.
+        static let lastSuccessAt = "metrics.lastSuccessAt"
+        /// Attempts that have failed in a row, for the backoff.
+        static let failures      = "metrics.failures"
         static let noticeShownAt = "metrics.noticeShownAt"
         static let everReported  = "metrics.everReported"
     }
@@ -151,6 +184,12 @@ final class Metrics: ObservableObject {
     let isSuppressedByEnvironment: Bool
     /// Launch and a clean can both ask to report within moments of each other.
     private var reportInFlight = false
+    /// Watches for the network coming back. Nil in tests, which pass no
+    /// endpoint and have no business opening one.
+    private var connectivity: NWPathMonitor?
+    /// Whether the last path update said there was a usable network, so that
+    /// "came back" can be told from "still up".
+    private var wasOnline = true
     /// How long the first-run card gets to be read and acted on before the
     /// first report goes. Injected so tests need not wait it out.
     private let noticeGrace: TimeInterval
@@ -195,6 +234,50 @@ final class Metrics: ObservableObject {
         self.noticeSeen = defaults.bool(forKey: Key.noticeSeen)
         self.noticeShown = defaults.bool(forKey: Key.noticeShown)
         self.lifetimeCleaned = Int64(defaults.integer(forKey: Key.cleanedTotal))
+
+        // Only when there is somewhere to report to, which keeps every test in
+        // this file from starting a network monitor it does not need.
+        if endpoint != nil { watchConnectivity() }
+    }
+
+    // No deinit cancelling the monitor: this object is a @StateObject on the
+    // App itself, so it lives as long as the process does and there is nothing
+    // to tidy up before that. Reaching into main-actor state from a nonisolated
+    // deinit to save nothing would be the wrong trade.
+
+    /// Reports as soon as the machine has a network again.
+    ///
+    /// Everything here works offline already: scanning and cleaning never
+    /// touch the network, a failed report is silent, and the total is
+    /// cumulative so nothing is lost by one not landing. What was missing is
+    /// the other half — noticing that the thing which made it fail has gone
+    /// away. Without this, a laptop that was offline when it cleaned 40 GB
+    /// waits for the next launch, clean, or fifteen-minute tick before trying
+    /// again, and a Mac that is only ever online briefly might never coincide
+    /// with one.
+    private func watchConnectivity() {
+        let monitor = NWPathMonitor()
+        connectivity = monitor
+        monitor.pathUpdateHandler = { [weak self] path in
+            let online = path.status == .satisfied
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                defer { self.wasOnline = online }
+                // Only on the edge. A path update also arrives when the
+                // interface changes while staying usable — Wi-Fi to Ethernet,
+                // a VPN coming up — and reporting on each of those would be a
+                // way to send far more often than "once a day" promises.
+                guard online, !self.wasOnline else { return }
+                // The reason every recent attempt failed has demonstrably
+                // gone, so the backoff those failures built up is describing a
+                // problem that no longer exists. Starting from a clean slate
+                // is what makes coming back online mean reporting now rather
+                // than in up to two hours.
+                self.defaults.set(0, forKey: Key.failures)
+                self.reportIfNeeded()
+            }
+        }
+        monitor.start(queue: DispatchQueue.global(qos: .utility))
     }
 
     /// An escape hatch for anyone deploying this somewhere it must not phone
@@ -225,7 +308,7 @@ final class Metrics: ObservableObject {
     /// identifier and send before the button offering to stop it had been up
     /// for a second. The gate has to be on reporting itself, not on one caller.
     private var firstReportDue: Bool {
-        guard defaults.double(forKey: Key.lastReportAt) == 0 else { return true }
+        guard defaults.double(forKey: Key.lastAttemptAt) == 0 else { return true }
         let shownAt = defaults.double(forKey: Key.noticeShownAt)
         guard shownAt > 0 else { return false }
         return Date().timeIntervalSince1970 - shownAt >= noticeGrace
@@ -276,28 +359,28 @@ final class Metrics: ObservableObject {
         guard !reportInFlight, isReporting, let endpoint = self.endpoint else { return }
 
         let total = lifetimeCleaned
-        let stamp = defaults.double(forKey: Key.lastReportAt)
-        let last = stamp > 0 ? Date(timeIntervalSince1970: stamp) : nil
         guard MetricsRules.shouldReport(
             now: now,
-            lastReport: last,
+            lastAttempt: date(Key.lastAttemptAt),
+            lastSuccess: lastSuccess,
             reportedTotal: Int64(defaults.integer(forKey: Key.reportedTotal)),
             currentTotal: total,
-            everReported: defaults.bool(forKey: Key.everReported)) else { return }
+            consecutiveFailures: defaults.integer(forKey: Key.failures)) else { return }
 
         let report = MetricsReport(id: installID(), cleaned: total, version: Metrics.appVersion)
         reportInFlight = true
-        // Stamped on the attempt rather than on success. Recorded only when it
-        // worked, an endpoint that is down would be retried on every launch and
-        // every clean — a flood aimed at something already struggling. The
-        // total is cumulative, so nothing is lost by waiting for the next turn.
-        defaults.set(now.timeIntervalSince1970, forKey: Key.lastReportAt)
+        // Stamped on the attempt, and used only to pace retries. Recorded
+        // solely on success, an endpoint that is down would be retried from
+        // every launch and every clean — a flood aimed at something already
+        // struggling. The daily beat runs off Key.lastSuccessAt instead, so
+        // failing does not push the next report further away.
+        defaults.set(now.timeIntervalSince1970, forKey: Key.lastAttemptAt)
 
         Task { [weak self] in
             let delivered = await Metrics.send(report, to: endpoint)
             guard let self else { return }
             self.reportInFlight = false
-            if delivered { self.markReported(total: total) }
+            if delivered { self.markReported(total: total) } else { self.markFailed() }
         }
     }
 
@@ -309,6 +392,28 @@ final class Metrics: ObservableObject {
         // Distinct from reportedTotal, which a perfectly good first report of
         // zero bytes would leave at zero.
         defaults.set(true, forKey: Key.everReported)
+        defaults.set(Date().timeIntervalSince1970, forKey: Key.lastSuccessAt)
+        defaults.set(0, forKey: Key.failures)
+    }
+
+    private func markFailed() {
+        defaults.set(defaults.integer(forKey: Key.failures) + 1, forKey: Key.failures)
+    }
+
+    private func date(_ key: String) -> Date? {
+        let stamp = defaults.double(forKey: key)
+        return stamp > 0 ? Date(timeIntervalSince1970: stamp) : nil
+    }
+
+    /// When a report last landed.
+    ///
+    /// An install updating from 1.0.44 has reported but has no success stamp,
+    /// because that build kept only the one clock. Its attempt stamp is the
+    /// closest thing to the truth and is very nearly it, since the stamp was
+    /// written moments before the report that set everReported.
+    private var lastSuccess: Date? {
+        if let recorded = date(Key.lastSuccessAt) { return recorded }
+        return defaults.bool(forKey: Key.everReported) ? date(Key.lastAttemptAt) : nil
     }
 
     /// Created on first use rather than at launch, so a person who turns this
@@ -344,6 +449,13 @@ final class Metrics: ObservableObject {
         config.urlCache = nil
         config.httpShouldSetCookies = false
         config.timeoutIntervalForRequest = 10
+        config.timeoutIntervalForResource = 30
+        // Fail immediately when there is no network rather than holding the
+        // request open until one appears. Offline is a normal state here, not
+        // an error to wait out: the total is cumulative, the path monitor
+        // notices when connectivity returns, and a task parked indefinitely
+        // would keep reportInFlight set and block every later attempt.
+        config.waitsForConnectivity = false
         let session = URLSession(configuration: config)
         defer { session.finishTasksAndInvalidate() }
 
