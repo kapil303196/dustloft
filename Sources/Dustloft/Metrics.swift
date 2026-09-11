@@ -176,7 +176,13 @@ final class Metrics: ObservableObject {
     /// An escape hatch for anyone deploying this somewhere it must not phone
     /// home, without needing to open the app to say so. The instance reads this
     /// once at construction; prefer `isSuppressedByEnvironment` everywhere else.
-    static var suppressedByEnvironment: Bool {
+    ///
+    /// `nonisolated` because it is the default for `init`, and a default
+    /// argument is evaluated wherever the initialiser is called — including
+    /// `@StateObject private var metrics = Metrics()` in a struct's property
+    /// initialiser, which is not on the main actor. Reading the process
+    /// environment needs no isolation to be safe.
+    nonisolated static var suppressedByEnvironment: Bool {
         MetricsRules.suppresses(ProcessInfo.processInfo.environment["DUSTLOFT_NO_METRICS"])
     }
 
