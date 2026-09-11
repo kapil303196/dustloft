@@ -49,6 +49,24 @@ if pgrep -f "${APP}.app" >/dev/null 2>&1; then
 fi
 
 say "Installing to ${TARGET}"
+# Deleting the old copy needs write access to every folder inside it. A copy
+# that was installed with administrator rights (the in-app updater falls back
+# to that) is owned by root, so rm fails even though /Applications itself is
+# writable. Remove that one with sudo; the new copy below is still installed as
+# this user, so the next update will not need a password.
+locked_dir() {
+  find "$TARGET" -type d 2>/dev/null | while IFS= read -r d; do
+    [ -w "$d" ] || { printf '%s\n' "$d"; break; }
+  done
+}
+if [ -e "$TARGET" ] && [ -n "$(locked_dir)" ]; then
+  say "The installed copy is owned by another user (usually root), so macOS needs your password to remove it"
+  sudo rm -rf "$TARGET" || {
+    echo "Could not remove ${TARGET}."
+    echo "Move it to the Trash in Finder (it will ask for an administrator password), then run this again."
+    exit 1
+  }
+fi
 rm -rf "$TARGET"
 # ditto preserves the code signature and extended attributes; cp does not.
 ditto "$TMP/mnt/${APP}.app" "$TARGET"

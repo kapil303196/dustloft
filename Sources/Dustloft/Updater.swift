@@ -137,7 +137,12 @@ final class Updater: ObservableObject {
 
             let script = "/bin/rm -rf '\(target)' && /usr/bin/ditto '\(staged)' '\(target)'"
             var res = Shell.run("/bin/sh", ["-c", script], timeout: 300)
-            if !res.ok { res = Shell.runAsAdmin(script) }   // /Applications may need elevation
+            if !res.ok {
+                // /Applications may need elevation. Hand the new copy back to
+                // this user afterwards: left owned by root, the next update and
+                // the install script could not delete it without a password.
+                res = Shell.runAsAdmin(script + " && /usr/sbin/chown -R \(getuid()):\(getgid()) '\(target)'")
+            }
             guard res.ok else {
                 message = "Could not replace the installed app: \(res.err)"
                 return
