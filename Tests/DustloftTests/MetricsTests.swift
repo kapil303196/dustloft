@@ -224,6 +224,33 @@ final class MetricsTests: XCTestCase {
         XCTAssertTrue(Cleaner.entryExists(link.path))
     }
 
+    /// The one place the same bytes could be billed twice: Dustloft moves a
+    /// permanent item to the Trash and counts it, the next scan offers that
+    /// same file from the Trash, and emptying it there would count it again
+    /// for space that is only freed once.
+    func test_theTrashNeverCountsTwice() {
+        let home = NSHomeDirectory()
+        XCTAssertTrue(Cleaner.isInsideTrash(home + "/.Trash/holiday.mov"))
+        XCTAssertTrue(Cleaner.isInsideTrash(home + "/.Trash"))
+        XCTAssertTrue(Cleaner.isInsideTrash("/Volumes/Backup/.Trashes/501/old.dmg"))
+
+        XCTAssertFalse(Cleaner.isInsideTrash(home + "/Movies/holiday.mov"))
+        // A lookalike prefix is not a match.
+        XCTAssertFalse(Cleaner.isInsideTrash(home + "/.Trashcan/thing"))
+        XCTAssertFalse(Cleaner.isInsideTrash(home + "/Library/Caches/Trash/thing"))
+    }
+
+    func test_targetPathIsTheOneTheActionTouches() {
+        XCTAssertEqual(Cleaner.targetPath(of: .removePath("/a")), "/a")
+        XCTAssertEqual(Cleaner.targetPath(of: .trashPath("/b")), "/b")
+        XCTAssertEqual(Cleaner.targetPath(of: .removePathAdmin("/c")), "/c")
+        XCTAssertEqual(Cleaner.targetPath(of: .gitGC("/d")), "/d")
+        // No path means nothing to check against the Trash.
+        XCTAssertNil(Cleaner.targetPath(of: .dockerPrune))
+        XCTAssertNil(Cleaner.targetPath(of: .ollamaModel("llama3")))
+        XCTAssertNil(Cleaner.targetPath(of: .adminShell("/usr/bin/mdutil -E /")))
+    }
+
     // MARK: The off switch
 
     func test_environmentSwitchRecognisesOffAndFailsClosed() {

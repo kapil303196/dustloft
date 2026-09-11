@@ -85,6 +85,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'expected a small JSON body' });
   }
 
+  // `null`, `123`, `"hello"` and `[]` are all valid JSON and none of them is a
+  // report. Checked here rather than relied upon: reading .id off null throws,
+  // and a 500 for a malformed body tells the client to try again forever.
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return res.status(400).json({ error: 'expected a JSON object' });
+  }
+
   // Lower-cased before it is used as the dedup key. The regex accepts either
   // case and the shipped client always sends lower, but one identifier arriving
   // in two cases would otherwise be two installs — and its cumulative total

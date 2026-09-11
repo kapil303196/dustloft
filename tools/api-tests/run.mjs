@@ -61,6 +61,17 @@ await t('rejects a non-POST', async () => {
   assert.equal(res.code, 405);
 });
 
+await t('rejects a body that is valid JSON but not a report', async () => {
+  // Every one of these is valid JSON. Reading .id off null throws, and a 500
+  // would tell a client to keep trying something that can never work.
+  for (const body of [null, 123, 'hello', [], true]) {
+    assert.equal((await post(body)).code, 400, JSON.stringify(body));
+  }
+  const raw = mock('POST', Buffer.from('null'));
+  await ping(raw.req, raw.res);
+  assert.equal(raw.res.code, 400);
+});
+
 await t('rejects a malformed id', async () => {
   assert.equal((await post({ id: 'nope', cleaned: 1 })).code, 400);
   assert.equal((await post({ cleaned: 1 })).code, 400);

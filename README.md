@@ -67,7 +67,8 @@ it:
 
 `cleaned` counts items sent to the Trash as well as those deleted outright — you
 asked for both to go — which is why everything shown against this figure says
-"cleaned" rather than "freed".
+"cleaned" rather than "freed". Each item counts once, at the moment it leaves
+the active filesystem, and never again when the Trash is emptied.
 
 The request's IP address is used to rate limit, and only that. A salted hash of
 it becomes a counter that expires after sixty seconds; the address itself is

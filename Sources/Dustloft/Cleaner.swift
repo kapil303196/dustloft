@@ -38,8 +38,11 @@ final class Cleaner: ObservableObject {
     /// What Dustloft itself removed — items sent to the Trash included, since
     /// the person asked for those to go and they leave when the Trash is
     /// emptied. Everything shown against this figure says "cleaned" rather than
-    /// "freed" for that reason. Anything whose effect could not be measured is
-    /// excluded; see `CleanOutcome.countsAsCleaned`.
+    /// "freed" for that reason — and counted once, at the moment it leaves the
+    /// active filesystem, never again when the Trash itself is emptied.
+    ///
+    /// Anything whose effect could not be measured is excluded too; see
+    /// `CleanOutcome.countsAsCleaned`.
     ///
     /// Deliberately not `freedBytes`: that figure is overwritten by the volume
     /// delta, which is the right number to show someone staring at their disk
@@ -100,8 +103,10 @@ final class Cleaner: ObservableObject {
             // estimated before the run. Everything downstream — the results
             // list, the log and the lifetime total — uses the same number.
             let bytes = res.2 ?? item.bytes
+            let counts = Cleaner.targetPath(of: action).map { !Cleaner.isInsideTrash($0) } ?? true
             outcomes.append(CleanOutcome(itemID: item.id, name: item.name,
-                                         bytes: bytes, ok: res.0, message: res.1))
+                                         bytes: bytes, ok: res.0, message: res.1,
+                                         countsAsCleaned: counts))
             OperationLog.record(action: action, name: item.name,
                                 bytes: bytes, ok: res.0, message: res.1)
             if res.0 {
@@ -190,6 +195,11 @@ final class Cleaner: ObservableObject {
                 // published. Shown and logged as before; not counted.
                 var counts = true
                 if case .adminShell = item.action { counts = false }
+                // A root-owned file in the Trash arrives here rather than on
+                // the path above, and is the same double-count either way.
+                if let p = Cleaner.targetPath(of: item.action), Cleaner.isInsideTrash(p) {
+                    counts = false
+                }
 
                 if cancelled {
                     // Nothing in the batch ran, so nothing in it succeeded —
@@ -266,6 +276,33 @@ final class Cleaner: ObservableObject {
             return Scanners.parseDockerSize(line.split(separator: " ").map(String.init)) ?? 0
         }
         return 0
+    }
+
+    /// The filesystem path an action operates on, where it has one.
+    nonisolated static func targetPath(of action: CleanAction) -> String? {
+        switch action {
+        case .removePath(let p), .trashPath(let p), .removePathAdmin(let p), .gitGC(let p):
+            return p
+        case .ollamaModel, .dockerPrune, .adminShell, .advisory:
+            return nil
+        }
+    }
+
+    /// Whether a path is already inside a Trash.
+    ///
+    /// This is the one place the same bytes can be billed twice. Dustloft moves
+    /// a permanent-tier item to the Trash and counts it, the next scan finds
+    /// that file in the Trash and offers it again, and emptying it there would
+    /// count it a second time for work that frees the space once. The rule is
+    /// that the moment it leaves the active filesystem is the moment it counts,
+    /// and the Trash never counts.
+    ///
+    /// A component match rather than a prefix, so per-volume `.Trashes` is
+    /// covered too. A directory genuinely called `.Trash` elsewhere would go
+    /// uncounted, which is the harmless direction.
+    nonisolated static func isInsideTrash(_ path: String) -> Bool {
+        let components = (path as NSString).pathComponents
+        return components.contains(".Trash") || components.contains(".Trashes")
     }
 
     /// Whether there is an entry at this path at all.
