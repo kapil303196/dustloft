@@ -129,7 +129,7 @@ final class MetricsTests: XCTestCase {
         let (defaults, name) = try scratchDefaults()
         defer { defaults.removePersistentDomain(forName: name) }
 
-        let metrics = Metrics(defaults: defaults, endpoint: nil, suppressedByEnvironment: false)
+        let metrics = Metrics(defaults: defaults, endpoint: nil, suppressedByEnvironment: false, noticeGrace: 0)
         XCTAssertFalse(metrics.isReporting, "reported before the notice was ever drawn")
 
         metrics.markNoticeShown()
@@ -139,6 +139,30 @@ final class MetricsTests: XCTestCase {
         XCTAssertFalse(metrics.isReporting)
     }
 
+    /// Deferring the scheduled first report is not the same as gating
+    /// reporting: a clean inside the grace window takes a different route
+    /// entirely, and would send before the button offering to stop it had been
+    /// on screen for a second.
+    @MainActor
+    func test_nothingIsSentInsideTheGraceWindowEitherWay() throws {
+        let (defaults, name) = try scratchDefaults()
+        defer { defaults.removePersistentDomain(forName: name) }
+
+        let metrics = Metrics(defaults: defaults, endpoint: nil,
+                              suppressedByEnvironment: false, noticeGrace: 3_600)
+        metrics.markNoticeShown()
+        XCTAssertFalse(metrics.isReporting, "the card has only just appeared")
+
+        // The route a clean takes, which does not go past the scheduled report.
+        metrics.recordCleaned(5_000)
+        XCTAssertEqual(metrics.lifetimeCleaned, 5_000, "the total is still kept locally")
+        XCTAssertFalse(metrics.isReporting)
+
+        // And no identifier exists yet, because installID() is only reached
+        // from inside reportIfNeeded.
+        XCTAssertNil(defaults.string(forKey: "metrics.installID"))
+    }
+
     /// The environment switch has to win over everything else, including a
     /// notice that has been seen and a person who never opted out.
     @MainActor
@@ -146,7 +170,7 @@ final class MetricsTests: XCTestCase {
         let (defaults, name) = try scratchDefaults()
         defer { defaults.removePersistentDomain(forName: name) }
 
-        let metrics = Metrics(defaults: defaults, endpoint: nil, suppressedByEnvironment: true)
+        let metrics = Metrics(defaults: defaults, endpoint: nil, suppressedByEnvironment: true, noticeGrace: 0)
         metrics.markNoticeShown()
         XCTAssertFalse(metrics.optedOut)
         XCTAssertFalse(metrics.isReporting)
@@ -157,13 +181,13 @@ final class MetricsTests: XCTestCase {
         let (defaults, name) = try scratchDefaults()
         defer { defaults.removePersistentDomain(forName: name) }
 
-        let first = Metrics(defaults: defaults, endpoint: nil, suppressedByEnvironment: false)
+        let first = Metrics(defaults: defaults, endpoint: nil, suppressedByEnvironment: false, noticeGrace: 0)
         first.recordCleaned(4_000)
         first.recordCleaned(1_500)
         first.recordCleaned(0)
         XCTAssertEqual(first.lifetimeCleaned, 5_500)
 
-        XCTAssertEqual(Metrics(defaults: defaults, endpoint: nil, suppressedByEnvironment: false).lifetimeCleaned, 5_500)
+        XCTAssertEqual(Metrics(defaults: defaults, endpoint: nil, suppressedByEnvironment: false, noticeGrace: 0).lifetimeCleaned, 5_500)
     }
 
     /// Turning it off has to be sticky; a preference that resets on relaunch is
@@ -173,12 +197,12 @@ final class MetricsTests: XCTestCase {
         let (defaults, name) = try scratchDefaults()
         defer { defaults.removePersistentDomain(forName: name) }
 
-        let first = Metrics(defaults: defaults, endpoint: nil, suppressedByEnvironment: false)
+        let first = Metrics(defaults: defaults, endpoint: nil, suppressedByEnvironment: false, noticeGrace: 0)
         first.markNoticeShown()
         first.optedOut = true
         first.noticeSeen = true
 
-        let second = Metrics(defaults: defaults, endpoint: nil, suppressedByEnvironment: false)
+        let second = Metrics(defaults: defaults, endpoint: nil, suppressedByEnvironment: false, noticeGrace: 0)
         XCTAssertTrue(second.optedOut)
         XCTAssertTrue(second.noticeSeen)
         XCTAssertTrue(second.noticeShown)

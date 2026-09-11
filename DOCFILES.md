@@ -154,7 +154,7 @@ way to close it is a permanent local list of every path ever cleaned, which is a
 worse thing for this app to be keeping than the double-count is a problem.
 
 **The website is not the app.** dustloft.com loads Microsoft Clarity on every
-page, including `/privacy`. That is ordinary site analytics and is nothing to do
+page except `/stats`, `/privacy` included. That is ordinary site analytics and is nothing to do
 with the app's counter, but a page describing one while silently doing the other
 is sleight of hand — so `site/privacy.html` has a section naming it. If Clarity
 is ever removed, or added to, that section moves with it. (Running a session

@@ -123,6 +123,7 @@ final class Metrics: ObservableObject {
         static let cleanedTotal  = "metrics.cleanedTotal"
         static let reportedTotal = "metrics.reportedTotal"
         static let lastReportAt  = "metrics.lastReportAt"
+        static let noticeShownAt = "metrics.noticeShownAt"
     }
 
     private let defaults: UserDefaults
@@ -135,6 +136,9 @@ final class Metrics: ObservableObject {
     let isSuppressedByEnvironment: Bool
     /// Launch and a clean can both ask to report within moments of each other.
     private var reportInFlight = false
+    /// How long the first-run card gets to be read and acted on before the
+    /// first report goes. Injected so tests need not wait it out.
+    private let noticeGrace: TimeInterval
 
     /// Lifetime bytes reclaimed on this Mac. Tracked whether or not anything is
     /// ever reported, because it is worth showing the person who did it.
@@ -166,10 +170,12 @@ final class Metrics: ObservableObject {
 
     init(defaults: UserDefaults = .standard,
          endpoint: URL? = Metrics.endpoint,
-         suppressedByEnvironment: Bool = Metrics.suppressedByEnvironment) {
+         suppressedByEnvironment: Bool = Metrics.suppressedByEnvironment,
+         noticeGrace: TimeInterval = Metrics.defaultNoticeGrace) {
         self.defaults = defaults
         self.endpoint = endpoint
         self.isSuppressedByEnvironment = suppressedByEnvironment
+        self.noticeGrace = noticeGrace
         self.optedOut = defaults.bool(forKey: Key.optedOut)
         self.noticeSeen = defaults.bool(forKey: Key.noticeSeen)
         self.noticeShown = defaults.bool(forKey: Key.noticeShown)
@@ -189,36 +195,49 @@ final class Metrics: ObservableObject {
         MetricsRules.suppresses(ProcessInfo.processInfo.environment["DUSTLOFT_NO_METRICS"])
     }
 
-    /// Reporting needs all three: not opted out, not disabled by the
-    /// environment, and the explanation already seen at least once.
-    var isReporting: Bool { !optedOut && !isSuppressedByEnvironment && noticeShown }
+    /// Reporting needs all four: not opted out, not disabled by the
+    /// environment, the explanation already drawn, and — for the very first
+    /// report only — that explanation readable for long enough to act on.
+    var isReporting: Bool {
+        !optedOut && !isSuppressedByEnvironment && noticeShown && firstReportDue
+    }
+
+    /// Whether the grace after the card appeared has passed.
+    ///
+    /// Only the first report waits. Deferring the *scheduled* first report was
+    /// not enough on its own: cleaning something inside that window goes
+    /// straight to `recordCleaned` → `reportIfNeeded`, which would mint the
+    /// identifier and send before the button offering to stop it had been up
+    /// for a second. The gate has to be on reporting itself, not on one caller.
+    private var firstReportDue: Bool {
+        guard defaults.double(forKey: Key.lastReportAt) == 0 else { return true }
+        let shownAt = defaults.double(forKey: Key.noticeShownAt)
+        guard shownAt > 0 else { return false }
+        return Date().timeIntervalSince1970 - shownAt >= noticeGrace
+    }
 
     /// Called by the notice card the first time it is drawn.
     func markNoticeShown() {
         guard !noticeShown else { return }
         noticeShown = true
         defaults.set(true, forKey: Key.noticeShown)
+        defaults.set(Date().timeIntervalSince1970, forKey: Key.noticeShownAt)
 
-        // The gate has only just opened, and on a first run nothing else will
-        // ask again this session: the launch path returns early to show the
-        // welcome sheet, before it reaches reportIfNeeded. Without this, an
-        // install where someone looks once and never reopens the app is never
-        // counted at all — which is the single thing this was built to count.
-        //
-        // But not in the same frame the "Turn it off" button first appears, or
-        // reading the card and declining would come too late to matter. The
-        // wait is long enough to read it in; isReporting is re-checked at the
-        // end of it, and no identifier is minted in the meantime because
-        // installID() is only reached from inside reportIfNeeded.
+        // On a first run nothing else will ask again this session: the launch
+        // path returns early to show the welcome sheet, before it reaches
+        // reportIfNeeded. Without this, an install where someone looks once and
+        // never reopens the app is never counted at all — which is the single
+        // thing this was built to count. The wait is the grace above, which
+        // `isReporting` enforces independently, so this is only what makes the
+        // report happen once it expires.
         Task { [weak self] in
-            try? await Task.sleep(nanoseconds: Metrics.noticeGrace)
+            guard let grace = self?.noticeGrace else { return }
+            try? await Task.sleep(nanoseconds: UInt64(max(0, grace) * 1_000_000_000))
             self?.reportIfNeeded()
         }
     }
 
-    /// How long the first-run card gets to be read and acted on before the
-    /// first report goes.
-    static let noticeGrace: UInt64 = 30 * 1_000_000_000
+    static let defaultNoticeGrace: TimeInterval = 30
 
     static var appVersion: String {
         MetricsRules.sanitizedVersion(

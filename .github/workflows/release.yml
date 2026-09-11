@@ -3,11 +3,14 @@ name: Build DMG
 on:
   push:
     branches: [main]
-    # The marketing site ships through Vercel, not through this workflow.
-    # Without this, editing a blog post cuts a release and every existing
-    # user is prompted to update to a byte-identical build.
+    # The marketing site ships through Vercel, not through this workflow, and
+    # neither it nor the tests for its endpoints are part of the app. Without
+    # this, editing a blog post — or a test for /api/ping — cuts a release and
+    # prompts every existing user to update to a byte-identical build.
     paths-ignore:
       - 'site/**'
+      - 'tools/api-tests/**'
+      - '.github/workflows/site-api.yml'
       - '**.md'
       - 'LICENSE'
   # Swift only builds on a macOS runner, so until this was added the first time
@@ -16,6 +19,8 @@ on:
   pull_request:
     paths-ignore:
       - 'site/**'
+      - 'tools/api-tests/**'
+      - '.github/workflows/site-api.yml'
       - '**.md'
       - 'LICENSE'
   workflow_dispatch:
