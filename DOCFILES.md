@@ -70,6 +70,64 @@ overridable from the UI.
 
 ---
 
+## 2b. Counting, and the promise around it
+
+Dustloft had no idea how many Macs it ran on or whether it had ever actually
+given anyone their disk back. It now sends **one line, about once a day**:
+`{ id, cleaned, version }` — a random UUID belonging to that copy, the running
+total of bytes reclaimed, and the build number. That is the entire payload, and
+`MetricsReport` is written as a type so a fourth field cannot be added without a
+visible diff and a failing test.
+
+Rules, in the same spirit as the safety model — do not weaken these either:
+
+- **Nothing about the contents of a disk.** No file name, no path, no listing,
+  no account, no address. The operations log stays local, always.
+- **The identifier is random and made on first use.** Not derived from hardware
+  or user, and never created at all if reporting is off before the first report.
+- **The IP address is used to rate limit and then discarded.** Never stored,
+  never attached to a report. Without `DUSTLOFT_IP_SALT` the salt is random per
+  server process, so two requests cannot be correlated even in principle.
+- **Off is one click, and permanent.** The first-run card leads with the literal
+  three fields and carries the off switch; the switch then lives in the Overview
+  footer. `DUSTLOFT_NO_METRICS=1` disables it without launching the app, and an
+  unrecognised value fails closed.
+- **Aggregates only on the way out.** `/api/stats` returns totals. Nothing
+  returns one install's row; the per-install value exists so a duplicate report
+  is not counted twice, and for no other reason.
+
+Counting correctness lives in one Lua script (`site/api/_lua.mjs`) because the
+three properties that make the numbers mean anything — count an install once,
+ignore a replayed report, keep the version tally equal to the install set — do
+not survive being split across round trips.
+
+The client cap `MetricsRules.maxCleaned` and the server's `MAX_CLEANED` are the
+same number on purpose. Move one and move the other.
+
+If this section and the code ever disagree, so do `README.md` and
+`site/privacy.html`, and all four need fixing together.
+
+### Turning the counters on (one manual step)
+
+The endpoints ship inert. Until a store is attached, `/api/ping` returns 202 and
+throws the report away and `/api/stats` reports `configured: false` — a preview
+deployment is never broken by the absence, and nothing is recorded.
+
+1. In the Vercel project, **Storage → add a Redis store** (the first-party KV
+   product or Upstash; both expose the same REST API). The free tier is far more
+   than this needs: one hash field per install, plus two counters.
+2. Vercel injects the credentials itself. `_store.mjs` accepts either naming —
+   `KV_REST_API_URL`/`KV_REST_API_TOKEN` or
+   `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` — so whichever was
+   attached works without a code change.
+3. Redeploy. `/stats` fills in on its own.
+
+Two optional variables: `DUSTLOFT_IP_SALT` makes rate limiting global rather
+than per server process, and `DUSTLOFT_STATS_TOKEN` closes `/api/stats` behind a
+bearer token if the figures should stop being public.
+
+---
+
 ## 3. Architecture
 
 ```
@@ -81,11 +139,19 @@ Sources/Dustloft/
   Shell.swift             Process wrapper, PATH resolution, admin via osascript
   Scanner.swift           ScanEngine (@MainActor) + Scanners (background)
   Cleaner.swift           executes CleanActions, batches admin into one prompt
+  Metrics.swift           the anonymous install/reclaimed count, and its rules
   Views/
     Components.swift      Card, TierBadge, StorageMeter, CompositionBar, buttons
     ContentView.swift     RootView, sidebar, overview, action bar
     CategoryDetailView.swift  per-category item list
     ReviewSheet.swift     review → running → results
+    MetricsNotice.swift   first-run disclosure card and the permanent switch
+
+site/api/
+  _store.mjs              Redis over REST; no-ops when no store is attached
+  _lua.mjs                the one atomic script that does all the counting
+  ping.mjs                POST one report
+  stats.mjs               GET the aggregates
 ```
 
 **Threading:** `ScanEngine` and `Cleaner` are `@MainActor`. Every `Scanners.*`
@@ -172,8 +238,19 @@ lookalike prefix does not match, that Docker volumes never count as reclaimable,
 and that a remote with zero refs reads as "only copy" while an unchecked remote
 does not.
 
+It also pins the reporting rules: the throttle, the saturating total, and the
+literal bytes of the payload — that last one fails if a fourth field is ever
+added, which is the point of it.
+
 Tests run in CI, not locally: XCTest ships with full Xcode, which the runner has
 and a Command Line Tools machine does not. Treat CI as the test environment.
+
+The two site endpoints have their own suite, `./tools/api-tests/run.sh`, run by
+the `Site API` workflow. It starts a throwaway `redis-server` and drives the
+real handlers through a shim that speaks the store's REST dialect — the counting
+rules are a Lua script Redis executes, so a mocked store would only ever test
+the mock. It needs `redis-server` on PATH (`brew install redis`) and skips
+cleanly without it.
 
 ### Known gaps / next steps
 

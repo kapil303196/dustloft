@@ -1,0 +1,155 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dustloft in numbers</title>
+<meta name="description" content="How many Macs Dustloft runs on and how much disk space it has handed back, counted anonymously.">
+<link rel="canonical" href="https://dustloft.com/stats">
+<!-- Deliberately not indexed: the figures are fetched after load, so a crawler
+     would only ever see an empty shell and file it as a thin page. -->
+<meta name="robots" content="noindex,follow">
+<meta name="theme-color" content="#141013">
+<link rel="icon" href="/img/mark-v3.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/blog/_shared.css">
+<style>
+  .figures{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));margin:28px 0}
+  .figure{border:1px solid var(--line);border-radius:14px;padding:18px 20px;background:var(--bg2)}
+  .figure b{display:block;font-size:clamp(28px,6vw,40px);font-weight:800;line-height:1.1;color:var(--amber);
+            font-variant-numeric:tabular-nums}
+  .figure span{display:block;margin-top:6px;color:var(--ink2);font-size:14px}
+  .figure small{display:block;margin-top:4px;color:var(--ink3);font-size:12px}
+  .chart{border:1px solid var(--line);border-radius:14px;padding:20px;background:var(--bg2);margin:8px 0 28px}
+  .bars{display:flex;align-items:flex-end;gap:3px;height:140px;margin-top:14px}
+  .bars i{flex:1;min-width:2px;background:var(--amber2);border-radius:3px 3px 0 0;opacity:.85;
+          display:block;min-height:2px}
+  .bars i:hover{opacity:1;background:var(--amber)}
+  .axis{display:flex;justify-content:space-between;color:var(--ink3);font-size:12px;margin-top:8px}
+  .vtable{width:100%;border-collapse:collapse;margin:8px 0 28px;font-size:14px}
+  .vtable th,.vtable td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+  .vtable td:last-child,.vtable th:last-child{text-align:right;font-variant-numeric:tabular-nums}
+  .note{color:var(--ink3);font-size:13px}
+  [hidden]{display:none!important}
+</style>
+</head><body>
+<header><div class="wrap">
+<a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
+<nav><a href="/blog/">Guides</a><a href="/safety">Safety</a><a href="/privacy">Privacy</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
+</div></header>
+<article><div class="wrap">
+<h1>Dustloft in numbers</h1>
+<p class="meta">Updated every few minutes</p>
+
+<p>Every figure here comes from the anonymous count described on the <a href="/privacy">privacy page</a> — a random identifier, a byte total and a version number, with an off switch in the app. There is nothing behind this page that anyone could be identified from, including by us.</p>
+
+<div id="state" class="answer"><p>Loading…</p></div>
+
+<div class="figures" id="figures" hidden>
+  <div class="figure"><b id="installs">—</b><span>Macs running Dustloft</span><small>Copies that have reported at least once</small></div>
+  <div class="figure"><b id="cleaned">—</b><span>Disk space handed back</span><small id="cleanedExact">&nbsp;</small></div>
+  <div class="figure"><b id="downloads">—</b><span>Release downloads</span><small>Counted by GitHub, installs included or not</small></div>
+</div>
+
+<section id="chartWrap" hidden>
+  <h2>New installs, last 30 days</h2>
+  <div class="chart"><div class="bars" id="bars"></div><div class="axis"><span id="from"></span><span id="to">today</span></div></div>
+</section>
+
+<section id="versionWrap" hidden>
+  <h2>Which version people are on</h2>
+  <table class="vtable"><thead><tr><th>Version</th><th>Installs</th></tr></thead><tbody id="versions"></tbody></table>
+  <p class="note">An install moves between rows when it updates, so this counts Macs rather than reports.</p>
+</section>
+
+<p class="note">Raw JSON: <a href="/api/stats">/api/stats</a></p>
+</div></article>
+<footer><div class="wrap">Dustloft — MIT licensed. No ads, no account, no personal data. ·
+<a href="/">Home</a> · <a href="/blog/">All guides</a> · <a href="/privacy">Privacy</a> ·
+<a href="https://github.com/kapil303196/dustloft">Source</a><br><br>
+Made with ♥ in India by <a href="https://logicspark.io">Logicspark</a></div></footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+function compact(n) {
+  return n >= 1000 ? new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(n)
+                   : String(n);
+}
+
+function say(html) { $('state').innerHTML = '<p>' + html + '</p>'; }
+
+async function loadStats() {
+  let data;
+  try {
+    const res = await fetch('/api/stats', { headers: { accept: 'application/json' } });
+    data = await res.json();
+    if (!res.ok) throw new Error(data && data.error);
+  } catch {
+    say('The counters are not reachable right now. Nothing is lost — every install sends a running total, so the next report carries whatever this one missed.');
+    return;
+  }
+
+  if (!data.configured) {
+    say('No store is attached yet, so nothing is being recorded. ' +
+        'Attach a Redis store in Vercel and redeploy, and this page fills in on its own.');
+    return;
+  }
+
+  $('state').hidden = true;
+  $('figures').hidden = false;
+
+  $('installs').textContent = compact(data.installs);
+  $('cleaned').textContent = data.cleaned.human;
+  $('cleanedExact').textContent = data.cleaned.bytes.toLocaleString('en') + ' bytes';
+
+  const daily = data.daily || [];
+  if (daily.some((d) => d.installs > 0)) {
+    const peak = Math.max(...daily.map((d) => d.installs), 1);
+    $('bars').replaceChildren(...daily.map((d) => {
+      const bar = document.createElement('i');
+      bar.style.height = Math.max(2, Math.round((d.installs / peak) * 100)) + '%';
+      bar.title = `${d.date}: ${d.installs} new`;
+      return bar;
+    }));
+    $('from').textContent = daily[0].date;
+    $('chartWrap').hidden = false;
+  }
+
+  const versions = Object.entries(data.versions || {}).sort((a, b) => b[1] - a[1]);
+  if (versions.length) {
+    $('versions').replaceChildren(...versions.map(([name, count]) => {
+      const row = document.createElement('tr');
+      const v = document.createElement('td');
+      v.textContent = name;
+      const c = document.createElement('td');
+      c.textContent = count.toLocaleString('en');
+      row.append(v, c);
+      return row;
+    }));
+    $('versionWrap').hidden = false;
+  }
+}
+
+// Download counts come straight from GitHub in the visitor's own browser, so
+// the site never spends its shared rate limit on them.
+async function loadDownloads() {
+  try {
+    const res = await fetch('https://api.github.com/repos/kapil303196/dustloft/releases?per_page=100');
+    if (!res.ok) return;
+    const releases = await res.json();
+    let total = 0;
+    for (const release of releases) {
+      for (const asset of release.assets || []) {
+        if (asset.name && asset.name.endsWith('.dmg')) total += asset.download_count || 0;
+      }
+    }
+    $('downloads').textContent = compact(total);
+  } catch {
+    $('downloads').textContent = '—';
+  }
+}
+
+loadStats();
+loadDownloads();
+</script>
+</body></html>

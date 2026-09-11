@@ -42,8 +42,47 @@ And it refuses, by design, to:
   canonicalised and the refusal list re-checked against the resolved path
 
 Every removal is appended to `~/Library/Logs/Dustloft/operations.log` — timestamp,
-action, size and full path, tab separated. It stays on your machine; there is no
-telemetry and nothing is uploaded.
+action, size and full path, tab separated. That file stays on your machine and is
+never uploaded, in whole or in part.
+
+## What Dustloft sends, and what it does not
+
+Nothing about the contents of your disk ever leaves it. No file name, no path, no
+directory listing, no account, no email address.
+
+Dustloft does send one anonymous line, about once a day, so there is some idea of
+how many Macs it runs on and whether it has actually given anyone their disk back.
+That line is the whole of it:
+
+```json
+{ "id": "9f2c1e7a-…", "cleaned": 41203847610, "version": "1.0.27" }
+```
+
+- `id` is a random UUID this copy of the app generated for itself on first use.
+  It is not derived from your hardware, your network, your account or anything
+  else, and it is created only if something is actually going to be sent.
+- `cleaned` is the running total of bytes Dustloft has reclaimed on this Mac.
+- `version` is the build you are running.
+
+The request's IP address is used to stop one machine flooding the counter, then
+discarded — it is never stored, and the salt used to hash it is random per server
+process by default, so two requests cannot be linked even in principle. The
+figures it feeds are public at **[dustloft.com/stats](https://dustloft.com/stats)**;
+there is no endpoint, there or anywhere, that returns a single install's row.
+
+**Turning it off.** The first-run card shows the message above with your real
+numbers in it, and has a "Turn it off" button. The switch stays in the Overview
+footer afterwards. To disable it before the app is ever launched:
+
+```bash
+launchctl setenv DUSTLOFT_NO_METRICS 1
+```
+
+Turning it off stops it permanently — there is no final report on the way out.
+
+The code is worth more than the paragraph: [`Sources/Dustloft/Metrics.swift`](Sources/Dustloft/Metrics.swift)
+is the entire client, and the payload is pinned by a test that fails if a fourth
+field is ever added.
 
 ## Install
 

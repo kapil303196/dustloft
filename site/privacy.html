@@ -1,0 +1,99 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>What Dustloft sends — Dustloft</title>
+<meta name="description" content="The exact message Dustloft sends, field by field: a random identifier, a byte total and a version number. No name, no email, no file names, no paths — and how to switch it off.">
+<link rel="canonical" href="https://dustloft.com/privacy">
+<meta property="og:title" content="What Dustloft sends"><meta property="og:description" content="The exact message Dustloft sends, field by field: a random identifier, a byte total and a version number. No name, no email, no file names, no paths — and how to switch it off.">
+<meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#141013">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<meta property="og:site_name" content="Dustloft">
+<meta property="og:locale" content="en_US">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<meta property="og:url" content="https://dustloft.com/privacy">
+<meta property="og:image" content="https://dustloft.com/img/overview.png">
+<meta name="twitter:image" content="https://dustloft.com/img/overview.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com"}, {"@type": "ListItem", "position": 2, "name": "Privacy", "item": "https://dustloft.com/privacy"}]}</script>
+<link rel="icon" href="/img/mark-v3.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/blog/_shared.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "What Dustloft sends", "description": "The exact message Dustloft sends, field by field, and how to switch it off.", "url": "https://dustloft.com/privacy", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.com"}, "datePublished": "2026-09-11", "dateModified": "2026-09-11", "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What does Dustloft send?", "acceptedAnswer": {"@type": "Answer", "text": "One line, about once a day, with three fields: a random identifier the app generated for itself, the total number of bytes that copy has reclaimed, and its version number. Nothing else."}}, {"@type": "Question", "name": "Can Dustloft see my files?", "acceptedAnswer": {"@type": "Answer", "text": "It reads your disk to measure it, and none of that leaves the machine. No file name, no path and no directory listing is ever sent, and the log of what was removed is written to your own disk and uploaded nowhere."}}, {"@type": "Question", "name": "How do I switch it off?", "acceptedAnswer": {"@type": "Answer", "text": "The card shown on first run has a Turn it off button, and the switch stays in the Overview footer afterwards. To disable it before the app is ever launched, run launchctl setenv DUSTLOFT_NO_METRICS 1. Turning it off stops it permanently; there is no final report."}}]}</script>
+<script>
+(function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+})(window, document, "clarity", "script", "yfsb7st26m");
+</script>
+</head><body>
+<header><div class="wrap">
+<a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
+<nav><a href="/blog/">Guides</a><a href="/safety">Safety</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
+</div></header>
+<article><div class="wrap">
+<h1>What Dustloft sends</h1>
+<p class="meta">Privacy · 3 min read · Updated September 2026</p>
+
+<div class="answer"><p><strong>Short answer:</strong> one line, about once a day, containing a random identifier, a byte total and a version number. Nothing about the contents of your disk ever leaves it — no file name, no path, no directory listing, no account, no email address. You can switch it off in the app, or before the app is ever launched.</p></div>
+
+<h2>The entire message</h2>
+
+<p>Not a summary of it. This is the whole request body:</p>
+
+<pre><code>POST https://dustloft.com/api/ping
+
+{ "id": "9f2c1e7a-4b35-4f01-9a6e-2d8c7b1e5a44",
+  "cleaned": 41203847610,
+  "version": "1.0.27" }</code></pre>
+
+<ul>
+<li><strong><code>id</code></strong> — a random UUID that this copy of the app generated for itself. It is not derived from your hardware, your network, your account, your username or anything else about you, and it is created only at the moment something is actually going to be sent. Its only job is to stop one Mac being counted as a hundred.</li>
+<li><strong><code>cleaned</code></strong> — the running total of bytes Dustloft has reclaimed on this Mac. A total, not a list: which files, where they were and what they were called are not part of it.</li>
+<li><strong><code>version</code></strong> — the build you are running, so it is possible to tell whether an update actually reached people.</li>
+</ul>
+
+<h2>What is not in it</h2>
+
+<p>No name. No email address. No account, because there are no accounts. No file names, no paths, no directory listing, no disk size, no serial number, no hardware identifier, no location, no advertising identifier, and nothing that could be joined against any of those elsewhere.</p>
+
+<p>The operations log — the record of everything Dustloft has removed, with full paths — is written to <code>~/Library/Logs/Dustloft/operations.log</code> on your own machine. It is plain text, you can read or delete it with anything, and no part of it is ever uploaded.</p>
+
+<h2>Your IP address</h2>
+
+<p>Any request over the internet necessarily carries one. It is used to stop a single machine flooding the counter, and then discarded. It is never written to storage, never attached to a report, and never logged alongside one. The value used for rate limiting is a salted hash, and unless a fixed salt is configured the salt is random per server process — so two requests from the same address cannot be linked to each other even in principle.</p>
+
+<h2>Where the numbers go</h2>
+
+<p>Into two totals, and a daily count for a chart. They are public at <a href="/stats">dustloft.com/stats</a>. There is no endpoint, there or anywhere, that returns a single install's row; the per-install value exists only so that a report which arrives twice is not counted twice.</p>
+
+<h2>Switching it off</h2>
+
+<p>The first thing Dustloft shows on a new install is a card with the message above — with your real numbers in it — and a <strong>Turn it off</strong> button. The switch stays in the Overview footer afterwards, so the decision is never one that card made for good. Turning it off stops it permanently: there is no final report on the way out.</p>
+
+<p>To disable it before the app is ever launched, so that nothing is sent even once:</p>
+
+<pre><code>launchctl setenv DUSTLOFT_NO_METRICS 1</code></pre>
+
+<p>When that is set, the app never generates an identifier at all.</p>
+
+<h2>The other network request</h2>
+
+<p>On launch, Dustloft asks the GitHub Releases API whether a newer version exists. That request goes to GitHub, not to us, and carries nothing but the request itself.</p>
+
+<h2>Do not take any of this on trust</h2>
+
+<p>The client is one file — <a href="https://github.com/kapil303196/dustloft/blob/main/Sources/Dustloft/Metrics.swift">Sources/Dustloft/Metrics.swift</a> — and the payload is pinned by <a href="https://github.com/kapil303196/dustloft/blob/main/Tests/DustloftTests/MetricsTests.swift">a test that fails if a fourth field is ever added</a>. The server is two short files in the same repository. If this page and the code ever disagree, the code is what runs.</p>
+
+<div class="cta">
+<h3>See exactly what is on your own disk</h3>
+<p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
+<a class="btn" href="/#install">Install Dustloft</a>
+</div>
+</div></article>
+<footer><div class="wrap">Dustloft — MIT licensed. No ads, no account, no personal data. ·
+<a href="/">Home</a> · <a href="/blog/">All guides</a> · <a href="/stats">Stats</a> ·
+<a href="https://github.com/kapil303196/dustloft">Source</a><br><br>
+Made with ♥ in India by <a href="https://logicspark.io">Logicspark</a></div></footer>
+</body></html>
