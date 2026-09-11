@@ -96,7 +96,7 @@ struct MetricsFooterControl: View {
     @ObservedObject var metrics: Metrics
 
     var body: some View {
-        if Metrics.suppressedByEnvironment {
+        if metrics.isSuppressedByEnvironment {
             Text("· anonymous counting off (DUSTLOFT_NO_METRICS)")
                 .font(DS.caption())
                 .foregroundStyle(DS.textFaint)

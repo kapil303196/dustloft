@@ -126,7 +126,7 @@ final class MetricsTests: XCTestCase {
         let (defaults, name) = try scratchDefaults()
         defer { defaults.removePersistentDomain(forName: name) }
 
-        let metrics = Metrics(defaults: defaults, endpoint: nil)
+        let metrics = Metrics(defaults: defaults, endpoint: nil, suppressedByEnvironment: false)
         XCTAssertFalse(metrics.isReporting, "reported before the notice was ever drawn")
 
         metrics.markNoticeShown()
@@ -136,18 +136,31 @@ final class MetricsTests: XCTestCase {
         XCTAssertFalse(metrics.isReporting)
     }
 
+    /// The environment switch has to win over everything else, including a
+    /// notice that has been seen and a person who never opted out.
+    @MainActor
+    func test_theEnvironmentSwitchOverridesEverything() throws {
+        let (defaults, name) = try scratchDefaults()
+        defer { defaults.removePersistentDomain(forName: name) }
+
+        let metrics = Metrics(defaults: defaults, endpoint: nil, suppressedByEnvironment: true)
+        metrics.markNoticeShown()
+        XCTAssertFalse(metrics.optedOut)
+        XCTAssertFalse(metrics.isReporting)
+    }
+
     @MainActor
     func test_theLifetimeTotalSurvivesRelaunch() throws {
         let (defaults, name) = try scratchDefaults()
         defer { defaults.removePersistentDomain(forName: name) }
 
-        let first = Metrics(defaults: defaults, endpoint: nil)
+        let first = Metrics(defaults: defaults, endpoint: nil, suppressedByEnvironment: false)
         first.recordCleaned(4_000)
         first.recordCleaned(1_500)
         first.recordCleaned(0)
         XCTAssertEqual(first.lifetimeCleaned, 5_500)
 
-        XCTAssertEqual(Metrics(defaults: defaults, endpoint: nil).lifetimeCleaned, 5_500)
+        XCTAssertEqual(Metrics(defaults: defaults, endpoint: nil, suppressedByEnvironment: false).lifetimeCleaned, 5_500)
     }
 
     /// Turning it off has to be sticky; a preference that resets on relaunch is
@@ -157,12 +170,12 @@ final class MetricsTests: XCTestCase {
         let (defaults, name) = try scratchDefaults()
         defer { defaults.removePersistentDomain(forName: name) }
 
-        let first = Metrics(defaults: defaults, endpoint: nil)
+        let first = Metrics(defaults: defaults, endpoint: nil, suppressedByEnvironment: false)
         first.markNoticeShown()
         first.optedOut = true
         first.noticeSeen = true
 
-        let second = Metrics(defaults: defaults, endpoint: nil)
+        let second = Metrics(defaults: defaults, endpoint: nil, suppressedByEnvironment: false)
         XCTAssertTrue(second.optedOut)
         XCTAssertTrue(second.noticeSeen)
         XCTAssertTrue(second.noticeShown)

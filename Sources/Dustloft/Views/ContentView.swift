@@ -167,7 +167,7 @@ struct RootView: View {
                     UpdateBanner(updater: updater).padding(.bottom, DS.s4)
                 }
 
-                if !metrics.noticeSeen && !Metrics.suppressedByEnvironment {
+                if !metrics.noticeSeen && !metrics.isSuppressedByEnvironment {
                     MetricsNotice(metrics: metrics).padding(.bottom, DS.s4)
                 }
 

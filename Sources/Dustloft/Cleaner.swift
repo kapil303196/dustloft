@@ -43,8 +43,14 @@ final class Cleaner: ObservableObject {
 
     /// Executes the chosen items. Admin removals are collected and run under a
     /// single authorisation prompt rather than one dialog per path.
-    func run(_ items: [ScanItem]) async {
-        guard !isRunning, !items.isEmpty else { return }
+    ///
+    /// Returns false when there was nothing to do, or a run was already under
+    /// way. The caller has to know the difference: crediting a cumulative total
+    /// from `outcomes` after a no-op would count a run's bytes twice, and that
+    /// total only ever rises.
+    @discardableResult
+    func run(_ items: [ScanItem]) async -> Bool {
+        guard !isRunning, !items.isEmpty else { return false }
         isRunning = true
         finished = false
         outcomes = []
@@ -173,6 +179,7 @@ final class Cleaner: ObservableObject {
         progress = 1
         isRunning = false
         finished = true
+        return true
     }
 
     /// Anything unrecoverable is moved to the Trash rather than unlinked.
@@ -258,7 +265,15 @@ final class Cleaner: ObservableObject {
             let before = Shell.diskUsage(gitDir)
             let r = Shell.run(git, ["-C", repo, "gc", "--prune=now"], timeout: 900)
             guard r.ok else { return (false, r.err, nil) }
-            return (true, nil, max(0, before - Shell.diskUsage(gitDir)))
+            let after = Shell.diskUsage(gitDir)
+            // diskUsage cannot tell "empty" from "du failed" — both come back
+            // as 0 — and a .git small enough to genuinely be zero was never
+            // offered here in the first place. So an unreadable measurement
+            // counts as nothing reclaimed. Guessing in the other direction
+            // would file the entire repository as cleaned, in a total that
+            // only ever rises and then gets reported.
+            guard before > 0, after > 0, after < before else { return (true, nil, 0) }
+            return (true, nil, before - after)
 
         case .advisory:
             return (false, "advisory only", nil)

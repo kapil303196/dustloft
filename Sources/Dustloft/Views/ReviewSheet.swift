@@ -120,13 +120,17 @@ struct ReviewSheet: View {
                 }
                 Button(items.isEmpty ? "Nothing ticked" : "Clean \(Bytes.fmt(totalBytes))") {
                     Task {
-                        await cleaner.run(items)
+                        // Only on a run that actually happened. A second
+                        // activation while one is in flight returns false with
+                        // the earlier run's outcomes still in place, and would
+                        // otherwise credit those bytes a second time.
+                        guard await cleaner.run(items) else { return }
                         engine.removeCleaned(cleaner.cleanedIDs)
                         metrics.recordCleaned(cleaner.accountedBytes)
                     }
                 }
                 .buttonStyle(PrimaryButton(tint: permanent.isEmpty ? DS.accent : DS.danger))
-                .disabled(blocked || items.isEmpty)
+                .disabled(blocked || items.isEmpty || cleaner.isRunning)
                 .help(blocked ? "Confirm the permanent deletions first" : "Begin cleaning")
             }
             .padding(DS.s5)

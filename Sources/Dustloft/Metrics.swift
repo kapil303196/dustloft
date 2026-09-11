@@ -124,6 +124,12 @@ final class Metrics: ObservableObject {
 
     private let defaults: UserDefaults
     private let endpoint: URL?
+
+    /// Read once at construction, not on every access: `launchctl setenv` only
+    /// affects processes launched afterwards, so it cannot change underneath a
+    /// running app. Injected rather than read inline so a test is not at the
+    /// mercy of whoever ran the documented opt-out on the machine it runs on.
+    let isSuppressedByEnvironment: Bool
     /// Launch and a clean can both ask to report within moments of each other.
     private var reportInFlight = false
 
@@ -155,9 +161,12 @@ final class Metrics: ObservableObject {
     /// case where it matters most.
     @Published private(set) var noticeShown: Bool
 
-    init(defaults: UserDefaults = .standard, endpoint: URL? = Metrics.endpoint) {
+    init(defaults: UserDefaults = .standard,
+         endpoint: URL? = Metrics.endpoint,
+         suppressedByEnvironment: Bool = Metrics.suppressedByEnvironment) {
         self.defaults = defaults
         self.endpoint = endpoint
+        self.isSuppressedByEnvironment = suppressedByEnvironment
         self.optedOut = defaults.bool(forKey: Key.optedOut)
         self.noticeSeen = defaults.bool(forKey: Key.noticeSeen)
         self.noticeShown = defaults.bool(forKey: Key.noticeShown)
@@ -165,14 +174,15 @@ final class Metrics: ObservableObject {
     }
 
     /// An escape hatch for anyone deploying this somewhere it must not phone
-    /// home, without needing to open the app to say so.
+    /// home, without needing to open the app to say so. The instance reads this
+    /// once at construction; prefer `isSuppressedByEnvironment` everywhere else.
     static var suppressedByEnvironment: Bool {
         MetricsRules.suppresses(ProcessInfo.processInfo.environment["DUSTLOFT_NO_METRICS"])
     }
 
     /// Reporting needs all three: not opted out, not disabled by the
     /// environment, and the explanation already seen at least once.
-    var isReporting: Bool { !optedOut && !Metrics.suppressedByEnvironment && noticeShown }
+    var isReporting: Bool { !optedOut && !isSuppressedByEnvironment && noticeShown }
 
     /// Called by the notice card the first time it is drawn.
     func markNoticeShown() {
