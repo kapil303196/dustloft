@@ -52,6 +52,9 @@ export default async function handler(req, res) {
   }
 
   res.setHeader('Access-Control-Allow-Origin', '*');
+  // The response varies by credential, and a shared CDN cache that ignored
+  // that would hand the gated payload to the next anonymous caller.
+  res.setHeader('Vary', 'Authorization');
 
   if (!configured) {
     res.setHeader('Cache-Control', 'no-store');
@@ -87,7 +90,10 @@ export default async function handler(req, res) {
     }
 
     const totalBytes = int(bytes);
-    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    res.setHeader(
+      'Cache-Control',
+      gate ? 'private, no-store' : 'public, s-maxage=300, stale-while-revalidate=600'
+    );
     return res.status(200).json({
       configured: true,
       installs: int(installs),

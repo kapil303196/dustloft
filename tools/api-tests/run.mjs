@@ -15,13 +15,16 @@ process.env.KV_REST_API_URL = shim.url;
 process.env.KV_REST_API_TOKEN = 'test-token';
 process.env.DUSTLOFT_IP_SALT = 'fixed-salt-for-tests';
 
+// Safe only because run.sh guarantees this server was started by run.sh, on a
+// port nothing else was listening on, and is shut down again afterwards.
 await shim.client.cmd(['FLUSHALL']);
 
 const { default: ping } = await import('../../site/api/ping.mjs');
 const { default: stats } = await import('../../site/api/stats.mjs');
 
 function mock(method, body, { ip = '203.0.113.7', headers = {} } = {}) {
-  const req = { method, body, headers: { 'x-forwarded-for': ip, ...headers } };
+  // Spread last so a test can replace the forwarding headers outright.
+  const req = { method, body, headers: { 'x-real-ip': ip, ...headers } };
   const res = {
     code: 0, payload: undefined, headers: {},
     setHeader(k, v) { this.headers[k.toLowerCase()] = v; return this; },
@@ -130,6 +133,46 @@ await t('rate limits a flood from one source', async () => {
     if (r.code === 429) limited++;
   }
   assert.ok(limited >= 5, `expected throttling, got ${limited}`);
+});
+
+await t('every rate-limit bucket carries a TTL', async () => {
+  // Set as a separate call, a failed EXPIRE leaves the bucket immortal and that
+  // address refused forever. It has to be part of the same atomic step.
+  const keys = await shim.client.cmd(['KEYS', 'dustloft:rl:*']);
+  assert.ok(keys.length > 0, 'expected some buckets to exist by now');
+  for (const key of keys) {
+    const ttl = Number(await shim.client.cmd(['TTL', key]));
+    assert.ok(ttl > 0 && ttl <= 60, `${key} has TTL ${ttl}`);
+  }
+});
+
+await t('a forged x-forwarded-for does not dodge the limiter', async () => {
+  await shim.client.cmd(['FLUSHALL']);
+  let limited = 0;
+  for (let i = 0; i < 40; i++) {
+    // The leftmost entry is whatever the caller wrote. Trusting it would let
+    // one host randomise the header and never be limited at all.
+    const r = await post(
+      { id: A, cleaned: 10 },
+      { headers: { 'x-forwarded-for': `10.0.0.${i}, 198.51.100.77`, 'x-real-ip': '198.51.100.77' } }
+    );
+    if (r.code === 429) limited++;
+  }
+  assert.ok(limited >= 5, `expected throttling, got ${limited}`);
+});
+
+await t('a token-gated reply is never publicly cacheable', async () => {
+  process.env.DUSTLOFT_STATS_TOKEN = 'sekrit';
+  const res = await get({ headers: { authorization: 'Bearer sekrit' } });
+  assert.equal(res.code, 200);
+  // A shared CDN would otherwise serve the gated payload to the next anonymous
+  // caller for five minutes, which makes the token do nothing at all.
+  assert.match(res.headers['cache-control'], /no-store/);
+  assert.equal(res.headers.vary, 'Authorization');
+  delete process.env.DUSTLOFT_STATS_TOKEN;
+
+  const open = await get();
+  assert.match(open.headers['cache-control'], /s-maxage/);
 });
 
 await t('stats honours a token when one is set', async () => {

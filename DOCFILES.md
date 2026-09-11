@@ -85,9 +85,13 @@ Rules, in the same spirit as the safety model — do not weaken these either:
   no account, no address. The operations log stays local, always.
 - **The identifier is random and made on first use.** Not derived from hardware
   or user, and never created at all if reporting is off before the first report.
-- **The IP address is used to rate limit and then discarded.** Never stored,
-  never attached to a report. Without `DUSTLOFT_IP_SALT` the salt is random per
-  server process, so two requests cannot be correlated even in principle.
+- **The IP address is used to rate limit and nothing else.** A salted hash of it
+  becomes a counter with a sixty-second TTL; the address itself is never
+  written, and neither it nor the hash is attached to a report. Without
+  `DUSTLOFT_IP_SALT` the salt is random per server process and never persisted,
+  so those counters cannot be correlated across processes or restarts. Do not
+  write that requests "cannot be linked at all" — within one process and one
+  minute they share a counter, and the docs say so.
 - **The card is drawn before anything is sent.** `isReporting` requires
   `noticeShown`, which the notice sets when it first appears. Without it, a
   first run where someone cleans straight away could report before being told.

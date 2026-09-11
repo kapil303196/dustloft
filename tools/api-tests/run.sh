@@ -12,15 +12,22 @@ if ! command -v redis-server >/dev/null 2>&1; then
   exit 0
 fi
 
-STARTED=0
-if ! redis-cli -p "$PORT" ping >/dev/null 2>&1; then
-  redis-server --port "$PORT" --save '' --appendonly no --daemonize yes
-  STARTED=1
-  for _ in $(seq 1 20); do
-    redis-cli -p "$PORT" ping >/dev/null 2>&1 && break
-    sleep 0.2
-  done
+# The suite starts with FLUSHALL, so it must only ever speak to a server it
+# started itself. Reusing whatever happens to be listening would wipe it.
+if redis-cli -p "$PORT" ping >/dev/null 2>&1; then
+  echo "Something is already listening on port $PORT." >&2
+  echo "These tests erase the database they run against, so they will not reuse it." >&2
+  echo "Stop it, or pick another port:  REDIS_PORT=6400 $0" >&2
+  exit 1
 fi
-trap '[ "$STARTED" = "1" ] && redis-cli -p "$PORT" shutdown nosave >/dev/null 2>&1 || true' EXIT
+
+redis-server --port "$PORT" --save '' --appendonly no --daemonize yes
+trap 'redis-cli -p "$PORT" shutdown nosave >/dev/null 2>&1 || true' EXIT
+
+for _ in $(seq 1 20); do
+  redis-cli -p "$PORT" ping >/dev/null 2>&1 && break
+  sleep 0.2
+done
+redis-cli -p "$PORT" ping >/dev/null 2>&1 || { echo "redis-server did not come up" >&2; exit 1; }
 
 REDIS_PORT="$PORT" node run.mjs

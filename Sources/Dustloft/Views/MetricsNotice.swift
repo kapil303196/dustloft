@@ -29,7 +29,7 @@ struct MetricsNotice: View {
 
                     MetricsPayloadSample(cleaned: metrics.lifetimeCleaned)
 
-                    Text("No name, no email, no account, no file names, no paths. The identifier is random and belongs to this copy of the app, not to you. Your IP address is used to stop one machine flooding the counter and is then discarded, never stored.")
+                    Text("No name, no email, no account, no file names, no paths. The identifier is random and belongs to this copy of the app, not to you. Your IP address is used only to rate limit — a salted hash of it becomes a counter that expires after a minute, and the address itself is never written down or attached to anything.")
                         .font(DS.caption())
                         .foregroundStyle(DS.textDim)
                         .fixedSize(horizontal: false, vertical: true)

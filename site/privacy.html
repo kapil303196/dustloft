@@ -50,7 +50,7 @@
 
 <ul>
 <li><strong><code>id</code></strong> — a random UUID that this copy of the app generated for itself. It is not derived from your hardware, your network, your account, your username or anything else about you, and it is created only at the moment something is actually going to be sent. Its only job is to stop one Mac being counted as a hundred.</li>
-<li><strong><code>cleaned</code></strong> — the running total of bytes Dustloft has reclaimed on this Mac. A total, not a list: which files, where they were and what they were called are not part of it.</li>
+<li><strong><code>cleaned</code></strong> — the running total of bytes Dustloft has removed on this Mac, counting items sent to the Trash as well as those deleted outright. A total, not a list: which files, where they were and what they were called are not part of it.</li>
 <li><strong><code>version</code></strong> — the build you are running, so it is possible to tell whether an update actually reached people.</li>
 </ul>
 
@@ -62,7 +62,11 @@
 
 <h2>Your IP address</h2>
 
-<p>Any request over the internet necessarily carries one. It is used to stop a single machine flooding the counter, and then discarded. It is never written to storage, never attached to a report, and never logged alongside one. The value used for rate limiting is a salted hash, and unless a fixed salt is configured the salt is random per server process — so two requests from the same address cannot be linked to each other even in principle.</p>
+<p>Any request over the internet necessarily carries one. It is used to rate limit, and only that, so that a single machine cannot flood the counter.</p>
+
+<p>Precisely what happens to it: the address is hashed with a salt, and that hash becomes a counter which expires sixty seconds later. The address itself is never written down. Neither the address nor the hash is attached to a report, stored beside one, or written to a log. Unless a fixed salt is configured, the salt is random per server process and is never persisted — so those sixty-second counters cannot be matched up across processes, or after a restart, by us or by anyone who obtained the database.</p>
+
+<p>What that does not claim: within one server process and one sixty-second window, two requests from the same address do land on the same counter. That is what rate limiting <em>is</em>. It is bounded to a minute, holds no address, and touches nothing that is kept.</p>
 
 <h2>Where the numbers go</h2>
 

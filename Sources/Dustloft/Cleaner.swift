@@ -28,12 +28,17 @@ final class Cleaner: ObservableObject {
     /// Ids of everything that was actually removed.
     var cleanedIDs: [UUID] { outcomes.filter { $0.ok }.map { $0.itemID } }
 
-    /// What Dustloft itself removed, trashed items included.
+    /// What Dustloft itself removed — items sent to the Trash included, since
+    /// the person asked for those to go and they leave when the Trash is
+    /// emptied. Everything shown against this figure says "cleaned" rather than
+    /// "freed" for that reason.
     ///
     /// Deliberately not `freedBytes`: that figure is overwritten by the volume
     /// delta, which is the right number to show someone staring at their disk
     /// but the wrong one to add up, because it also counts whatever else macOS
-    /// happened to do during the run.
+    /// happened to do during the run. It cannot be used as a ceiling here
+    /// either — an APFS snapshot routinely holds deleted space for hours, so a
+    /// real 50 GB removal can show a delta of nothing.
     var accountedBytes: Int64 { outcomes.filter { $0.ok }.reduce(0) { $0 + $1.bytes } }
 
     /// Executes the chosen items. Admin removals are collected and run under a
@@ -128,12 +133,22 @@ final class Cleaner: ObservableObject {
                                         bytes: item.bytes, ok: false, message: refusal.1)
                     continue
                 }
-                let msg = res.ok ? nil : (res.err.isEmpty ? "authorisation cancelled" : res.err)
+                // The batch runs as `rm -rf a b c ; other-command`, and a shell
+                // reports the status of the last command in it. A removal that
+                // failed in the middle would otherwise be recorded — and, now,
+                // counted — as a success. Whether the path is still there is
+                // the only answer that does not depend on that.
+                var ok = res.ok
+                var msg = res.ok ? nil : (res.err.isEmpty ? "authorisation cancelled" : res.err)
+                if case .removePathAdmin(let path) = item.action {
+                    ok = !FileManager.default.fileExists(atPath: path)
+                    if !ok && res.ok { msg = "still present after the administrator step" }
+                }
                 outcomes.append(CleanOutcome(
-                    itemID: item.id, name: item.name, bytes: item.bytes, ok: res.ok, message: msg))
+                    itemID: item.id, name: item.name, bytes: item.bytes, ok: ok, message: msg))
                 OperationLog.record(action: item.action, name: item.name,
-                                    bytes: item.bytes, ok: res.ok, message: msg)
-                if res.ok { freedBytes += item.bytes }
+                                    bytes: item.bytes, ok: ok, message: msg)
+                if ok { freedBytes += item.bytes }
             }
             done += 1
             progress = done / total

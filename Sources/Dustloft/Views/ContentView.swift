@@ -317,7 +317,7 @@ struct RootView: View {
                              value: Bytes.fmt(engine.totalSelected), tint: DS.accent)
                 }
                 if metrics.lifetimeCleaned > 0 {
-                    StatChip(symbol: "clock.arrow.circlepath", label: "Reclaimed so far",
+                    StatChip(symbol: "clock.arrow.circlepath", label: "Cleaned so far",
                              value: Bytes.fmt(metrics.lifetimeCleaned), tint: DS.textDim)
                 }
                 Spacer()

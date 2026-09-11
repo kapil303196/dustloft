@@ -58,5 +58,21 @@ end
 return { fresh, string.format('%d', delta) }
 `;
 
+/**
+ * Increment-and-expire, atomically.
+ *
+ * Done as two calls guarded by "is this the first hit", the EXPIRE can be the
+ * one that fails — and the bucket then never expires, so that hashed address is
+ * refused for as long as the key lives. With a fixed DUSTLOFT_IP_SALT, that is
+ * forever.
+ */
+export const RATE_LIMIT = `
+local hits = redis.call('INCR', KEYS[1])
+if hits == 1 then
+  redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+return hits
+`;
+
 /** Daily buckets are kept for just over a year, then expire on their own. */
 export const DAILY_TTL_SECONDS = 400 * 24 * 60 * 60;

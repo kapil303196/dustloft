@@ -11,7 +11,9 @@ struct MetricsReport: Codable, Equatable {
     /// hardware, the user, the network or anything else — a fresh UUID, whose
     /// only job is to stop one Mac being counted as a hundred.
     let id: String
-    /// Bytes this copy has reclaimed over its lifetime, cumulative.
+    /// Bytes this copy has removed over its lifetime, cumulative. Counts items
+    /// sent to the Trash as well as those deleted outright, which is why the UI
+    /// says "cleaned" against this figure and never "freed".
     let cleaned: Int64
     /// Which build is running, so an update's reach can be seen.
     let version: String
@@ -122,6 +124,8 @@ final class Metrics: ObservableObject {
 
     private let defaults: UserDefaults
     private let endpoint: URL?
+    /// Launch and a clean can both ask to report within moments of each other.
+    private var reportInFlight = false
 
     /// Lifetime bytes reclaimed on this Mac. Tracked whether or not anything is
     /// ever reported, because it is worth showing the person who did it.
@@ -196,7 +200,7 @@ final class Metrics: ObservableObject {
     /// A failure is left alone: the total is cumulative, so the next successful
     /// report carries whatever this one would have.
     func reportIfNeeded(now: Date = Date()) {
-        guard isReporting, let endpoint = self.endpoint else { return }
+        guard !reportInFlight, isReporting, let endpoint = self.endpoint else { return }
 
         let total = lifetimeCleaned
         let stamp = defaults.double(forKey: Key.lastReportAt)
@@ -208,15 +212,26 @@ final class Metrics: ObservableObject {
             currentTotal: total) else { return }
 
         let report = MetricsReport(id: installID(), cleaned: total, version: Metrics.appVersion)
+        reportInFlight = true
+        // Stamped on the attempt rather than on success. Recorded only when it
+        // worked, an endpoint that is down would be retried on every launch and
+        // every clean — a flood aimed at something already struggling. The
+        // total is cumulative, so nothing is lost by waiting for the next turn.
+        defaults.set(now.timeIntervalSince1970, forKey: Key.lastReportAt)
+
         Task { [weak self] in
-            guard await Metrics.send(report, to: endpoint) else { return }
-            self?.markReported(total: total)
+            let delivered = await Metrics.send(report, to: endpoint)
+            guard let self else { return }
+            self.reportInFlight = false
+            if delivered { self.markReported(total: total) }
         }
     }
 
     private func markReported(total: Int64) {
-        defaults.set(Int(total), forKey: Key.reportedTotal)
-        defaults.set(Date().timeIntervalSince1970, forKey: Key.lastReportAt)
+        // A high-water mark: a late reply must never drag it back down, or the
+        // difference would be sent a second time and counted twice.
+        let known = Int64(defaults.integer(forKey: Key.reportedTotal))
+        defaults.set(Int(max(known, total)), forKey: Key.reportedTotal)
     }
 
     /// Created on first use rather than at launch, so a person who turns this

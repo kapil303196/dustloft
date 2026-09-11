@@ -64,11 +64,18 @@ That line is the whole of it:
 - `cleaned` is the running total of bytes Dustloft has reclaimed on this Mac.
 - `version` is the build you are running.
 
-The request's IP address is used to stop one machine flooding the counter, then
-discarded — it is never stored, and the salt used to hash it is random per server
-process by default, so two requests cannot be linked even in principle. The
-figures it feeds are public at **[dustloft.com/stats](https://dustloft.com/stats)**;
-there is no endpoint, there or anywhere, that returns a single install's row.
+`cleaned` counts items sent to the Trash as well as those deleted outright — you
+asked for both to go — which is why everything shown against this figure says
+"cleaned" rather than "freed".
+
+The request's IP address is used to rate limit, and only that. A salted hash of
+it becomes a counter that expires after sixty seconds; the address itself is
+never written down, and neither the hash nor the address is attached to a report
+or stored alongside one. By default the salt is random per server process, so
+those short-lived counters cannot be matched up across processes or after a
+restart. The figures all this feeds are public at
+**[dustloft.com/stats](https://dustloft.com/stats)**; there is no endpoint, there
+or anywhere, that returns a single install's row.
 
 **Turning it off.** The first-run card shows the message above with your real
 numbers in it, and has a "Turn it off" button. The switch stays in the Overview
