@@ -1,0 +1,40 @@
+name: Site API
+
+# The DMG workflow deliberately ignores site/**, so without this the counting
+# endpoints would ship to production with nothing having run against them.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/api/**'
+      - 'tools/api-tests/**'
+      - '.github/workflows/site-api.yml'
+  pull_request:
+    paths:
+      - 'site/api/**'
+      - 'tools/api-tests/**'
+      - '.github/workflows/site-api.yml'
+  workflow_dispatch:
+
+# This also runs code from the branch under test, so it gets no more than it
+# needs to check the branch out.
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Redis
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends redis-server
+
+      # The counting rules are a Lua script Redis executes, so they are only
+      # meaningfully tested against a real server.
+      - name: Run the endpoint tests
+        run: ./tools/api-tests/run.sh

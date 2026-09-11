@@ -9,6 +9,13 @@ struct CleanOutcome: Identifiable {
     var bytes: Int64
     var ok: Bool
     var message: String?
+    /// Whether this may be added to a running total of space cleaned.
+    ///
+    /// False for work whose effect cannot be measured — a shell command run as
+    /// root, where `bytes` is an estimate of what it was *asked* to reclaim and
+    /// nothing afterwards can say what it actually did. Such an item is still
+    /// shown and still logged; it is only kept out of the arithmetic.
+    var countsAsCleaned: Bool = true
 }
 
 @MainActor
@@ -28,10 +35,41 @@ final class Cleaner: ObservableObject {
     /// Ids of everything that was actually removed.
     var cleanedIDs: [UUID] { outcomes.filter { $0.ok }.map { $0.itemID } }
 
+    /// What Dustloft itself removed — items sent to the Trash included, since
+    /// the person asked for those to go and they leave when the Trash is
+    /// emptied. Everything shown against this figure says "cleaned" rather than
+    /// "freed" for that reason — counted when it leaves the active filesystem,
+    /// and not again when the Trash is later emptied through Dustloft.
+    ///
+    /// Not a universal "once, ever": restoring something from the Trash by hand
+    /// and cleaning it again does count it twice. Closing that would mean
+    /// keeping a permanent local list of every path ever cleaned, which is a
+    /// worse thing to have than the double-count is a problem — the log is
+    /// deliberately append-only and nothing reads it back.
+    ///
+    /// Anything whose effect could not be measured is excluded too; see
+    /// `CleanOutcome.countsAsCleaned`.
+    ///
+    /// Deliberately not `freedBytes`: that figure is overwritten by the volume
+    /// delta, which is the right number to show someone staring at their disk
+    /// but the wrong one to add up, because it also counts whatever else macOS
+    /// happened to do during the run. It cannot be used as a ceiling here
+    /// either — an APFS snapshot routinely holds deleted space for hours, so a
+    /// real 50 GB removal can show a delta of nothing.
+    var accountedBytes: Int64 {
+        outcomes.filter { $0.ok && $0.countsAsCleaned }.reduce(0) { $0 + $1.bytes }
+    }
+
     /// Executes the chosen items. Admin removals are collected and run under a
     /// single authorisation prompt rather than one dialog per path.
-    func run(_ items: [ScanItem]) async {
-        guard !isRunning, !items.isEmpty else { return }
+    ///
+    /// Returns false when there was nothing to do, or a run was already under
+    /// way. The caller has to know the difference: crediting a cumulative total
+    /// from `outcomes` after a no-op would count a run's bytes twice, and that
+    /// total only ever rises.
+    @discardableResult
+    func run(_ items: [ScanItem]) async -> Bool {
+        guard !isRunning, !items.isEmpty else { return false }
         isRunning = true
         finished = false
         outcomes = []
@@ -62,18 +100,24 @@ final class Cleaner: ObservableObject {
         for item in normal {
             currentStep = item.name
             let action = Cleaner.effectiveAction(for: item)
-            let res: (Bool, String?) = await withCheckedContinuation { cont in
+            let res: (Bool, String?, Int64?) = await withCheckedContinuation { cont in
                 DispatchQueue.global(qos: .userInitiated).async {
                     cont.resume(returning: Cleaner.perform(action))
                 }
             }
+            // What was measured, where anything was, rather than what was
+            // estimated before the run. Everything downstream — the results
+            // list, the log and the lifetime total — uses the same number.
+            let bytes = res.2 ?? item.bytes
+            let counts = Cleaner.targetPath(of: action).map { !Cleaner.isInsideTrash($0) } ?? true
             outcomes.append(CleanOutcome(itemID: item.id, name: item.name,
-                                         bytes: item.bytes, ok: res.0, message: res.1))
+                                         bytes: bytes, ok: res.0, message: res.1,
+                                         countsAsCleaned: counts))
             OperationLog.record(action: action, name: item.name,
-                                bytes: item.bytes, ok: res.0, message: res.1)
+                                bytes: bytes, ok: res.0, message: res.1)
             if res.0 {
-                if case .trashPath = action { trashedBytes += item.bytes }
-                else { freedBytes += item.bytes }
+                if case .trashPath = action { trashedBytes += bytes }
+                else { freedBytes += bytes }
             }
             done += 1
             progress = done / total
@@ -88,6 +132,11 @@ final class Cleaner: ObservableObject {
             // password prompt, and a path that fails is dropped rather than
             // weakening the batch.
             var refusedAdmin: [(String, String)] = []
+            // Captured before the prompt. Afterwards, absence alone cannot tell
+            // "this run removed it" from "it was already gone", and the second
+            // would credit a scan-time estimate to a run that did nothing.
+            var existedBefore: Set<String> = []
+            var sizeBefore: [String: Int64] = [:]
             let paths = adminItems.compactMap { item -> String? in
                 guard case .removePathAdmin(let p) = item.action else { return nil }
                 if let refusal = SafePath.validate(p) {
@@ -95,6 +144,13 @@ final class Cleaner: ObservableObject {
                 }
                 if SafePath.isSymlink(p) {
                     refusedAdmin.append((item.name, "refused: symlink, not removed as root")); return nil
+                }
+                if Cleaner.entryExists(p) {
+                    existedBefore.insert(p)
+                    // Free, and it has to happen before the batch because
+                    // afterwards there is nothing left to stat. A directory
+                    // gets nothing back and keeps the scan's figure.
+                    if let measured = Cleaner.fileSizeNow(p) { sizeBefore[p] = measured }
                 }
                 return p
             }
@@ -110,6 +166,29 @@ final class Cleaner: ObservableObject {
                     cont.resume(returning: Shell.runAsAdmin(script))
                 }
             }
+            // A refused authorisation is distinct from a command that ran and
+            // failed: osascript reports it as -128, and in that case not one
+            // line of the batch executed. Everything else means the script did
+            // run, and per-item truth has to come from somewhere better than
+            // the exit status of whichever command was last.
+            // osascript writes `execution error: User canceled. (-128)`, and
+            // every word of that is localised — including the prefix. The
+            // parenthesised code is not, because it is formatting rather than
+            // message, so it is the only part of the line that means the same
+            // thing on a Mac set to any language. The English wording is still
+            // matched as well, in both spellings, for the case where the
+            // formatting ever changes.
+            //
+            // A bare "-128" would be too loose: a path called chunk-1284 would
+            // turn any failing command in the batch into "cancelled". The
+            // parentheses are what make it a code and not a coincidence, and a
+            // path containing literally "(-128)" would only cost a batch being
+            // reported as refused, with nothing credited — the safe direction.
+            let lowered = res.err.lowercased()
+            let cancelled = !res.ok && (lowered.contains("(-128)")
+                                        || lowered.contains("user canceled")
+                                        || lowered.contains("user cancelled"))
+
             for item in adminItems {
                 // An item dropped by validation was never in the script, so it
                 // must not inherit the batch's success.
@@ -120,12 +199,72 @@ final class Cleaner: ObservableObject {
                                         bytes: item.bytes, ok: false, message: refusal.1)
                     continue
                 }
-                let msg = res.ok ? nil : (res.err.isEmpty ? "authorisation cancelled" : res.err)
+                let ok: Bool
+                let msg: String?
+                // Zeroed for anything this run did not actually remove. The
+                // volume delta only overwrites freedBytes when it is positive,
+                // which an APFS snapshot routinely prevents — so the results
+                // screen would otherwise be free to claim gigabytes for a path
+                // that was gone before the prompt was ever shown.
+                var bytes = item.bytes
+                // A shell command has no path to check afterwards, so it keeps
+                // the batch's exit status — which, for `a ; b`, is b's. The two
+                // that reach here (`tmutil thinlocalsnapshots`, `mdutil -E`)
+                // also carry an estimate of what they were asked to reclaim
+                // rather than a measurement of what they did, so neither the
+                // status nor the size can be trusted in a total that is
+                // published. Shown and logged as before; not counted.
+                var counts = true
+                if case .adminShell = item.action { counts = false }
+                // A root-owned file in the Trash arrives here rather than on
+                // the path above, and is the same double-count either way.
+                if let p = Cleaner.targetPath(of: item.action), Cleaner.isInsideTrash(p) {
+                    counts = false
+                }
+
+                if cancelled {
+                    // Nothing in the batch ran, so nothing in it succeeded —
+                    // whatever the filesystem happens to look like.
+                    ok = false
+                    msg = "authorisation cancelled"
+                } else if case .removePathAdmin(let path) = item.action {
+                    if !existedBefore.contains(path) {
+                        // Gone before the prompt. The row should still clear,
+                        // but this run did not reclaim it.
+                        ok = true
+                        msg = "already gone"
+                        counts = false
+                        bytes = 0
+                    } else {
+                        // The path is the ground truth, in both directions. The
+                        // batch is `rm -rf … ; cmd1 ; cmd2` and a shell reports
+                        // the LAST command's status, so a failing mdutil marks a
+                        // perfectly successful rm as failed exactly as readily
+                        // as the reverse. Asking the filesystem is the only
+                        // answer that does not depend on what came last.
+                        //
+                        // It is not perfect either: a path recreated by its own
+                        // app during the batch's slow tail reads as "still
+                        // there", so a real removal is reported as a failure and
+                        // credited nothing. That is the direction to be wrong
+                        // in — the row stays visible and the published total
+                        // stays short — and the alternative is trusting an exit
+                        // status that demonstrably lies.
+                        ok = !Cleaner.entryExists(path)
+                        msg = ok ? nil : (res.ok ? "still present after the administrator step"
+                                                 : (res.err.isEmpty ? "could not remove" : res.err))
+                        if let measured = sizeBefore[path] { bytes = measured }
+                    }
+                } else {
+                    ok = res.ok
+                    msg = res.ok ? nil : (res.err.isEmpty ? "could not run" : res.err)
+                }
                 outcomes.append(CleanOutcome(
-                    itemID: item.id, name: item.name, bytes: item.bytes, ok: res.ok, message: msg))
+                    itemID: item.id, name: item.name, bytes: bytes, ok: ok,
+                    message: msg, countsAsCleaned: counts))
                 OperationLog.record(action: item.action, name: item.name,
-                                    bytes: item.bytes, ok: res.ok, message: msg)
-                if res.ok { freedBytes += item.bytes }
+                                    bytes: bytes, ok: ok, message: msg)
+                if ok { freedBytes += bytes }
             }
             done += 1
             progress = done / total
@@ -141,6 +280,7 @@ final class Cleaner: ObservableObject {
         progress = 1
         isRunning = false
         finished = true
+        return true
     }
 
     /// Anything unrecoverable is moved to the Trash rather than unlinked.
@@ -148,49 +288,182 @@ final class Cleaner: ObservableObject {
     /// it here makes that decision reversible for as long as the Trash is left
     /// alone. Regenerable and admin items are deleted outright — they come
     /// back on their own, so reversibility would only cost disk space.
+    ///
+    /// The exception is something already in the Trash, which has nowhere
+    /// further to go: emptying it unlinks. The review sheet says so in place of
+    /// the usual "stays recoverable" promise whenever such a row is ticked.
     nonisolated static func effectiveAction(for item: ScanItem) -> CleanAction {
         if case .removePath(let p) = item.action, item.tier == .permanent {
+            // Except when it is already there. Trash rows are permanent-tier
+            // too, so this used to hand `trashItem` a file inside ~/.Trash —
+            // which either fails with "could not move to Trash" or shuffles it
+            // around inside, clearing the row while the file returns on the
+            // next scan. Emptying the Trash is the one case where a permanent
+            // item really is meant to be unlinked, and it is the case the user
+            // confirmed individually.
+            if isInsideTrash(p) { return item.action }
             return .trashPath(p)
         }
         return item.action
     }
 
+    /// The "Total reclaimed space: 10.79GB" line `docker system prune` prints.
+    ///
+    /// Returns 0 rather than the scan estimate when the line is missing, on the
+    /// same principle as the git gc measurement: a figure that is published is
+    /// either measured or not counted.
+    nonisolated static func dockerReclaimed(_ output: String) -> Int64 {
+        for line in output.split(separator: "\n")
+        where line.lowercased().contains("total reclaimed space") {
+            return Scanners.parseDockerSize(line.split(separator: " ").map(String.init)) ?? 0
+        }
+        return 0
+    }
+
+    /// The filesystem path an action operates on, where it has one.
+    nonisolated static func targetPath(of action: CleanAction) -> String? {
+        switch action {
+        case .removePath(let p), .trashPath(let p), .removePathAdmin(let p), .gitGC(let p):
+            return p
+        case .ollamaModel, .dockerPrune, .adminShell, .advisory:
+            return nil
+        }
+    }
+
+    /// Whether a path is already inside a Trash.
+    ///
+    /// This is the one place the same bytes can be billed twice. Dustloft moves
+    /// a permanent-tier item to the Trash and counts it, the next scan finds
+    /// that file in the Trash and offers it again, and emptying it there would
+    /// count it a second time for work that frees the space once. The rule is
+    /// that the moment it leaves the active filesystem is the moment it counts,
+    /// and the Trash never counts.
+    ///
+    /// Anchored to the real Trash roots, not any path with a `.Trash` component
+    /// in it. That distinction used to be cosmetic — a false positive only cost
+    /// an uncounted row — but this also decides whether a permanent item is
+    /// moved to the Trash or unlinked outright, and there it is the difference
+    /// between a reversible decision and a final one. A sandboxed app's
+    /// `~/Library/Containers/<id>/Data/.Trash` is not the Trash.
+    nonisolated static func isInsideTrash(_ path: String) -> Bool {
+        let standard = (path as NSString).standardizingPath
+
+        let home = NSHomeDirectory() + "/.Trash"
+        if standard == home || standard.hasPrefix(home + "/") { return true }
+
+        // Per-volume trashes live only at a volume root: /.Trashes/<uid>/… and
+        // /Volumes/<name>/.Trashes/<uid>/…. pathComponents starts with "/".
+        let components = (standard as NSString).pathComponents
+        guard let index = components.firstIndex(of: ".Trashes") else { return false }
+        if index == 1 { return true }
+        return index == 3 && components[1] == "Volumes"
+    }
+
+    /// A single file's size on disk right now, from the stat and nothing more.
+    ///
+    /// Scan results are cached — for hours, and for as long as the app stays
+    /// open — so `item.bytes` can be out of date by the time someone cleans,
+    /// and it feeds a published total that only ever rises. This corrects that
+    /// for free.
+    ///
+    /// Allocated blocks rather than apparent size, matching
+    /// `Shell.allocatedSize` and the scanners: Docker.raw reports 460 GB while
+    /// occupying 8.8 GB, and a figure that says the first is a lie the safety
+    /// page explicitly promises not to tell.
+    ///
+    /// `nil` for anything that is not a regular file. A directory's own
+    /// `st_blocks` describes the directory entry and not its contents, and
+    /// measuring the contents means a `du` over the whole tree — which is what
+    /// a previous version of this did, and which cost every clean a second full
+    /// walk of everything the scan had already walked. A directory therefore
+    /// keeps the scan's figure. That is a real if bounded overstatement when
+    /// the app has been open for hours, and it is the cheaper of the two
+    /// errors: the alternative made every clean minutes slower for everyone.
+    nonisolated static func fileSizeNow(_ path: String) -> Int64? {
+        var info = stat()
+        guard lstat(path, &info) == 0, (info.st_mode & S_IFMT) == S_IFREG else { return nil }
+        return Int64(info.st_blocks) * 512
+    }
+
+    /// Whether there is an entry at this path at all.
+    ///
+    /// `lstat` rather than `FileManager`, and not for speed. Two distinctions
+    /// matter here and Foundation blurs both. It must not follow symlinks — a
+    /// dangling one is a real directory entry that really does need removing.
+    /// And "there is nothing here" has to be told apart from "I could not
+    /// look": an unmounted volume, a stale mount or a permission wall is a
+    /// question without an answer, and calling it "gone" turns a failure into
+    /// a successful clean, skips the removal attempt, and — since this is also
+    /// the ground truth for the admin batch — reports a removal that did
+    /// happen as one that did not.
+    ///
+    /// The first attempt at this asked `attributesOfItem` and matched
+    /// `NSFileNoSuchFileError`, which is not the code it throws. It answered
+    /// "present" for a file that had just been deleted, and CI caught it.
+    /// errno leaves nothing to guess at.
+    nonisolated static func entryExists(_ path: String) -> Bool {
+        var info = stat()
+        if lstat(path, &info) == 0 { return true }
+        return errno != ENOENT
+    }
+
     // MARK: - Action execution (background thread only)
 
-    nonisolated private static func perform(_ action: CleanAction) -> (Bool, String?) {
+    /// The third element is what was *actually* reclaimed, when that can be
+    /// measured and differs from the item's size. `nil` means "the item's own
+    /// size was right", which is true of everything that is simply removed.
+    nonisolated private static func perform(_ action: CleanAction) -> (Bool, String?, Int64?) {
         switch action {
 
         case .removePath(let p):
-            if let refusal = SafePath.validate(p) { return (false, refusal.reason) }
+            if let refusal = SafePath.validate(p) { return (false, refusal.reason, nil) }
+            // Gone since the scan — emptied by hand, or by the app that owns
+            // it. `rm -rf` exits 0 on a path that is not there, so without this
+            // the scan-time estimate would be banked as space this run
+            // reclaimed. It is still a success: the row should disappear.
+            guard entryExists(p) else { return (true, "already gone", 0) }
+            let removing = fileSizeNow(p)
             do {
                 try FileManager.default.removeItem(atPath: p)
-                return (true, nil)
+                return (true, nil, removing)
             } catch {
                 let r = Shell.run("/bin/rm", ["-rf", p], timeout: 900)
-                return r.ok ? (true, nil) : (false, r.err.isEmpty ? "could not remove" : r.err)
+                return r.ok ? (true, nil, removing)
+                            : (false, r.err.isEmpty ? "could not remove" : r.err, nil)
             }
 
         case .trashPath(let p):
-            if let refusal = SafePath.validate(p) { return (false, refusal.reason) }
+            if let refusal = SafePath.validate(p) { return (false, refusal.reason, nil) }
+            // Same as above: gone since the scan is a success with nothing to
+            // its name, not the failure trashItem would otherwise report — and
+            // the row has to clear either way.
+            guard entryExists(p) else { return (true, "already gone", 0) }
+            let trashing = fileSizeNow(p)
             do {
                 try FileManager.default.trashItem(at: URL(fileURLWithPath: p), resultingItemURL: nil)
-                return (true, nil)
+                return (true, nil, trashing)
             } catch {
                 // Deliberately no rm -rf fallback. This item was routed here
                 // because it cannot be recovered; quietly deleting it outright
                 // would remove the one guarantee the routing exists to provide.
-                return (false, "could not move to Trash")
+                return (false, "could not move to Trash", nil)
             }
 
         case .removePathAdmin, .adminShell:
-            return (false, "handled in the batched admin step")
+            return (false, "handled in the batched admin step", nil)
 
         case .ollamaModel(let name):
+            // The only row counted at its scan-time figure on purpose. `ollama
+            // rm` reports nothing about size, but it fails outright on a model
+            // that is not there — so a success is itself evidence the listed
+            // model still existed, and a model's size does not drift the way a
+            // build directory's does. The figure is wrong only if a different
+            // model was pulled under the same tag in between.
             let r = Shell.tool("ollama", ["rm", name], timeout: 120)
-            return r.ok ? (true, nil) : (false, r.err)
+            return r.ok ? (true, nil, nil) : (false, r.err, nil)
 
         case .dockerPrune:
-            guard let docker = Shell.which("docker") else { return (false, "docker not found") }
+            guard let docker = Shell.which("docker") else { return (false, "docker not found", nil) }
             var startedByUs = false
             if !Shell.run(docker, ["info"], timeout: 20).ok {
                 _ = Shell.run("/usr/bin/open", ["-a", "Docker"], timeout: 30)
@@ -201,22 +474,43 @@ final class Cleaner: ObservableObject {
                 }
             }
             guard Shell.run(docker, ["info"], timeout: 15).ok else {
-                return (false, "Docker daemon did not start")
+                return (false, "Docker daemon did not start", nil)
             }
             // -a removes unused images and stopped containers. No --volumes, ever.
             let r = Shell.run(docker, ["system", "prune", "-a", "-f"], timeout: 900)
             if startedByUs {
                 _ = Shell.run("/usr/bin/osascript", ["-e", "quit app \"Docker\""], timeout: 30)
             }
-            return r.ok ? (true, nil) : (false, r.err)
+            guard r.ok else { return (false, r.err, nil) }
+            // The item's size came from `docker system df` at scan time, and
+            // results are cached between launches — so by now it can be well
+            // out of date in either direction. Prune prints what it actually
+            // freed, and that is a measurement rather than an estimate.
+            return (true, nil, dockerReclaimed(r.out))
 
         case .gitGC(let repo):
-            guard let git = Shell.which("git") else { return (false, "git not found") }
+            guard let git = Shell.which("git") else { return (false, "git not found", nil) }
+            // The only action here that compacts rather than removes. The item's
+            // size is the whole repository and gc reclaims a fraction of it, so
+            // taking the size at face value would report a 3 GB repo as 3 GB
+            // cleaned. Measuring both ends costs two `du` runs next to a gc that
+            // already walked the object store.
+            let gitDir = repo + "/.git"
+            let before = Shell.diskUsage(gitDir)
             let r = Shell.run(git, ["-C", repo, "gc", "--prune=now"], timeout: 900)
-            return r.ok ? (true, nil) : (false, r.err)
+            guard r.ok else { return (false, r.err, nil) }
+            let after = Shell.diskUsage(gitDir)
+            // diskUsage cannot tell "empty" from "du failed" — both come back
+            // as 0 — and a .git small enough to genuinely be zero was never
+            // offered here in the first place. So an unreadable measurement
+            // counts as nothing reclaimed. Guessing in the other direction
+            // would file the entire repository as cleaned, in a total that
+            // only ever rises and then gets reported.
+            guard before > 0, after > 0, after < before else { return (true, nil, 0) }
+            return (true, nil, before - after)
 
         case .advisory:
-            return (false, "advisory only")
+            return (false, "advisory only", nil)
         }
     }
 }

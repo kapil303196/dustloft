@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RootView: View {
     @ObservedObject var settings: Settings
+    @ObservedObject var metrics: Metrics
     @StateObject private var engine: ScanEngine
     // A List(selection:) bound to String? needs String tags, never String?.
     // Overview therefore gets a real id rather than nil.
@@ -15,8 +16,9 @@ struct RootView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
 
-    init(settings: Settings) {
+    init(settings: Settings, metrics: Metrics) {
         self.settings = settings
+        self.metrics = metrics
         _engine = StateObject(wrappedValue: ScanEngine(settings: settings))
     }
 
@@ -72,7 +74,8 @@ struct RootView: View {
         .toolbar { toolbarContent }
         .safeAreaInset(edge: .bottom) { actionBar }
         .sheet(isPresented: $showReview) {
-            ReviewSheet(engine: engine, isPresented: $showReview, scope: reviewScope)
+            ReviewSheet(engine: engine, metrics: metrics,
+                        isPresented: $showReview, scope: reviewScope)
         }
         .sheet(isPresented: $showSummary) {
             SummarySheet(engine: engine, isPresented: $showSummary)
@@ -86,14 +89,38 @@ struct RootView: View {
             // Ask once, on first run only. After that a dismissible banner
             // carries the message — never a sheet on every launch.
             if !hasSeenWelcome {
-                hasSeenWelcome = true
+                // Order matters. The metrics notice is gated on both of these,
+                // and setting the persisted one first would leave a frame in
+                // which the card could appear — and mark itself as shown —
+                // underneath the sheet that is covering it.
                 showWelcome = true
+                hasSeenWelcome = true
                 return
             }
             // Cached results are shown straight away; a fresh scan only starts
             // when they are genuinely old.
             if engine.isStale { await engine.scan() }
             await updater.check(silent: true)
+            metrics.reportIfNeeded()
+        }
+        .task {
+            // The daily beat only happens if something asks on the day, and the
+            // only things that ask are launch and a clean. Without this, an app
+            // left open for a week reports once, and the daily floor the notice,
+            // the README and the privacy page all promise is not one.
+            //
+            // Fifteen minutes rather than an hour, because the ticker starts at
+            // launch and the clock it is checking is stamped a moment later, so
+            // a tick always lands just short of the mark. At an hour that means
+            // the twenty-fourth tick misses and the beat settles into a
+            // twenty-five hour cycle; at fifteen minutes the drift is fifteen
+            // minutes. reportIfNeeded is two defaults reads when throttled, so
+            // asking four times an hour costs nothing worth measuring.
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 900 * 1_000_000_000)
+                if Task.isCancelled { break }
+                metrics.reportIfNeeded()
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .dustloftCheckUpdates)) { _ in
             Task { await updater.check() }
@@ -144,6 +171,21 @@ struct RootView: View {
     private var overview: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+
+                // First in the scroll view, above the hero, and its position
+                // is load-bearing rather than editorial. The card marks itself
+                // as shown when it appears, and that mark is what permits
+                // anything to be sent at all — so it has to be somewhere that
+                // is unarguably on screen. A ScrollView builds its children
+                // eagerly, so onAppear fires whether or not a card further down
+                // is below the fold; at the top of the scroll view it cannot be.
+                //
+                // Nor while the first-run sheet is covering the window: being
+                // in the view tree behind a modal is not being seen either.
+                if hasSeenWelcome && !showWelcome
+                    && !metrics.noticeSeen && !metrics.isSuppressedByEnvironment {
+                    MetricsNotice(metrics: metrics).padding(.bottom, DS.s4)
+                }
 
                 hero
 
@@ -209,6 +251,7 @@ struct RootView: View {
                     Button("Check for updates") { Task { await updater.check() } }
                         .buttonStyle(.link)
                         .font(DS.caption())
+                    MetricsFooterControl(metrics: metrics)
                     Spacer()
                 }
                 .padding(.top, DS.s3)
@@ -306,6 +349,10 @@ struct RootView: View {
                 if engine.totalSelected > 0 {
                     StatChip(symbol: "checkmark.circle.fill", label: "Selected",
                              value: Bytes.fmt(engine.totalSelected), tint: DS.accent)
+                }
+                if metrics.lifetimeCleaned > 0 {
+                    StatChip(symbol: "clock.arrow.circlepath", label: "Cleaned so far",
+                             value: Bytes.fmt(metrics.lifetimeCleaned), tint: DS.textDim)
                 }
                 Spacer()
             }

@@ -70,6 +70,121 @@ overridable from the UI.
 
 ---
 
+## 2b. Counting, and the promise around it
+
+Dustloft had no idea how many Macs it ran on or whether it had ever actually
+given anyone their disk back. It now sends **one line, when its byte total
+changes and once a day even when it has not**:
+`{ id, cleaned, version }` — a random UUID belonging to that copy, the running
+total of bytes reclaimed, and the build number. That is the entire payload, and
+`MetricsReport` is written as a type so a fourth field cannot be added without a
+visible diff and a failing test.
+
+The cadence is a ceiling of one report a minute and a floor of one a day, which
+is why nothing anywhere says "once a day" flat: the daily beat is the minimum,
+not the maximum, and five cleans in ten minutes really are five reports. If
+`MetricsRules.minInterval` or `heartbeat` move, the wording in the notice, the
+README, `site/privacy.html`, `site/index.html`, `site/safety.html` and
+`site/llms.txt` moves with them.
+
+Rules, in the same spirit as the safety model — do not weaken these either:
+
+- **Nothing about the contents of a disk.** No file name, no path, no listing,
+  no account, no address. The operations log stays local, always.
+- **The identifier is random and made on first use.** Not derived from hardware
+  or user, and never created at all if reporting is off before the first report.
+- **The IP address is used to rate limit and nothing else.** A salted hash of it
+  becomes a counter with a sixty-second TTL; the address itself is never
+  written, and neither it nor the hash is attached to a report. Without
+  `DUSTLOFT_IP_SALT` the salt is random per server process and never persisted,
+  so those counters cannot be correlated across processes or restarts. Do not
+  write that requests "cannot be linked at all" — within one process and one
+  minute they share a counter, and the docs say so.
+- **The card is drawn, and has been readable for half a minute, before
+  anything is sent.** `isReporting` requires
+  `noticeShown`, which the notice sets when it first appears. Without it, a
+  first run where someone cleans straight away could report before being told.
+  Two things make that mark mean "was on screen": the card is rendered first in
+  the Overview's scroll view, because SwiftUI builds a `ScrollView`'s children
+  eagerly and `onAppear` would otherwise fire for a card below the fold; and it
+  is not rendered at all while the first-run sheet covers the window. Moving it
+  down the page, or into a lazy container, quietly breaks the guarantee. The
+  first report then waits `Metrics.noticeGrace` and re-checks `isReporting`, so
+  reading the card and pressing "Turn it off" beats it — otherwise the decision
+  it offers would already have been made.
+- **Off is one click, and permanent.** The first-run card leads with the literal
+  three fields and carries the off switch; the switch then lives in the Overview
+  footer. `launchctl setenv DUSTLOFT_NO_METRICS 1` disables it without launching
+  the app, and an unrecognised value fails closed. It has to be `launchctl` and
+  not a shell `export`: an app opened from the Dock or Finder inherits launchd's
+  environment, not a terminal's. Anywhere this is documented, say so — it is the
+  difference between an opt-out that works and one that only looks like it does.
+- **Aggregates only on the way out.** `/api/stats` returns totals. Nothing
+  returns one install's row; the per-install value exists so a duplicate report
+  is not counted twice, and for no other reason.
+
+Counting correctness lives in one Lua script (`site/api/_lua.mjs`) because the
+three properties that make the numbers mean anything — count an install once,
+ignore a replayed report, keep the version tally equal to the install set — do
+not survive being split across round trips.
+
+The client cap `MetricsRules.maxCleaned` and the server's `MAX_CLEANED` are the
+same number on purpose. Move one and move the other.
+
+Two rules keep the total honest, and both are easy to undo by accident:
+**measured or not counted** — where the item's own size is an estimate of
+something else, the real figure is measured and that is what counts (`git gc`
+reports the `.git` directory's shrinkage, `docker system prune` reports what it
+says it freed, and an unreadable measurement counts as zero); where it cannot be
+measured at all, as with a root shell command, the row carries
+`countsAsCleaned: false` and is shown and logged as ever but never added up.
+For a plain removal the correction is `Cleaner.fileSizeNow`, a single stat in
+allocated blocks — never apparent size, or Docker.raw would be counted at
+460 GB while occupying 8.8 GB. It answers only for regular files: re-walking a
+directory would cost every clean a second full pass over what the scan already
+walked, so a directory keeps the scan's figure and that overstatement is
+accepted deliberately. And
+**the Trash never counts**, because an
+item Dustloft trashes is counted then, is offered again from the Trash on the
+next scan, and would otherwise be billed twice for space freed once.
+
+Neither rule claims "once, ever". Restoring something from the Trash by hand and
+cleaning it again counts it twice, and that is left alone deliberately: the only
+way to close it is a permanent local list of every path ever cleaned, which is a
+worse thing for this app to be keeping than the double-count is a problem.
+
+**The website is not the app.** dustloft.com loads Microsoft Clarity on every
+page except `/stats`, `/privacy` included. That is ordinary site analytics and is nothing to do
+with the app's counter, but a page describing one while silently doing the other
+is sleight of hand — so `site/privacy.html` has a section naming it. If Clarity
+is ever removed, or added to, that section moves with it. (Running a session
+recorder on the page that explains your privacy is a fair thing to object to;
+removing the tag from `privacy.html` alone is a one-block deletion.)
+
+If this section and the code ever disagree, so do `README.md` and
+`site/privacy.html`, and all four need fixing together.
+
+### Turning the counters on (one manual step)
+
+The endpoints ship inert. Until a store is attached, `/api/ping` returns 202 and
+throws the report away and `/api/stats` reports `configured: false` — a preview
+deployment is never broken by the absence, and nothing is recorded.
+
+1. In the Vercel project, **Storage → add a Redis store** (the first-party KV
+   product or Upstash; both expose the same REST API). The free tier is far more
+   than this needs: one hash field per install, plus two counters.
+2. Vercel injects the credentials itself. `_store.mjs` accepts either naming —
+   `KV_REST_API_URL`/`KV_REST_API_TOKEN` or
+   `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` — so whichever was
+   attached works without a code change.
+3. Redeploy. `/stats` fills in on its own.
+
+Two optional variables: `DUSTLOFT_IP_SALT` makes rate limiting global rather
+than per server process, and `DUSTLOFT_STATS_TOKEN` closes `/api/stats` behind a
+bearer token if the figures should stop being public.
+
+---
+
 ## 3. Architecture
 
 ```
@@ -81,11 +196,19 @@ Sources/Dustloft/
   Shell.swift             Process wrapper, PATH resolution, admin via osascript
   Scanner.swift           ScanEngine (@MainActor) + Scanners (background)
   Cleaner.swift           executes CleanActions, batches admin into one prompt
+  Metrics.swift           the anonymous install/reclaimed count, and its rules
   Views/
     Components.swift      Card, TierBadge, StorageMeter, CompositionBar, buttons
     ContentView.swift     RootView, sidebar, overview, action bar
     CategoryDetailView.swift  per-category item list
     ReviewSheet.swift     review → running → results
+    MetricsNotice.swift   first-run disclosure card and the permanent switch
+
+site/api/
+  _store.mjs              Redis over REST; no-ops when no store is attached
+  _lua.mjs                the one atomic script that does all the counting
+  ping.mjs                POST one report
+  stats.mjs               GET the aggregates
 ```
 
 **Threading:** `ScanEngine` and `Cleaner` are `@MainActor`. Every `Scanners.*`
@@ -172,8 +295,19 @@ lookalike prefix does not match, that Docker volumes never count as reclaimable,
 and that a remote with zero refs reads as "only copy" while an unchecked remote
 does not.
 
+It also pins the reporting rules: the throttle, the saturating total, and the
+literal bytes of the payload — that last one fails if a fourth field is ever
+added, which is the point of it.
+
 Tests run in CI, not locally: XCTest ships with full Xcode, which the runner has
 and a Command Line Tools machine does not. Treat CI as the test environment.
+
+The two site endpoints have their own suite, `./tools/api-tests/run.sh`, run by
+the `Site API` workflow. It starts a throwaway `redis-server` and drives the
+real handlers through a shim that speaks the store's REST dialect — the counting
+rules are a Lua script Redis executes, so a mocked store would only ever test
+the mock. It needs `redis-server` on PATH (`brew install redis`) and skips
+cleanly without it.
 
 ### Known gaps / next steps
 

@@ -1,0 +1,158 @@
+// Reads back the two figures the reports add up to: how many copies of Dustloft
+// exist, and how much space they have reclaimed between them.
+//
+// Aggregates only. There is no endpoint, here or anywhere, that returns a
+// single install's row — the per-install values exist purely so a repeated
+// report cannot be counted twice.
+import { configured, pipeline, KEYS, today } from './_store.mjs';
+
+/** How many days of history the chart gets. */
+const WINDOW = 30;
+
+function days(count, now = new Date()) {
+  const out = [];
+  for (let i = count - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setUTCDate(d.getUTCDate() - i);
+    out.push(today(d));
+  }
+  return out;
+}
+
+const int = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
+/**
+ * The byte total as an exact decimal string.
+ *
+ * Redis counters are 64-bit and JSON numbers are doubles, so past 2^53 — about
+ * 9 PB, which enough installs cleaning enough disks really will reach — Number
+ * silently rounds. The page prints this figure as an exact byte count, so it
+ * has to survive as text and never pass through a double on the way.
+ */
+const exact = (v) => {
+  const raw = typeof v === 'string' ? v.trim() : String(v ?? '0');
+  return /^-?[0-9]+$/.test(raw) ? raw : '0';
+};
+
+/** Digit grouping without going through Number, for the same reason. */
+export function grouped(decimal) {
+  const negative = decimal.startsWith('-');
+  const digits = negative ? decimal.slice(1) : decimal;
+  return (negative ? '-' : '') + digits.replace(/\B(?=([0-9]{3})+(?![0-9]))/g, ',');
+}
+
+/** Decimal units — 1 kB is 1000 bytes — because that is what macOS reports and
+ *  what ByteCountFormatter(.file) gives the app. Do not "fix" this to 1024: the
+ *  site would then disagree with every figure Dustloft shows. */
+export function human(bytes) {
+  const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+  let n = Math.abs(bytes);
+  let u = 0;
+  while (n >= 1000 && u < units.length - 1) {
+    n /= 1000;
+    u++;
+  }
+  return `${u === 0 ? n : n.toFixed(n < 10 ? 2 : 1)} ${units[u]}`;
+}
+
+export default async function handler(req, res) {
+  // Set first, so they are present on the 405 and the 401 too. Without them a
+  // cross-origin caller gets an opaque browser error in place of a readable
+  // reason, which is the one thing an error response is for.
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  // The response varies by credential, and a shared CDN cache that ignored
+  // that would hand the gated payload to the next anonymous caller.
+  res.setHeader('Vary', 'Authorization');
+
+  // Without this a cross-origin read carrying a token fails at the preflight,
+  // before the handler is reached at all.
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    return res.status(204).end();
+  }
+
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    res.setHeader('Allow', 'GET');
+    return res.status(405).json({ error: 'method not allowed' });
+  }
+
+  // Public by default — a running "X reclaimed" total is worth showing. Setting
+  // DUSTLOFT_STATS_TOKEN closes it without any code change.
+  const gate = process.env.DUSTLOFT_STATS_TOKEN;
+  if (gate) {
+    const auth = req.headers.authorization || '';
+    const presented = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+    if (presented !== gate) return res.status(401).json({ error: 'unauthorized' });
+  }
+
+  if (!configured) {
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(200).json({
+      configured: false,
+      hint: 'Attach a Redis store in Vercel and redeploy. Nothing is being recorded until then.',
+      installs: 0,
+      cleaned: { bytes: 0, exact: '0', grouped: '0', gb: 0, human: '0 B' },
+      versions: {},
+      daily: [],
+    });
+  }
+
+  const window = days(WINDOW);
+
+  try {
+    const [installs, bytes, versions, newDaily, bytesDaily] = await pipeline([
+      ['GET', KEYS.installCount],
+      ['GET', KEYS.bytesTotal],
+      ['HGETALL', KEYS.versionCounts],
+      ['MGET', ...window.map(KEYS.newOn)],
+      ['MGET', ...window.map(KEYS.bytesOn)],
+    ]);
+
+    // HGETALL comes back over REST as a flat field/value array.
+    const versionCounts = {};
+    if (Array.isArray(versions)) {
+      for (let i = 0; i + 1 < versions.length; i += 2) {
+        versionCounts[versions[i]] = int(versions[i + 1]);
+      }
+    } else if (versions && typeof versions === 'object') {
+      for (const [k, v] of Object.entries(versions)) versionCounts[k] = int(v);
+    }
+
+    const totalExact = exact(bytes);
+    const totalBig = BigInt(totalExact);
+    // `bytes` stays a JSON number because every consumer wants one; `exact` is
+    // the authority, and the two only differ beyond 2^53.
+    const totalBytes = Number(totalBig);
+    res.setHeader(
+      'Cache-Control',
+      gate ? 'private, no-store' : 'public, s-maxage=300, stale-while-revalidate=600'
+    );
+    return res.status(200).json({
+      configured: true,
+      installs: int(installs),
+      cleaned: {
+        bytes: totalBytes,
+        exact: totalExact,
+        grouped: grouped(totalExact),
+        gb: Number(totalBig / 1_000_000_000n),
+        human: human(totalBytes),
+      },
+      versions: versionCounts,
+      daily: window.map((date, i) => ({
+        date,
+        installs: int(Array.isArray(newDaily) ? newDaily[i] : 0),
+        cleanedBytes: int(Array.isArray(bytesDaily) ? bytesDaily[i] : 0),
+      })),
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error('stats failed:', err.message);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(503).json({ error: 'temporarily unavailable' });
+  }
+}

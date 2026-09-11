@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ReviewSheet: View {
     @ObservedObject var engine: ScanEngine
+    @ObservedObject var metrics: Metrics
     @Binding var isPresented: Bool
     /// nil reviews everything selected; a category id reviews just that section.
     var scope: String? = nil
@@ -11,6 +12,40 @@ struct ReviewSheet: View {
     /// Rendering from this fixed list means unticking every row in a section
     /// leaves the section on screen so it can be ticked back on.
     @State private var frozen: [(String, [UUID])] = []
+
+    /// Rows needing confirmation that will not end up in the Trash.
+    ///
+    /// Asked of `effectiveAction`, not of the path, because there are two ways
+    /// to miss the Trash and only one of them is about where the file is. An
+    /// item already in the Trash has nowhere further to go — and so does one
+    /// needing an administrator, because `Cleaner.run` partitions by action
+    /// rather than tier, so an admin row never reaches the Trash routing at all
+    /// and is unlinked by the batched root `rm`. Both are final; only the
+    /// question "what will actually be run for this row" catches both.
+    private var permanentDeletedOutright: [ScanItem] {
+        permanent.filter {
+            if case .trashPath = Cleaner.effectiveAction(for: $0) { return false }
+            return true
+        }
+    }
+
+    /// The promise has to match what is about to happen to the ticked rows.
+    /// "They stay recoverable until you empty it" is true of a file on its way
+    /// to the Trash and false of everything above, so it cannot simply be said
+    /// to everyone.
+    private var permanentWarning: String {
+        let final = permanentDeletedOutright.count
+        if final == 0 {
+            return "Nothing rebuilds these, so they go to the Trash rather than being deleted outright. They stay recoverable until you empty it."
+        }
+        if final == permanent.count {
+            return final == 1
+                ? "This cannot be moved to the Trash — it is either already there or owned by the system. Ticking this deletes it for good, right now."
+                : "These cannot be moved to the Trash — they are either already there or owned by the system. Ticking this deletes them for good, right now."
+        }
+        let recoverable = permanent.count - final
+        return "Nothing rebuilds these. \(recoverable) of them go to the Trash and stay recoverable until you empty it. The other \(final) cannot — already there, or owned by the system — and \(final == 1 ? "that one is" : "those are") deleted for good, right now."
+    }
 
     /// Selected rows, grouped by the section they came from and ordered with
     /// the riskiest sections first so nothing dangerous hides below the fold.
@@ -45,7 +80,19 @@ struct ReviewSheet: View {
     private var items: [ScanItem] { groups.flatMap { $0.1 }.filter { $0.selected } }
     private var totalBytes: Int64 { items.reduce(0) { $0 + $1.bytes } }
     private var offeredCount: Int { groups.reduce(0) { $0 + $1.1.count } }
-    private var permanent: [ScanItem] { items.filter { $0.tier == .permanent } }
+    /// Everything that needs its own confirmation before this runs.
+    ///
+    /// Permanent tier, plus anything inside a Trash whatever its tier. A
+    /// root-owned file in `~/.Trash` is classified `.admin` because removing it
+    /// needs a password — but it is every bit as unrecoverable as the
+    /// permanent-tier file next to it, and it was reaching the batched root
+    /// `rm -rf` with no acknowledgement asked for at all.
+    private var permanent: [ScanItem] {
+        items.filter { item in
+            if item.tier == .permanent { return true }
+            return Cleaner.targetPath(of: item.action).map(Cleaner.isInsideTrash) ?? false
+        }
+    }
     private var admin: [ScanItem] { items.filter { $0.tier == .admin } }
     private var regen: [ScanItem] { items.filter { $0.tier == .regenerable } }
     private var blocked: Bool { !permanent.isEmpty && !acknowledgePermanent }
@@ -60,6 +107,14 @@ struct ReviewSheet: View {
         .animation(DS.quick, value: cleaner.finished)
         // A progress bar does not need a 620x560 window.
         .onAppear { if frozen.isEmpty { freeze() } }
+        // The tick is consent to one specific sentence. Change the ticked rows
+        // and that sentence can change from "stays recoverable until you empty
+        // the Trash" to "deleted for good, right now", so an acknowledgement
+        // given to the first must not carry over to the second. Watched out
+        // here rather than on the card itself, which is removed from the tree
+        // when nothing permanent is ticked and would miss the change that
+        // brings it back.
+        .onChange(of: permanentWarning) { _ in acknowledgePermanent = false }
         .frame(width: cleaner.isRunning && !cleaner.finished ? 400 : 620,
                height: cleaner.isRunning && !cleaner.finished ? 168 : 560)
         .background(DS.bg)
@@ -93,7 +148,7 @@ struct ReviewSheet: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("I understand these \(permanent.count) item\(permanent.count == 1 ? "" : "s") are not regenerable")
                                         .font(DS.body().weight(.semibold)).foregroundStyle(DS.text)
-                                    Text("Nothing rebuilds these, so they go to the Trash rather than being deleted outright. They stay recoverable until you empty it.")
+                                    Text(permanentWarning)
                                         .font(DS.caption()).foregroundStyle(DS.textDim)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
@@ -119,12 +174,17 @@ struct ReviewSheet: View {
                 }
                 Button(items.isEmpty ? "Nothing ticked" : "Clean \(Bytes.fmt(totalBytes))") {
                     Task {
-                        await cleaner.run(items)
+                        // Only on a run that actually happened. A second
+                        // activation while one is in flight returns false with
+                        // the earlier run's outcomes still in place, and would
+                        // otherwise credit those bytes a second time.
+                        guard await cleaner.run(items) else { return }
                         engine.removeCleaned(cleaner.cleanedIDs)
+                        metrics.recordCleaned(cleaner.accountedBytes)
                     }
                 }
                 .buttonStyle(PrimaryButton(tint: permanent.isEmpty ? DS.accent : DS.danger))
-                .disabled(blocked || items.isEmpty)
+                .disabled(blocked || items.isEmpty || cleaner.isRunning)
                 .help(blocked ? "Confirm the permanent deletions first" : "Begin cleaning")
             }
             .padding(DS.s5)
@@ -273,7 +333,12 @@ struct ReviewSheet: View {
                             Text(o.name).font(DS.caption()).foregroundStyle(DS.text)
                                 .lineLimit(1).truncationMode(.middle)
                             if let m = o.message {
-                                Text(m).font(DS.caption()).foregroundStyle(DS.danger)
+                                // A message no longer implies a failure: a row
+                                // that succeeded with nothing to do says "already
+                                // gone", and painting that red next to a green
+                                // tick reads as a contradiction.
+                                Text(m).font(DS.caption())
+                                    .foregroundStyle(o.ok ? DS.textDim : DS.danger)
                                     .lineLimit(1)
                             }
                             Spacer()

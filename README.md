@@ -27,7 +27,7 @@ Dustloft sorts everything it finds into three tiers:
 |---|---|
 | **Regenerable** | Comes back on its own — caches, build output, dependencies, Docker images |
 | **Needs admin** | Safe to remove, but macOS asks for your password once |
-| **Permanent** | Nothing rebuilds it. Never bulk-selected, needs a separate confirmation, and is moved to the Trash rather than deleted outright |
+| **Permanent** | Nothing rebuilds it. Never bulk-selected, needs a separate confirmation, and is moved to the Trash rather than deleted outright — except for something already in the Trash, which has nowhere further to go, and which the confirmation says will be deleted for good |
 
 And it refuses, by design, to:
 
@@ -42,8 +42,61 @@ And it refuses, by design, to:
   canonicalised and the refusal list re-checked against the resolved path
 
 Every removal is appended to `~/Library/Logs/Dustloft/operations.log` — timestamp,
-action, size and full path, tab separated. It stays on your machine; there is no
-telemetry and nothing is uploaded.
+action, size and full path, tab separated. That file stays on your machine and is
+never uploaded, in whole or in part.
+
+## What Dustloft sends, and what it does not
+
+Nothing about the contents of your disk ever leaves it. No file name, no path, no
+directory listing, no account, no email address.
+
+Dustloft does send one anonymous line — when the total below changes, and once a
+day even when it has not — so there is some idea of how many Macs it runs on and
+whether it has actually given anyone their disk back. That line is the whole of
+it:
+
+```json
+{ "id": "9f2c1e7a-…", "cleaned": 41203847610, "version": "1.0.27" }
+```
+
+- `id` is a random UUID this copy of the app generated for itself on first use.
+  It is not derived from your hardware, your network, your account or anything
+  else, and it is created only if something is actually going to be sent.
+- `cleaned` is the running total of bytes Dustloft has reclaimed on this Mac.
+- `version` is the build you are running.
+
+`cleaned` counts items sent to the Trash as well as those deleted outright — you
+asked for both to go — which is why everything shown against this figure says
+"cleaned" rather than "freed". Each item counts once, at the moment it leaves
+the active filesystem, and never again when the Trash is emptied.
+
+The request's IP address is used to rate limit, and only that. A salted hash of
+it becomes a counter that expires after sixty seconds; the address itself is
+never written down, and neither the hash nor the address is attached to a report
+or stored alongside one. By default the salt is random per server process, so
+those short-lived counters cannot be matched up across processes or after a
+restart. The figures all this feeds are public at
+**[dustloft.com/stats](https://dustloft.com/stats)**; there is no endpoint, there
+or anywhere, that returns a single install's row.
+
+**Turning it off.** The first-run card shows the message above with your real
+numbers in it, and has a "Turn it off" button. The switch stays in the Overview
+footer afterwards. To disable it before the app is ever launched:
+
+```bash
+launchctl setenv DUSTLOFT_NO_METRICS 1
+```
+
+Turning it off stops it permanently — there is no final report on the way out.
+
+**The website is a separate matter.** dustloft.com runs Microsoft Clarity, which
+is ordinary website analytics and has nothing to do with the app — installing
+Dustloft does not opt you into it. It is described on
+[the privacy page](https://dustloft.com/privacy).
+
+The code is worth more than the paragraph: [`Sources/Dustloft/Metrics.swift`](Sources/Dustloft/Metrics.swift)
+is the entire client, and the payload is pinned by a test that fails if a fourth
+field is ever added.
 
 ## Install
 
