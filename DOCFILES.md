@@ -93,6 +93,16 @@ Rules, in the same spirit as the safety model — do not weaken these either:
   no account, no address. The operations log stays local, always.
 - **The identifier is random and made on first use.** Not derived from hardware
   or user, and never created at all if reporting is off before the first report.
+- **Offline is a normal state, not an error.** Nothing in the app waits on the
+  network: the session sets `waitsForConnectivity = false` so a request fails at
+  once rather than parking a task that would keep `reportInFlight` set and block
+  every later attempt. Two clocks make this work — `lastAttemptAt` paces retries
+  (doubling, capped at `maxRetryInterval`) so a dead endpoint is not hammered,
+  and `lastSuccessAt` drives the daily beat, so a week with no connection does
+  not push the next report a week further away. An `NWPathMonitor` reports on
+  the edge from offline to online, clearing the failure count first because the
+  reason those attempts failed has demonstrably gone. Do not collapse the two
+  clocks back into one; that is the bug this shape exists to prevent.
 - **The IP address is used to rate limit and nothing else.** A salted hash of it
   becomes a counter with a sixty-second TTL; the address itself is never
   written, and neither it nor the hash is attached to a report. Without
