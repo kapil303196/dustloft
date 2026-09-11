@@ -198,13 +198,27 @@ final class Metrics: ObservableObject {
         guard !noticeShown else { return }
         noticeShown = true
         defaults.set(true, forKey: Key.noticeShown)
+
         // The gate has only just opened, and on a first run nothing else will
         // ask again this session: the launch path returns early to show the
         // welcome sheet, before it reaches reportIfNeeded. Without this, an
         // install where someone looks once and never reopens the app is never
         // counted at all — which is the single thing this was built to count.
-        reportIfNeeded()
+        //
+        // But not in the same frame the "Turn it off" button first appears, or
+        // reading the card and declining would come too late to matter. The
+        // wait is long enough to read it in; isReporting is re-checked at the
+        // end of it, and no identifier is minted in the meantime because
+        // installID() is only reached from inside reportIfNeeded.
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: Metrics.noticeGrace)
+            self?.reportIfNeeded()
+        }
     }
+
+    /// How long the first-run card gets to be read and acted on before the
+    /// first report goes.
+    static let noticeGrace: UInt64 = 30 * 1_000_000_000
 
     static var appVersion: String {
         MetricsRules.sanitizedVersion(

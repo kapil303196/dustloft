@@ -309,25 +309,31 @@ final class MetricsTests: XCTestCase {
         XCTAssertNil(Cleaner.fileSizeNow(dir.path + "/missing"))
     }
 
-    /// The review sheet's "stays recoverable" promise is derived from this, and
-    /// there are two ways for a permanent item to miss the Trash: being in it
-    /// already, and needing an administrator — because run() partitions by
-    /// action, so an admin item never reaches the Trash routing at all.
-    func test_bothWaysAPermanentItemSkipsTheTrash() {
+    /// A root-owned file in the Trash is classified .admin because removing it
+    /// needs a password, and it is exactly as unrecoverable as the
+    /// permanent-tier file beside it. The review sheet asks for a confirmation
+    /// on both, which is why it cannot ask about tier alone.
+    func test_aRootOwnedTrashFileIsAsFinalAsAPermanentOne() {
         let home = NSHomeDirectory()
 
+        let trashed = home + "/.Trash/holiday.mov"
+        let rootOwned = ScanItem(name: "holiday.mov", path: trashed, bytes: 1, detail: "",
+                                 action: .removePathAdmin(trashed), tier: .admin)
+        XCTAssertNotEqual(rootOwned.tier, .permanent)
+        XCTAssertTrue(Cleaner.isInsideTrash(try XCTUnwrap(Cleaner.targetPath(of: rootOwned.action))))
+
+        // An admin row never reaches the Trash routing: run() partitions by
+        // action, so this is unlinked by the batched root rm.
+        guard case .removePathAdmin = Cleaner.effectiveAction(for: rootOwned) else {
+            return XCTFail("an admin item is unlinked by the batch, never trashed")
+        }
+
+        // An ordinary permanent item still goes to the Trash and stays there.
         let media = ScanItem(name: "holiday.mov", path: home + "/Movies/holiday.mov",
                              bytes: 1, detail: "", action: .removePath(home + "/Movies/holiday.mov"),
                              tier: .permanent)
         guard case .trashPath = Cleaner.effectiveAction(for: media) else {
             return XCTFail("an ordinary permanent item should be routed to the Trash")
-        }
-
-        let rootOwned = ScanItem(name: "Old.app", path: "/Applications/Old.app", bytes: 1,
-                                 detail: "", action: .removePathAdmin("/Applications/Old.app"),
-                                 tier: .permanent)
-        guard case .removePathAdmin = Cleaner.effectiveAction(for: rootOwned) else {
-            return XCTFail("an admin item is unlinked by the batch, never trashed")
         }
     }
 

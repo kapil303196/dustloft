@@ -13,15 +13,15 @@ struct ReviewSheet: View {
     /// leaves the section on screen so it can be ticked back on.
     @State private var frozen: [(String, [UUID])] = []
 
-    /// Permanent rows that will not end up in the Trash.
+    /// Rows needing confirmation that will not end up in the Trash.
     ///
     /// Asked of `effectiveAction`, not of the path, because there are two ways
     /// to miss the Trash and only one of them is about where the file is. An
-    /// item already in the Trash has nowhere further to go — but so does one
+    /// item already in the Trash has nowhere further to go — and so does one
     /// needing an administrator, because `Cleaner.run` partitions by action
-    /// rather than tier, so those never reach the Trash routing at all and are
-    /// unlinked by the batched root `rm`. Both are final; only the predicate
-    /// that asks what will actually be run catches both.
+    /// rather than tier, so an admin row never reaches the Trash routing at all
+    /// and is unlinked by the batched root `rm`. Both are final; only the
+    /// question "what will actually be run for this row" catches both.
     private var permanentDeletedOutright: [ScanItem] {
         permanent.filter {
             if case .trashPath = Cleaner.effectiveAction(for: $0) { return false }
@@ -79,7 +79,19 @@ struct ReviewSheet: View {
     private var items: [ScanItem] { groups.flatMap { $0.1 }.filter { $0.selected } }
     private var totalBytes: Int64 { items.reduce(0) { $0 + $1.bytes } }
     private var offeredCount: Int { groups.reduce(0) { $0 + $1.1.count } }
-    private var permanent: [ScanItem] { items.filter { $0.tier == .permanent } }
+    /// Everything that needs its own confirmation before this runs.
+    ///
+    /// Permanent tier, plus anything inside a Trash whatever its tier. A
+    /// root-owned file in `~/.Trash` is classified `.admin` because removing it
+    /// needs a password — but it is every bit as unrecoverable as the
+    /// permanent-tier file next to it, and it was reaching the batched root
+    /// `rm -rf` with no acknowledgement asked for at all.
+    private var permanent: [ScanItem] {
+        items.filter { item in
+            if item.tier == .permanent { return true }
+            return Cleaner.targetPath(of: item.action).map(Cleaner.isInsideTrash) ?? false
+        }
+    }
     private var admin: [ScanItem] { items.filter { $0.tier == .admin } }
     private var regen: [ScanItem] { items.filter { $0.tier == .regenerable } }
     private var blocked: Bool { !permanent.isEmpty && !acknowledgePermanent }

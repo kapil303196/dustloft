@@ -100,14 +100,18 @@ Rules, in the same spirit as the safety model — do not weaken these either:
   so those counters cannot be correlated across processes or restarts. Do not
   write that requests "cannot be linked at all" — within one process and one
   minute they share a counter, and the docs say so.
-- **The card is drawn before anything is sent.** `isReporting` requires
+- **The card is drawn, and has been readable for half a minute, before
+  anything is sent.** `isReporting` requires
   `noticeShown`, which the notice sets when it first appears. Without it, a
   first run where someone cleans straight away could report before being told.
   Two things make that mark mean "was on screen": the card is rendered first in
   the Overview's scroll view, because SwiftUI builds a `ScrollView`'s children
   eagerly and `onAppear` would otherwise fire for a card below the fold; and it
   is not rendered at all while the first-run sheet covers the window. Moving it
-  down the page, or into a lazy container, quietly breaks the guarantee.
+  down the page, or into a lazy container, quietly breaks the guarantee. The
+  first report then waits `Metrics.noticeGrace` and re-checks `isReporting`, so
+  reading the card and pressing "Turn it off" beats it — otherwise the decision
+  it offers would already have been made.
 - **Off is one click, and permanent.** The first-run card leads with the literal
   three fields and carries the off switch; the switch then lives in the Overview
   footer. `launchctl setenv DUSTLOFT_NO_METRICS 1` disables it without launching
