@@ -58,6 +58,8 @@ struct MetricsNotice: View {
                 Spacer(minLength: 0)
             }
         }
+        // Nothing is sent until this has happened at least once.
+        .onAppear { metrics.markNoticeShown() }
     }
 }
 

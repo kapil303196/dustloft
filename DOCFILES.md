@@ -88,6 +88,9 @@ Rules, in the same spirit as the safety model — do not weaken these either:
 - **The IP address is used to rate limit and then discarded.** Never stored,
   never attached to a report. Without `DUSTLOFT_IP_SALT` the salt is random per
   server process, so two requests cannot be correlated even in principle.
+- **The card is drawn before anything is sent.** `isReporting` requires
+  `noticeShown`, which the notice sets when it first appears. Without it, a
+  first run where someone cleans straight away could report before being told.
 - **Off is one click, and permanent.** The first-run card leads with the literal
   three fields and carries the off switch; the switch then lives in the Overview
   footer. `DUSTLOFT_NO_METRICS=1` disables it without launching the app, and an

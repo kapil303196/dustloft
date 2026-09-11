@@ -108,11 +108,12 @@ enum MetricsRules {
 @MainActor
 final class Metrics: ObservableObject {
 
-    static let endpoint = URL(string: "https://dustloft.com/api/ping")
+    nonisolated static let endpoint = URL(string: "https://dustloft.com/api/ping")
 
     private enum Key {
         static let optedOut      = "metrics.optedOut"
         static let noticeSeen    = "metrics.noticeSeen"
+        static let noticeShown   = "metrics.noticeShown"
         static let installID     = "metrics.installID"
         static let cleanedTotal  = "metrics.cleanedTotal"
         static let reportedTotal = "metrics.reportedTotal"
@@ -133,7 +134,8 @@ final class Metrics: ObservableObject {
         }
     }
 
-    /// Whether the one-time explanation has been shown and dismissed.
+    /// Whether the one-time explanation has been dismissed. Controls the card,
+    /// not the reporting — see `noticeShown` for that.
     @Published var noticeSeen: Bool {
         didSet {
             guard noticeSeen != oldValue else { return }
@@ -141,11 +143,20 @@ final class Metrics: ObservableObject {
         }
     }
 
+    /// Whether the explanation has ever actually been on screen.
+    ///
+    /// Nothing is sent before it has. Without this, a first run where someone
+    /// cleans immediately could report before the card had been drawn — which
+    /// would make "it tells you before it sends anything" false in exactly the
+    /// case where it matters most.
+    @Published private(set) var noticeShown: Bool
+
     init(defaults: UserDefaults = .standard, endpoint: URL? = Metrics.endpoint) {
         self.defaults = defaults
         self.endpoint = endpoint
         self.optedOut = defaults.bool(forKey: Key.optedOut)
         self.noticeSeen = defaults.bool(forKey: Key.noticeSeen)
+        self.noticeShown = defaults.bool(forKey: Key.noticeShown)
         self.lifetimeCleaned = Int64(defaults.integer(forKey: Key.cleanedTotal))
     }
 
@@ -155,7 +166,16 @@ final class Metrics: ObservableObject {
         MetricsRules.suppresses(ProcessInfo.processInfo.environment["DUSTLOFT_NO_METRICS"])
     }
 
-    var isReporting: Bool { !optedOut && !Metrics.suppressedByEnvironment }
+    /// Reporting needs all three: not opted out, not disabled by the
+    /// environment, and the explanation already seen at least once.
+    var isReporting: Bool { !optedOut && !Metrics.suppressedByEnvironment && noticeShown }
+
+    /// Called by the notice card the first time it is drawn.
+    func markNoticeShown() {
+        guard !noticeShown else { return }
+        noticeShown = true
+        defaults.set(true, forKey: Key.noticeShown)
+    }
 
     static var appVersion: String {
         MetricsRules.sanitizedVersion(
@@ -176,7 +196,7 @@ final class Metrics: ObservableObject {
     /// A failure is left alone: the total is cumulative, so the next successful
     /// report carries whatever this one would have.
     func reportIfNeeded(now: Date = Date()) {
-        guard isReporting, let endpoint else { return }
+        guard isReporting, let endpoint = self.endpoint else { return }
 
         let total = lifetimeCleaned
         let stamp = defaults.double(forKey: Key.lastReportAt)

@@ -111,6 +111,64 @@ final class MetricsTests: XCTestCase {
             #"{"cleaned":41203847610,"id":"11111111-2222-4333-8444-555555555555","version":"1.0.26"}"#)
     }
 
+    // MARK: The object itself
+
+    /// A scratch defaults domain, so a test can never read or write the real one.
+    private func scratchDefaults() throws -> (UserDefaults, String) {
+        let name = "dustloft.tests.\(UUID().uuidString)"
+        return (try XCTUnwrap(UserDefaults(suiteName: name)), name)
+    }
+
+    /// The promise is that the card explains this before anything is sent. That
+    /// only holds if the card having been drawn is what unlocks sending.
+    @MainActor
+    func test_nothingIsSentUntilTheNoticeHasBeenOnScreen() throws {
+        let (defaults, name) = try scratchDefaults()
+        defer { defaults.removePersistentDomain(forName: name) }
+
+        let metrics = Metrics(defaults: defaults, endpoint: nil)
+        XCTAssertFalse(metrics.isReporting, "reported before the notice was ever drawn")
+
+        metrics.markNoticeShown()
+        XCTAssertTrue(metrics.isReporting)
+
+        metrics.optedOut = true
+        XCTAssertFalse(metrics.isReporting)
+    }
+
+    @MainActor
+    func test_theLifetimeTotalSurvivesRelaunch() throws {
+        let (defaults, name) = try scratchDefaults()
+        defer { defaults.removePersistentDomain(forName: name) }
+
+        let first = Metrics(defaults: defaults, endpoint: nil)
+        first.recordCleaned(4_000)
+        first.recordCleaned(1_500)
+        first.recordCleaned(0)
+        XCTAssertEqual(first.lifetimeCleaned, 5_500)
+
+        XCTAssertEqual(Metrics(defaults: defaults, endpoint: nil).lifetimeCleaned, 5_500)
+    }
+
+    /// Turning it off has to be sticky; a preference that resets on relaunch is
+    /// worse than none, because it looks like a choice and is not one.
+    @MainActor
+    func test_theChoiceSurvivesRelaunch() throws {
+        let (defaults, name) = try scratchDefaults()
+        defer { defaults.removePersistentDomain(forName: name) }
+
+        let first = Metrics(defaults: defaults, endpoint: nil)
+        first.markNoticeShown()
+        first.optedOut = true
+        first.noticeSeen = true
+
+        let second = Metrics(defaults: defaults, endpoint: nil)
+        XCTAssertTrue(second.optedOut)
+        XCTAssertTrue(second.noticeSeen)
+        XCTAssertTrue(second.noticeShown)
+        XCTAssertFalse(second.isReporting)
+    }
+
     // MARK: The off switch
 
     func test_environmentSwitchRecognisesOffAndFailsClosed() {
