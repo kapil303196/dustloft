@@ -77,6 +77,9 @@ final class MetricsTests: XCTestCase {
         XCTAssertEqual(MetricsRules.sanitizedVersion("1.0.26"), "1.0.26")
         XCTAssertEqual(MetricsRules.sanitizedVersion("1"), "1")
         XCTAssertEqual(MetricsRules.sanitizedVersion("1.2.3.4"), "1.2.3.4")
+        // Releases are stamped from the CI run number, which only goes up.
+        XCTAssertEqual(MetricsRules.sanitizedVersion("1.0.10000"), "1.0.10000")
+        XCTAssertEqual(MetricsRules.sanitizedVersion("1.0.999999999"), "1.0.999999999")
     }
 
     func test_versionDropsAnythingElseRatherThanBeingRefused() {
@@ -85,7 +88,7 @@ final class MetricsTests: XCTestCase {
         XCTAssertEqual(MetricsRules.sanitizedVersion("v1.0.26"), "")
         XCTAssertEqual(MetricsRules.sanitizedVersion("1.2.3.4.5"), "")
         XCTAssertEqual(MetricsRules.sanitizedVersion("1..2"), "")
-        XCTAssertEqual(MetricsRules.sanitizedVersion("12345"), "")
+        XCTAssertEqual(MetricsRules.sanitizedVersion("1234567890"), "")
         // Digits that are not ASCII would pass a naive isNumber check.
         XCTAssertEqual(MetricsRules.sanitizedVersion("١.٠"), "")
     }

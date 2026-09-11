@@ -13,6 +13,32 @@ struct ReviewSheet: View {
     /// leaves the section on screen so it can be ticked back on.
     @State private var frozen: [(String, [UUID])] = []
 
+    /// Items already in the Trash, which emptying really does unlink.
+    private var permanentInTrash: [ScanItem] {
+        permanent.filter {
+            Cleaner.targetPath(of: $0.action).map(Cleaner.isInsideTrash) ?? false
+        }
+    }
+
+    /// The promise has to match what will actually happen to the ticked rows.
+    ///
+    /// "They stay recoverable until you empty it" is true of a file being moved
+    /// to the Trash and false of a file already in it — and emptying the Trash
+    /// is a thing this app is for, so the sentence cannot simply be the first
+    /// case for everyone.
+    private var permanentWarning: String {
+        let inTrash = permanentInTrash.count
+        if inTrash == 0 {
+            return "Nothing rebuilds these, so they go to the Trash rather than being deleted outright. They stay recoverable until you empty it."
+        }
+        if inTrash == permanent.count {
+            return inTrash == 1
+                ? "This is already in the Trash, so there is nowhere further for it to go: emptying it deletes it for good, right now."
+                : "These are already in the Trash, so there is nowhere further for them to go: emptying it deletes them for good, right now."
+        }
+        return "Nothing rebuilds these. Those not already in the Trash are moved there and stay recoverable until you empty it — but \(inTrash) of them \(inTrash == 1 ? "is" : "are") in the Trash already, and \(inTrash == 1 ? "it is" : "those are") deleted for good, right now."
+    }
+
     /// Selected rows, grouped by the section they came from and ordered with
     /// the riskiest sections first so nothing dangerous hides below the fold.
     /// Captures what was selected when the sheet appeared.
@@ -94,7 +120,7 @@ struct ReviewSheet: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("I understand these \(permanent.count) item\(permanent.count == 1 ? "" : "s") are not regenerable")
                                         .font(DS.body().weight(.semibold)).foregroundStyle(DS.text)
-                                    Text("Nothing rebuilds these, so they go to the Trash rather than being deleted outright. They stay recoverable until you empty it.")
+                                    Text(permanentWarning)
                                         .font(DS.caption()).foregroundStyle(DS.textDim)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }

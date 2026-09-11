@@ -66,7 +66,10 @@ enum MetricsRules {
         let parts = raw.split(separator: ".", omittingEmptySubsequences: false)
         guard (1...4).contains(parts.count) else { return "" }
         for part in parts {
-            guard (1...4).contains(part.count),
+            // Nine digits, matching the server. Four would have dropped every
+            // install into "unknown" at release 1.0.10000 — the build number
+            // is a CI run counter and only goes up.
+            guard (1...9).contains(part.count),
                   part.allSatisfy(\.isASCII), part.allSatisfy(\.isNumber) else { return "" }
         }
         return raw

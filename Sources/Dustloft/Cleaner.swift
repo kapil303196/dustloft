@@ -258,6 +258,10 @@ final class Cleaner: ObservableObject {
     /// it here makes that decision reversible for as long as the Trash is left
     /// alone. Regenerable and admin items are deleted outright — they come
     /// back on their own, so reversibility would only cost disk space.
+    ///
+    /// The exception is something already in the Trash, which has nowhere
+    /// further to go: emptying it unlinks. The review sheet says so in place of
+    /// the usual "stays recoverable" promise whenever such a row is ticked.
     nonisolated static func effectiveAction(for item: ScanItem) -> CleanAction {
         if case .removePath(let p) = item.action, item.tier == .permanent {
             // Except when it is already there. Trash rows are permanent-tier

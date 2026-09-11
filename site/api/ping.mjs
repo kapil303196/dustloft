@@ -10,7 +10,10 @@ import { configured, redis, KEYS, today } from './_store.mjs';
 import { REPORT, RATE_LIMIT, DAILY_TTL_SECONDS } from './_lua.mjs';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const VERSION = /^[0-9]{1,4}(\.[0-9]{1,4}){0,3}$/;
+// Nine digits per component, not four: releases are stamped
+// 1.0.${{ github.run_number }}, and a four-digit cap would silently drop every
+// install into the "unknown" row on run 10000.
+const VERSION = /^[0-9]{1,9}(\.[0-9]{1,9}){0,3}$/;
 
 /** 1 PB. Anything above this is a bug or a forgery, and is clamped rather than
  *  rejected so a genuine oddity cannot wedge one install into retrying forever. */
@@ -38,18 +41,23 @@ const IP_SALT = process.env.DUSTLOFT_IP_SALT || randomBytes(32).toString('hex');
  * the install count, and nothing short of an account could.
  */
 export function clientIP(req) {
-  const first = (value) => {
-    if (Array.isArray(value)) return value.length ? String(value[0]).trim() : '';
-    return typeof value === 'string' ? value.trim() : '';
+  // The last hop, for every header, not just x-forwarded-for. Node joins
+  // duplicate headers with ", ", so a client that sends its own x-real-ip ends
+  // up prepended to the platform's — and reading the whole value would let it
+  // rotate the bucket key on every request, which is the exact spoofing the
+  // x-forwarded-for handling exists to stop.
+  const lastHop = (value) => {
+    const joined = Array.isArray(value) ? value.join(',') : value;
+    if (typeof joined !== 'string') return '';
+    const hops = joined.split(',').map((hop) => hop.trim()).filter(Boolean);
+    return hops.length ? hops[hops.length - 1] : '';
   };
 
-  const platform = first(req.headers['x-vercel-forwarded-for']) || first(req.headers['x-real-ip']);
-  if (platform) return platform;
-
-  const forwarded = first(req.headers['x-forwarded-for']);
-  if (!forwarded) return '';
-  const hops = forwarded.split(',').map((hop) => hop.trim()).filter(Boolean);
-  return hops.length ? hops[hops.length - 1] : '';
+  return (
+    lastHop(req.headers['x-vercel-forwarded-for']) ||
+    lastHop(req.headers['x-real-ip']) ||
+    lastHop(req.headers['x-forwarded-for'])
+  );
 }
 
 /** Vercel parses a JSON body for us, but not for every content type, and not

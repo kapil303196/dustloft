@@ -27,7 +27,7 @@ Dustloft sorts everything it finds into three tiers:
 |---|---|
 | **Regenerable** | Comes back on its own — caches, build output, dependencies, Docker images |
 | **Needs admin** | Safe to remove, but macOS asks for your password once |
-| **Permanent** | Nothing rebuilds it. Never bulk-selected, needs a separate confirmation, and is moved to the Trash rather than deleted outright |
+| **Permanent** | Nothing rebuilds it. Never bulk-selected, needs a separate confirmation, and is moved to the Trash rather than deleted outright — except for something already in the Trash, which has nowhere further to go, and which the confirmation says will be deleted for good |
 
 And it refuses, by design, to:
 

@@ -173,6 +173,14 @@ await t('the address comes from the platform, or the last hop — never the firs
   assert.equal(clientIP({ headers: { 'x-forwarded-for': '10.0.0.1, 198.51.100.1' } }), '198.51.100.1');
   assert.equal(clientIP({ headers: { 'x-forwarded-for': ' 198.51.100.1 ' } }), '198.51.100.1');
   assert.equal(clientIP({ headers: {} }), '');
+
+  // Node joins duplicate headers with ", ", so a client sending its own
+  // x-real-ip lands in front of the platform's. Reading the whole value would
+  // let it rotate the bucket key on every request.
+  assert.equal(clientIP({ headers: { 'x-real-ip': '10.0.0.9, 198.51.100.1' } }), '198.51.100.1');
+  assert.equal(clientIP({ headers: { 'x-real-ip': ['10.0.0.9', '198.51.100.1'] } }), '198.51.100.1');
+  assert.equal(
+    clientIP({ headers: { 'x-vercel-forwarded-for': '10.0.0.9, 203.0.113.9' } }), '203.0.113.9');
 });
 
 await t('a forged x-forwarded-for does not dodge the limiter', async () => {
@@ -249,6 +257,24 @@ await t('one identifier in two letter cases is one install', async () => {
   const s = (await get()).payload;
   assert.equal(s.installs, 1);
   assert.equal(s.cleaned.bytes, 900);
+});
+
+await t('a spoofed x-real-ip does not rotate the bucket either', async () => {
+  await shim.client.cmd(['FLUSHALL']);
+  let limited = 0;
+  for (let i = 0; i < 40; i++) {
+    const r = await post({ id: A, cleaned: 5 }, { headers: { 'x-real-ip': `10.0.0.${i}, 198.51.100.42` }, ip: null });
+    if (r.code === 429) limited++;
+  }
+  assert.ok(limited >= 5, `expected throttling, got ${limited}`);
+});
+
+await t('a four-digit build number is not the ceiling', async () => {
+  await shim.client.cmd(['FLUSHALL']);
+  // Releases are stamped 1.0.<CI run number>, which only goes up.
+  await post({ id: A, cleaned: 1, version: '1.0.10000' });
+  const s = (await get()).payload;
+  assert.deepEqual(s.versions, { '1.0.10000': 1 });
 });
 
 await t('a raw Buffer body is decoded, not rejected', async () => {
