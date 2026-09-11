@@ -287,6 +287,22 @@ final class MetricsTests: XCTestCase {
         }
     }
 
+    /// Trashing is a rename, so its size has to come from somewhere free.
+    func test_aFileSizeCostsNothingAndADirectoryIsNotGuessedAt() throws {
+        let dir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("dustloft-tests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let file = dir.appendingPathComponent("recording.mov")
+        try Data(repeating: 0, count: 4096).write(to: file)
+        XCTAssertEqual(Cleaner.fileSizeNow(file.path), 4096)
+
+        // A directory would need a tree walk, which is the thing this avoids.
+        XCTAssertNil(Cleaner.fileSizeNow(dir.path))
+        XCTAssertNil(Cleaner.fileSizeNow(dir.path + "/missing"))
+    }
+
     // MARK: The off switch
 
     func test_environmentSwitchRecognisesOffAndFailsClosed() {
