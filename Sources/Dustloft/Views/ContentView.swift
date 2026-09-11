@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RootView: View {
     @ObservedObject var settings: Settings
+    @ObservedObject var metrics: Metrics
     @StateObject private var engine: ScanEngine
     // A List(selection:) bound to String? needs String tags, never String?.
     // Overview therefore gets a real id rather than nil.
@@ -15,8 +16,9 @@ struct RootView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
 
-    init(settings: Settings) {
+    init(settings: Settings, metrics: Metrics) {
         self.settings = settings
+        self.metrics = metrics
         _engine = StateObject(wrappedValue: ScanEngine(settings: settings))
     }
 
@@ -72,7 +74,8 @@ struct RootView: View {
         .toolbar { toolbarContent }
         .safeAreaInset(edge: .bottom) { actionBar }
         .sheet(isPresented: $showReview) {
-            ReviewSheet(engine: engine, isPresented: $showReview, scope: reviewScope)
+            ReviewSheet(engine: engine, metrics: metrics,
+                        isPresented: $showReview, scope: reviewScope)
         }
         .sheet(isPresented: $showSummary) {
             SummarySheet(engine: engine, isPresented: $showSummary)
@@ -94,6 +97,7 @@ struct RootView: View {
             // when they are genuinely old.
             if engine.isStale { await engine.scan() }
             await updater.check(silent: true)
+            metrics.reportIfNeeded()
         }
         .onReceive(NotificationCenter.default.publisher(for: .dustloftCheckUpdates)) { _ in
             Task { await updater.check() }
@@ -149,6 +153,10 @@ struct RootView: View {
 
                 if updater.updateAvailable {
                     UpdateBanner(updater: updater).padding(.bottom, DS.s4)
+                }
+
+                if !metrics.noticeSeen && !Metrics.suppressedByEnvironment {
+                    MetricsNotice(metrics: metrics).padding(.bottom, DS.s4)
                 }
 
                 if engine.permissionDenied {
@@ -209,6 +217,7 @@ struct RootView: View {
                     Button("Check for updates") { Task { await updater.check() } }
                         .buttonStyle(.link)
                         .font(DS.caption())
+                    MetricsFooterControl(metrics: metrics)
                     Spacer()
                 }
                 .padding(.top, DS.s3)
@@ -306,6 +315,10 @@ struct RootView: View {
                 if engine.totalSelected > 0 {
                     StatChip(symbol: "checkmark.circle.fill", label: "Selected",
                              value: Bytes.fmt(engine.totalSelected), tint: DS.accent)
+                }
+                if metrics.lifetimeCleaned > 0 {
+                    StatChip(symbol: "clock.arrow.circlepath", label: "Reclaimed so far",
+                             value: Bytes.fmt(metrics.lifetimeCleaned), tint: DS.textDim)
                 }
                 Spacer()
             }

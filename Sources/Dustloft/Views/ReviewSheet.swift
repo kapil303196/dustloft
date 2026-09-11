@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ReviewSheet: View {
     @ObservedObject var engine: ScanEngine
+    @ObservedObject var metrics: Metrics
     @Binding var isPresented: Bool
     /// nil reviews everything selected; a category id reviews just that section.
     var scope: String? = nil
@@ -121,6 +122,7 @@ struct ReviewSheet: View {
                     Task {
                         await cleaner.run(items)
                         engine.removeCleaned(cleaner.cleanedIDs)
+                        metrics.recordCleaned(cleaner.accountedBytes)
                     }
                 }
                 .buttonStyle(PrimaryButton(tint: permanent.isEmpty ? DS.accent : DS.danger))

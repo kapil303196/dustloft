@@ -28,6 +28,14 @@ final class Cleaner: ObservableObject {
     /// Ids of everything that was actually removed.
     var cleanedIDs: [UUID] { outcomes.filter { $0.ok }.map { $0.itemID } }
 
+    /// What Dustloft itself removed, trashed items included.
+    ///
+    /// Deliberately not `freedBytes`: that figure is overwritten by the volume
+    /// delta, which is the right number to show someone staring at their disk
+    /// but the wrong one to add up, because it also counts whatever else macOS
+    /// happened to do during the run.
+    var accountedBytes: Int64 { outcomes.filter { $0.ok }.reduce(0) { $0 + $1.bytes } }
+
     /// Executes the chosen items. Admin removals are collected and run under a
     /// single authorisation prompt rather than one dialog per path.
     func run(_ items: [ScanItem]) async {
