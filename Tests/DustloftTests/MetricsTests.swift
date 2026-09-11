@@ -217,10 +217,9 @@ final class MetricsTests: XCTestCase {
         XCTAssertFalse(Cleaner.entryExists(file.path))
 
         // A dangling symlink is a real directory entry that really does need
-        // removing, and fileExists — which follows links — calls it absent.
+        // removing, so it has to read as present.
         let link = dir.appendingPathComponent("dangling")
         try FileManager.default.createSymbolicLink(at: link, withDestinationURL: file)
-        XCTAssertFalse(FileManager.default.fileExists(atPath: link.path))
         XCTAssertTrue(Cleaner.entryExists(link.path))
     }
 

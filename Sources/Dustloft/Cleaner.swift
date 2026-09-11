@@ -315,9 +315,11 @@ final class Cleaner: ObservableObject {
 
     /// Whether there is an entry at this path at all.
     ///
-    /// `fileExists` follows symlinks, so it answers "no" for a dangling one —
-    /// which is a real directory entry that really does need removing. This
-    /// uses lstat semantics instead.
+    /// `attributesOfItem` rather than `fileExists`, for the reason below: it
+    /// reports *why* it could not answer, and "there is nothing here" has to be
+    /// told apart from "I could not look". It also does not follow symlinks, so
+    /// a dangling one reads as present — which it is, and it still needs
+    /// removing.
     nonisolated static func entryExists(_ path: String) -> Bool {
         do {
             _ = try FileManager.default.attributesOfItem(atPath: path)
