@@ -137,17 +137,33 @@ async function loadStats() {
 // Download counts come straight from GitHub in the visitor's own browser, so
 // the site never spends its shared rate limit on them.
 async function loadDownloads() {
+  // Paged, because every push to main cuts a release: one unpaginated request
+  // silently drops everything past the hundredth and the total would go *down*
+  // between page loads. Bounded so a visitor never spends their whole
+  // unauthenticated rate limit here.
+  const PER_PAGE = 100;
+  const MAX_PAGES = 10;
   try {
-    const res = await fetch('https://api.github.com/repos/kapil303196/dustloft/releases?per_page=100');
-    if (!res.ok) return;
-    const releases = await res.json();
     let total = 0;
-    for (const release of releases) {
-      for (const asset of release.assets || []) {
-        if (asset.name && asset.name.endsWith('.dmg')) total += asset.download_count || 0;
+    let complete = true;
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      const res = await fetch(
+        `https://api.github.com/repos/kapil303196/dustloft/releases?per_page=${PER_PAGE}&page=${page}`
+      );
+      if (!res.ok) return;
+      const releases = await res.json();
+      if (!Array.isArray(releases)) return;
+      for (const release of releases) {
+        for (const asset of release.assets || []) {
+          if (asset.name && asset.name.endsWith('.dmg')) total += asset.download_count || 0;
+        }
       }
+      if (releases.length < PER_PAGE) break;
+      // Ran out of pages before running out of releases: say so rather than
+      // presenting a number that is quietly short.
+      if (page === MAX_PAGES) complete = false;
     }
-    $('downloads').textContent = compact(total);
+    $('downloads').textContent = (complete ? '' : '≥ ') + compact(total);
   } catch {
     $('downloads').textContent = '—';
   }

@@ -224,6 +224,10 @@ final class MetricsTests: XCTestCase {
         let link = dir.appendingPathComponent("dangling")
         try FileManager.default.createSymbolicLink(at: link, withDestinationURL: file)
         XCTAssertTrue(Cleaner.entryExists(link.path))
+
+        // A path under a directory that does not exist is absent, not
+        // unanswerable — ENOENT either way.
+        XCTAssertFalse(Cleaner.entryExists(dir.path + "/missing/deeper/thing"))
     }
 
     /// The one place the same bytes could be billed twice: Dustloft moves a
@@ -236,10 +240,19 @@ final class MetricsTests: XCTestCase {
         XCTAssertTrue(Cleaner.isInsideTrash(home + "/.Trash"))
         XCTAssertTrue(Cleaner.isInsideTrash("/Volumes/Backup/.Trashes/501/old.dmg"))
 
+        XCTAssertTrue(Cleaner.isInsideTrash("/.Trashes/501/old.dmg"))
+
         XCTAssertFalse(Cleaner.isInsideTrash(home + "/Movies/holiday.mov"))
         // A lookalike prefix is not a match.
         XCTAssertFalse(Cleaner.isInsideTrash(home + "/.Trashcan/thing"))
         XCTAssertFalse(Cleaner.isInsideTrash(home + "/Library/Caches/Trash/thing"))
+
+        // This also decides whether a permanent item is moved to the Trash or
+        // unlinked, so a .Trash component somewhere in the middle of a path is
+        // not good enough — a sandboxed app's own is not the Trash.
+        XCTAssertFalse(
+            Cleaner.isInsideTrash(home + "/Library/Containers/com.x.y/Data/.Trash/big.mov"))
+        XCTAssertFalse(Cleaner.isInsideTrash(home + "/Projects/.Trashes/note.txt"))
     }
 
     func test_targetPathIsTheOneTheActionTouches() {

@@ -309,39 +309,46 @@ final class Cleaner: ObservableObject {
     /// that the moment it leaves the active filesystem is the moment it counts,
     /// and the Trash never counts.
     ///
-    /// A component match rather than a prefix, so per-volume `.Trashes` is
-    /// covered too. A directory genuinely called `.Trash` elsewhere would go
-    /// uncounted, which is the harmless direction.
+    /// Anchored to the real Trash roots, not any path with a `.Trash` component
+    /// in it. That distinction used to be cosmetic — a false positive only cost
+    /// an uncounted row — but this also decides whether a permanent item is
+    /// moved to the Trash or unlinked outright, and there it is the difference
+    /// between a reversible decision and a final one. A sandboxed app's
+    /// `~/Library/Containers/<id>/Data/.Trash` is not the Trash.
     nonisolated static func isInsideTrash(_ path: String) -> Bool {
-        let components = (path as NSString).pathComponents
-        return components.contains(".Trash") || components.contains(".Trashes")
+        let standard = (path as NSString).standardizingPath
+
+        let home = NSHomeDirectory() + "/.Trash"
+        if standard == home || standard.hasPrefix(home + "/") { return true }
+
+        // Per-volume trashes live only at a volume root: /.Trashes/<uid>/… and
+        // /Volumes/<name>/.Trashes/<uid>/…. pathComponents starts with "/".
+        let components = (standard as NSString).pathComponents
+        guard let index = components.firstIndex(of: ".Trashes") else { return false }
+        if index == 1 { return true }
+        return index == 3 && components[1] == "Volumes"
     }
 
     /// Whether there is an entry at this path at all.
     ///
-    /// `attributesOfItem` rather than `fileExists`, for the reason below: it
-    /// reports *why* it could not answer, and "there is nothing here" has to be
-    /// told apart from "I could not look". It also does not follow symlinks, so
-    /// a dangling one reads as present — which it is, and it still needs
-    /// removing.
+    /// `lstat` rather than `FileManager`, and not for speed. Two distinctions
+    /// matter here and Foundation blurs both. It must not follow symlinks — a
+    /// dangling one is a real directory entry that really does need removing.
+    /// And "there is nothing here" has to be told apart from "I could not
+    /// look": an unmounted volume, a stale mount or a permission wall is a
+    /// question without an answer, and calling it "gone" turns a failure into
+    /// a successful clean, skips the removal attempt, and — since this is also
+    /// the ground truth for the admin batch — reports a removal that did
+    /// happen as one that did not.
+    ///
+    /// The first attempt at this asked `attributesOfItem` and matched
+    /// `NSFileNoSuchFileError`, which is not the code it throws. It answered
+    /// "present" for a file that had just been deleted, and CI caught it.
+    /// errno leaves nothing to guess at.
     nonisolated static func entryExists(_ path: String) -> Bool {
-        do {
-            _ = try FileManager.default.attributesOfItem(atPath: path)
-            return true
-        } catch let error as NSError {
-            // Only "there is nothing here" means gone. Anything else — an
-            // unmounted volume, a stale mount, a permission wall — is a
-            // question that could not be answered, and answering it "absent"
-            // turns a failure into a successful clean and, where this gates
-            // the "already gone" shortcut, skips the attempt entirely.
-            if error.domain == NSCocoaErrorDomain, error.code == NSFileNoSuchFileError {
-                return false
-            }
-            if error.domain == NSPOSIXErrorDomain, error.code == Int(ENOENT) {
-                return false
-            }
-            return true
-        }
+        var info = stat()
+        if lstat(path, &info) == 0 { return true }
+        return errno != ENOENT
     }
 
     // MARK: - Action execution (background thread only)
