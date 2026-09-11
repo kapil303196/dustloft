@@ -125,10 +125,13 @@ The client cap `MetricsRules.maxCleaned` and the server's `MAX_CLEANED` are the
 same number on purpose. Move one and move the other.
 
 Two rules keep the total honest, and both are easy to undo by accident:
-**measured or not counted** — anything whose effect cannot be measured (a root
-shell command) or whose item size is an estimate of something else (a `git gc`
-on a repository, a stale `docker system df` row) is shown and logged as ever but
-carries `countsAsCleaned: false`; and **the Trash never counts**, because an
+**measured or not counted** — where the item's own size is an estimate of
+something else, the real figure is measured and that is what counts (`git gc`
+reports the `.git` directory's shrinkage, `docker system prune` reports what it
+says it freed, and an unreadable measurement counts as zero); where it cannot be
+measured at all, as with a root shell command, the row carries
+`countsAsCleaned: false` and is shown and logged as ever but never added up. And
+**the Trash never counts**, because an
 item Dustloft trashes is counted then, is offered again from the Trash on the
 next scan, and would otherwise be billed twice for space freed once.
 

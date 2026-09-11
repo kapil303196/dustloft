@@ -124,7 +124,12 @@ export default async function handler(req, res) {
     const bucket =
       'dustloft:rl:' + createHash('sha256').update(IP_SALT + ip).digest('hex').slice(0, 24);
     const hits = Number(await redis(['EVAL', RATE_LIMIT, 1, bucket, 60]));
-    if (Number.isFinite(hits) && hits > MAX_REPORTS_PER_MINUTE) {
+    // Not `isFinite(hits) && over`: an unreadable count would then mean "under
+    // the limit", and an endpoint that stops counting would stop limiting at
+    // exactly the moment it most needs to. Failing here lands in the catch
+    // below and answers 503.
+    if (!Number.isFinite(hits)) throw new Error('rate limiter returned no count');
+    if (hits > MAX_REPORTS_PER_MINUTE) {
       res.setHeader('Retry-After', '60');
       return res.status(429).json({ error: 'too many reports' });
     }

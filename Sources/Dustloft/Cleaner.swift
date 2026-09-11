@@ -260,6 +260,14 @@ final class Cleaner: ObservableObject {
     /// back on their own, so reversibility would only cost disk space.
     nonisolated static func effectiveAction(for item: ScanItem) -> CleanAction {
         if case .removePath(let p) = item.action, item.tier == .permanent {
+            // Except when it is already there. Trash rows are permanent-tier
+            // too, so this used to hand `trashItem` a file inside ~/.Trash —
+            // which either fails with "could not move to Trash" or shuffles it
+            // around inside, clearing the row while the file returns on the
+            // next scan. Emptying the Trash is the one case where a permanent
+            // item really is meant to be unlinked, and it is the case the user
+            // confirmed individually.
+            if isInsideTrash(p) { return item.action }
             return .trashPath(p)
         }
         return item.action

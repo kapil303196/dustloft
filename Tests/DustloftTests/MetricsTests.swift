@@ -251,6 +251,27 @@ final class MetricsTests: XCTestCase {
         XCTAssertNil(Cleaner.targetPath(of: .adminShell("/usr/bin/mdutil -E /")))
     }
 
+    /// Permanent items are routed to the Trash so the decision stays
+    /// reversible — but a file already in the Trash cannot be sent there, and
+    /// pretending otherwise clears the row while the file comes straight back.
+    func test_theTrashIsNotSentToTheTrash() {
+        let home = NSHomeDirectory()
+
+        let media = ScanItem(name: "holiday.mov", path: home + "/Movies/holiday.mov",
+                             bytes: 1, detail: "", action: .removePath(home + "/Movies/holiday.mov"),
+                             tier: .permanent)
+        guard case .trashPath = Cleaner.effectiveAction(for: media) else {
+            return XCTFail("a permanent item should be routed to the Trash")
+        }
+
+        let alreadyThere = home + "/.Trash/holiday.mov"
+        let trashed = ScanItem(name: "holiday.mov", path: alreadyThere, bytes: 1,
+                               detail: "", action: .removePath(alreadyThere), tier: .permanent)
+        guard case .removePath = Cleaner.effectiveAction(for: trashed) else {
+            return XCTFail("emptying the Trash has to unlink, not re-trash")
+        }
+    }
+
     // MARK: The off switch
 
     func test_environmentSwitchRecognisesOffAndFailsClosed() {
