@@ -35,18 +35,32 @@ enum MetricsRules {
     /// Report this often even when nothing has changed, so that the version
     /// tally reflects installs that update but never clean anything again.
     static let heartbeat: TimeInterval = 24 * 60 * 60
+    /// How soon to try again while nothing has ever got through.
+    static let firstReportRetry: TimeInterval = 60
 
     static func shouldReport(now: Date,
                              lastReport: Date?,
                              reportedTotal: Int64,
                              currentTotal: Int64,
+                             everReported: Bool,
                              minInterval: TimeInterval = MetricsRules.minInterval,
-                             heartbeat: TimeInterval = MetricsRules.heartbeat) -> Bool {
+                             heartbeat: TimeInterval = MetricsRules.heartbeat,
+                             firstReportRetry: TimeInterval = MetricsRules.firstReportRetry) -> Bool {
         guard let lastReport else { return true }
         let elapsed = now.timeIntervalSince(lastReport)
         // A clock that moved backwards would otherwise freeze reporting until
         // it caught up, which for a manually corrected clock can be months.
         if elapsed < 0 { return true }
+
+        // Nothing has ever got through. The stamp is written on the attempt,
+        // not on success — deliberately, so a dead endpoint is not hammered —
+        // but applying the daily beat to a *first* attempt that failed would
+        // mean a Mac that happened to be offline at first launch does not
+        // exist for a day, and never at all if the app is not reopened after
+        // it. Counting installs is the entire point, so this one retries on a
+        // short cycle instead.
+        if !everReported { return elapsed >= firstReportRetry }
+
         if elapsed >= heartbeat { return true }
         return currentTotal > reportedTotal && elapsed >= minInterval
     }
@@ -124,6 +138,7 @@ final class Metrics: ObservableObject {
         static let reportedTotal = "metrics.reportedTotal"
         static let lastReportAt  = "metrics.lastReportAt"
         static let noticeShownAt = "metrics.noticeShownAt"
+        static let everReported  = "metrics.everReported"
     }
 
     private let defaults: UserDefaults
@@ -267,7 +282,8 @@ final class Metrics: ObservableObject {
             now: now,
             lastReport: last,
             reportedTotal: Int64(defaults.integer(forKey: Key.reportedTotal)),
-            currentTotal: total) else { return }
+            currentTotal: total,
+            everReported: defaults.bool(forKey: Key.everReported)) else { return }
 
         let report = MetricsReport(id: installID(), cleaned: total, version: Metrics.appVersion)
         reportInFlight = true
@@ -290,6 +306,9 @@ final class Metrics: ObservableObject {
         // difference would be sent a second time and counted twice.
         let known = Int64(defaults.integer(forKey: Key.reportedTotal))
         defaults.set(Int(max(known, total)), forKey: Key.reportedTotal)
+        // Distinct from reportedTotal, which a perfectly good first report of
+        // zero bytes would leave at zero.
+        defaults.set(true, forKey: Key.everReported)
     }
 
     /// Created on first use rather than at launch, so a person who turns this

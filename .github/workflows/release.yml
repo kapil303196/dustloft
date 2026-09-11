@@ -55,6 +55,13 @@ jobs:
       - name: Run tests
         run: swift test
 
+      # run_number counts every run of this workflow, pull requests included, so
+      # published versions skip numbers. That is fine and deliberate: the update
+      # check is a semantic-version comparison, not a sequence, and a number
+      # that only ever increases is the only property it needs. Deriving it from
+      # something gapless — a commit count, say — would restart it below the
+      # versions already released, and every installed copy would stop being
+      # offered updates.
       - name: Stamp version
         id: v
         run: |

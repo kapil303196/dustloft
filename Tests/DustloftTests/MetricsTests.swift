@@ -15,26 +15,26 @@ final class MetricsTests: XCTestCase {
 
     func test_reportsOnceWhenNothingHasEverBeenSent() {
         XCTAssertTrue(MetricsRules.shouldReport(
-            now: epoch, lastReport: nil, reportedTotal: 0, currentTotal: 0))
+            now: epoch, lastReport: nil, reportedTotal: 0, currentTotal: 0, everReported: true))
     }
 
     func test_doesNotReportAgainImmediatelyAfterCleaning() {
         // Two cleans a few seconds apart must not become two reports.
         XCTAssertFalse(MetricsRules.shouldReport(
             now: epoch.addingTimeInterval(5),
-            lastReport: epoch, reportedTotal: 100, currentTotal: 900))
+            lastReport: epoch, reportedTotal: 100, currentTotal: 900, everReported: true))
     }
 
     func test_reportsOnceTheTotalMovesAndTheFloorHasPassed() {
         XCTAssertTrue(MetricsRules.shouldReport(
             now: epoch.addingTimeInterval(120),
-            lastReport: epoch, reportedTotal: 100, currentTotal: 900))
+            lastReport: epoch, reportedTotal: 100, currentTotal: 900, everReported: true))
     }
 
     func test_staysSilentWhenNothingChanged() {
         XCTAssertFalse(MetricsRules.shouldReport(
             now: epoch.addingTimeInterval(3600),
-            lastReport: epoch, reportedTotal: 900, currentTotal: 900))
+            lastReport: epoch, reportedTotal: 900, currentTotal: 900, everReported: true))
     }
 
     /// Without this an install that updates but never cleans again would keep
@@ -42,7 +42,27 @@ final class MetricsTests: XCTestCase {
     func test_heartbeatReportsEvenWithNoChange() {
         XCTAssertTrue(MetricsRules.shouldReport(
             now: epoch.addingTimeInterval(24 * 60 * 60),
-            lastReport: epoch, reportedTotal: 900, currentTotal: 900))
+            lastReport: epoch, reportedTotal: 900, currentTotal: 900, everReported: true))
+    }
+
+    /// The stamp is written on the attempt, so a first report that failed —
+    /// offline at launch, or a 503 — would otherwise put the install behind the
+    /// daily beat, making it not exist for a day and never at all if the app is
+    /// not reopened. Counting installs is the whole point.
+    func test_aFirstReportThatFailedIsRetriedSoon() {
+        let pending = { (seconds: TimeInterval) in
+            MetricsRules.shouldReport(
+                now: self.epoch.addingTimeInterval(seconds), lastReport: self.epoch,
+                reportedTotal: 0, currentTotal: 0, everReported: false)
+        }
+        XCTAssertFalse(pending(5), "not instantly, or a dead endpoint gets hammered")
+        XCTAssertTrue(pending(120))
+        XCTAssertTrue(pending(3600))
+
+        // Once one has got through, the ordinary daily beat takes over.
+        XCTAssertFalse(MetricsRules.shouldReport(
+            now: epoch.addingTimeInterval(3600), lastReport: epoch,
+            reportedTotal: 0, currentTotal: 0, everReported: true))
     }
 
     /// A clock corrected backwards by months would otherwise freeze reporting
@@ -50,7 +70,7 @@ final class MetricsTests: XCTestCase {
     func test_clockMovingBackwardsDoesNotWedgeIt() {
         XCTAssertTrue(MetricsRules.shouldReport(
             now: epoch.addingTimeInterval(-99_999),
-            lastReport: epoch, reportedTotal: 900, currentTotal: 900))
+            lastReport: epoch, reportedTotal: 900, currentTotal: 900, everReported: true))
     }
 
     // MARK: Accumulating
