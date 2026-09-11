@@ -130,7 +130,13 @@ something else, the real figure is measured and that is what counts (`git gc`
 reports the `.git` directory's shrinkage, `docker system prune` reports what it
 says it freed, and an unreadable measurement counts as zero); where it cannot be
 measured at all, as with a root shell command, the row carries
-`countsAsCleaned: false` and is shown and logged as ever but never added up. And
+`countsAsCleaned: false` and is shown and logged as ever but never added up.
+For a plain removal the correction is `Cleaner.fileSizeNow`, a single stat in
+allocated blocks — never apparent size, or Docker.raw would be counted at
+460 GB while occupying 8.8 GB. It answers only for regular files: re-walking a
+directory would cost every clean a second full pass over what the scan already
+walked, so a directory keeps the scan's figure and that overstatement is
+accepted deliberately. And
 **the Trash never counts**, because an
 item Dustloft trashes is counted then, is offered again from the Trash on the
 next scan, and would otherwise be billed twice for space freed once.

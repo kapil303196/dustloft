@@ -287,7 +287,7 @@ final class MetricsTests: XCTestCase {
         }
     }
 
-    /// Trashing is a rename, so its size has to come from somewhere free.
+    /// The size that corrects a stale scan figure, and it has to be free.
     func test_aFileSizeCostsNothingAndADirectoryIsNotGuessedAt() throws {
         let dir = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("dustloft-tests-\(UUID().uuidString)")
@@ -295,10 +295,16 @@ final class MetricsTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: dir) }
 
         let file = dir.appendingPathComponent("recording.mov")
-        try Data(repeating: 0, count: 4096).write(to: file)
-        XCTAssertEqual(Cleaner.fileSizeNow(file.path), 4096)
+        try Data(repeating: 0, count: 64 * 1024).write(to: file)
+        let measured = try XCTUnwrap(Cleaner.fileSizeNow(file.path))
+        // Allocated blocks, so the exact figure depends on the filesystem —
+        // but it has to be in the region of what was written, not zero.
+        XCTAssertGreaterThanOrEqual(measured, 64 * 1024)
+        XCTAssertLessThanOrEqual(measured, 256 * 1024)
 
-        // A directory would need a tree walk, which is the thing this avoids.
+        // A directory's own st_blocks describes the directory entry, not its
+        // contents, so answering for one would be worse than not answering.
+        // Measuring the contents means a tree walk, which is what this avoids.
         XCTAssertNil(Cleaner.fileSizeNow(dir.path))
         XCTAssertNil(Cleaner.fileSizeNow(dir.path + "/missing"))
     }

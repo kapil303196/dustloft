@@ -136,6 +136,7 @@ final class Cleaner: ObservableObject {
             // "this run removed it" from "it was already gone", and the second
             // would credit a scan-time estimate to a run that did nothing.
             var existedBefore: Set<String> = []
+            var sizeBefore: [String: Int64] = [:]
             let paths = adminItems.compactMap { item -> String? in
                 guard case .removePathAdmin(let p) = item.action else { return nil }
                 if let refusal = SafePath.validate(p) {
@@ -144,31 +145,15 @@ final class Cleaner: ObservableObject {
                 if SafePath.isSymlink(p) {
                     refusedAdmin.append((item.name, "refused: symlink, not removed as root")); return nil
                 }
-                if Cleaner.entryExists(p) { existedBefore.insert(p) }
+                if Cleaner.entryExists(p) {
+                    existedBefore.insert(p)
+                    // Free, and it has to happen before the batch because
+                    // afterwards there is nothing left to stat. A directory
+                    // gets nothing back and keeps the scan's figure.
+                    if let measured = Cleaner.fileSizeNow(p) { sizeBefore[p] = measured }
+                }
                 return p
             }
-            // Sizes, for the same reason the ordinary path measures at clean
-            // time rather than trusting the scan: that figure can be hours old.
-            // It has to happen before the batch, because afterwards there is
-            // nothing left to measure — and off the main actor, because the
-            // validation above is string work and an lstat but du is neither,
-            // and `run()` is @MainActor. Measuring inline would freeze the
-            // window in front of the password prompt.
-            let toMeasure = existedBefore
-            currentStep = "Measuring what is about to be removed…"
-            let sizeBefore: [String: Int64] = await withCheckedContinuation { cont in
-                DispatchQueue.global(qos: .userInitiated).async {
-                    var out: [String: Int64] = [:]
-                    // nil when du cannot read it, which root-owned trees often
-                    // are for this process — the scan's figure then stands.
-                    for path in toMeasure {
-                        if let measured = Cleaner.sizeNow(path) { out[path] = measured }
-                    }
-                    cont.resume(returning: out)
-                }
-            }
-            currentStep = "Waiting for administrator authorisation…"
-
             if !paths.isEmpty {
                 parts.append("/bin/rm -rf " + paths.map(SafePath.shellQuote).joined(separator: " "))
             }
@@ -358,32 +343,30 @@ final class Cleaner: ObservableObject {
         return index == 3 && components[1] == "Volumes"
     }
 
-    /// A single file's current size, from a stat and nothing more.
+    /// A single file's size on disk right now, from the stat and nothing more.
     ///
-    /// `nil` for anything that is not a regular file, because a directory needs
-    /// a tree walk and avoiding that is the entire point of this.
+    /// Scan results are cached — for hours, and for as long as the app stays
+    /// open — so `item.bytes` can be out of date by the time someone cleans,
+    /// and it feeds a published total that only ever rises. This corrects that
+    /// for free.
+    ///
+    /// Allocated blocks rather than apparent size, matching
+    /// `Shell.allocatedSize` and the scanners: Docker.raw reports 460 GB while
+    /// occupying 8.8 GB, and a figure that says the first is a lie the safety
+    /// page explicitly promises not to tell.
+    ///
+    /// `nil` for anything that is not a regular file. A directory's own
+    /// `st_blocks` describes the directory entry and not its contents, and
+    /// measuring the contents means a `du` over the whole tree — which is what
+    /// a previous version of this did, and which cost every clean a second full
+    /// walk of everything the scan had already walked. A directory therefore
+    /// keeps the scan's figure. That is a real if bounded overstatement when
+    /// the app has been open for hours, and it is the cheaper of the two
+    /// errors: the alternative made every clean minutes slower for everyone.
     nonisolated static func fileSizeNow(_ path: String) -> Int64? {
         var info = stat()
         guard lstat(path, &info) == 0, (info.st_mode & S_IFMT) == S_IFREG else { return nil }
-        return Int64(info.st_size)
-    }
-
-    /// What a path is worth right now, rather than when the scan ran.
-    ///
-    /// Scan results are cached — for hours, and for as long as the app stays
-    /// open — so `item.bytes` can be badly out of date by the time someone
-    /// cleans. DerivedData measured at 40 GB and since rebuilt down to 1 GB
-    /// would otherwise credit 40 GB to a total that only ever rises and then
-    /// gets published, which is the rule `git gc` and `docker prune` already
-    /// follow: measured, or not counted.
-    ///
-    /// The extra `du` is bounded by work that is about to happen anyway —
-    /// removing a tree walks every inode in it, and `du` walks the same tree
-    /// more cheaply. `nil` when it cannot be measured, so the caller keeps the
-    /// scan's figure rather than recording a zero for something real.
-    nonisolated static func sizeNow(_ path: String) -> Int64? {
-        let measured = Shell.diskUsage(path)
-        return measured > 0 ? measured : nil
+        return Int64(info.st_blocks) * 512
     }
 
     /// Whether there is an entry at this path at all.
@@ -423,7 +406,7 @@ final class Cleaner: ObservableObject {
             // the scan-time estimate would be banked as space this run
             // reclaimed. It is still a success: the row should disappear.
             guard entryExists(p) else { return (true, "already gone", 0) }
-            let removing = sizeNow(p)
+            let removing = fileSizeNow(p)
             do {
                 try FileManager.default.removeItem(atPath: p)
                 return (true, nil, removing)
@@ -439,13 +422,6 @@ final class Cleaner: ObservableObject {
             // its name, not the failure trashItem would otherwise report — and
             // the row has to clear either way.
             guard entryExists(p) else { return (true, "already gone", 0) }
-            // Deliberately not sizeNow: trashItem is a same-volume rename, so a
-            // du in front of it would turn an instant operation into a full
-            // tree walk — the "it walks the tree anyway" argument holds for
-            // removal and not for this. A single file's size comes free from
-            // the stat, which covers most of what lands here (recordings, VM
-            // images, disk images); a directory keeps the scan's figure, and
-            // permanent items are user media that does not shrink by itself.
             let trashing = fileSizeNow(p)
             do {
                 try FileManager.default.trashItem(at: URL(fileURLWithPath: p), resultingItemURL: nil)
