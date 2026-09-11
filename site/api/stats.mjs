@@ -24,6 +24,26 @@ const int = (v) => {
   return Number.isFinite(n) ? n : 0;
 };
 
+/**
+ * The byte total as an exact decimal string.
+ *
+ * Redis counters are 64-bit and JSON numbers are doubles, so past 2^53 — about
+ * 9 PB, which enough installs cleaning enough disks really will reach — Number
+ * silently rounds. The page prints this figure as an exact byte count, so it
+ * has to survive as text and never pass through a double on the way.
+ */
+const exact = (v) => {
+  const raw = typeof v === 'string' ? v.trim() : String(v ?? '0');
+  return /^-?[0-9]+$/.test(raw) ? raw : '0';
+};
+
+/** Digit grouping without going through Number, for the same reason. */
+export function grouped(decimal) {
+  const negative = decimal.startsWith('-');
+  const digits = negative ? decimal.slice(1) : decimal;
+  return (negative ? '-' : '') + digits.replace(/\B(?=([0-9]{3})+(?![0-9]))/g, ',');
+}
+
 /** Decimal units — 1 kB is 1000 bytes — because that is what macOS reports and
  *  what ByteCountFormatter(.file) gives the app. Do not "fix" this to 1024: the
  *  site would then disagree with every figure Dustloft shows. */
@@ -47,6 +67,15 @@ export default async function handler(req, res) {
   // that would hand the gated payload to the next anonymous caller.
   res.setHeader('Vary', 'Authorization');
 
+  // Without this a cross-origin read carrying a token fails at the preflight,
+  // before the handler is reached at all.
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    return res.status(204).end();
+  }
+
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     res.setHeader('Allow', 'GET');
     return res.status(405).json({ error: 'method not allowed' });
@@ -67,7 +96,7 @@ export default async function handler(req, res) {
       configured: false,
       hint: 'Attach a Redis store in Vercel and redeploy. Nothing is being recorded until then.',
       installs: 0,
-      cleaned: { bytes: 0, gb: 0, human: '0 B' },
+      cleaned: { bytes: 0, exact: '0', grouped: '0', gb: 0, human: '0 B' },
       versions: {},
       daily: [],
     });
@@ -94,7 +123,11 @@ export default async function handler(req, res) {
       for (const [k, v] of Object.entries(versions)) versionCounts[k] = int(v);
     }
 
-    const totalBytes = int(bytes);
+    const totalExact = exact(bytes);
+    const totalBig = BigInt(totalExact);
+    // `bytes` stays a JSON number because every consumer wants one; `exact` is
+    // the authority, and the two only differ beyond 2^53.
+    const totalBytes = Number(totalBig);
     res.setHeader(
       'Cache-Control',
       gate ? 'private, no-store' : 'public, s-maxage=300, stale-while-revalidate=600'
@@ -104,7 +137,9 @@ export default async function handler(req, res) {
       installs: int(installs),
       cleaned: {
         bytes: totalBytes,
-        gb: Math.round(totalBytes / 1e9),
+        exact: totalExact,
+        grouped: grouped(totalExact),
+        gb: Number(totalBig / 1_000_000_000n),
         human: human(totalBytes),
       },
       versions: versionCounts,

@@ -182,6 +182,48 @@ final class MetricsTests: XCTestCase {
         XCTAssertFalse(second.isReporting)
     }
 
+    // MARK: What a clean is allowed to count
+
+    /// The published total is only ever fed measurements. Prune's own summary
+    /// line is the measurement here; the scan estimate behind it is stale by
+    /// design, because results are cached between launches.
+    func test_dockerPruneIsCountedFromWhatItSaysItFreed() {
+        let output = "Deleted Images:\nuntagged: nginx:latest\n\nTotal reclaimed space: 10.79GB\n"
+        XCTAssertEqual(Cleaner.dockerReclaimed(output), 10_790_000_000)
+        XCTAssertEqual(Cleaner.dockerReclaimed("Total reclaimed space: 0B"), 0)
+    }
+
+    /// Nothing to report is not the same as a number that could not be read,
+    /// and neither may quietly fall back to the scan estimate.
+    func test_dockerPruneCountsNothingWhenItSaidNothing() {
+        XCTAssertEqual(Cleaner.dockerReclaimed(""), 0)
+        XCTAssertEqual(Cleaner.dockerReclaimed("Deleted Images:\nuntagged: nginx"), 0)
+    }
+
+    /// "Gone" and "could not be reached" must not be the same answer: the first
+    /// clears a row for free, and giving it for the second would turn an
+    /// unmounted volume into a successful clean.
+    func test_absentIsNotTheSameAsUnreachable() throws {
+        let dir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("dustloft-tests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let file = dir.appendingPathComponent("thing")
+        try Data("x".utf8).write(to: file)
+        XCTAssertTrue(Cleaner.entryExists(file.path))
+
+        try FileManager.default.removeItem(at: file)
+        XCTAssertFalse(Cleaner.entryExists(file.path))
+
+        // A dangling symlink is a real directory entry that really does need
+        // removing, and fileExists — which follows links — calls it absent.
+        let link = dir.appendingPathComponent("dangling")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: file)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: link.path))
+        XCTAssertTrue(Cleaner.entryExists(link.path))
+    }
+
     // MARK: The off switch
 
     func test_environmentSwitchRecognisesOffAndFailsClosed() {

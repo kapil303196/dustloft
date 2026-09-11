@@ -179,6 +179,21 @@ await t('a forged x-forwarded-for does not dodge the limiter', async () => {
   assert.ok(limited >= 5, `expected throttling, got ${limited}`);
 });
 
+await t('the byte total stays exact past 2^53', async () => {
+  await shim.client.cmd(['FLUSHALL']);
+  // Ten installs each clamped to 1 PB puts the total beyond what a JSON number
+  // can hold, and the page prints that figure as an exact byte count.
+  for (let i = 0; i < 10; i++) {
+    const id = `aaaaaaaa-bbbb-4ccc-8ddd-00000000000${i}`;
+    await post({ id, cleaned: 9e18 }, { ip: `198.51.100.${100 + i}` });
+  }
+  const { cleaned } = (await get()).payload;
+  assert.equal(cleaned.exact, '10000000000000000');
+  assert.equal(cleaned.grouped, '10,000,000,000,000,000');
+  assert.equal(cleaned.gb, 10_000_000);
+  assert.ok(!Number.isSafeInteger(cleaned.bytes), 'the number really is past 2^53');
+});
+
 await t('the version table always sums to the install count', async () => {
   await shim.client.cmd(['FLUSHALL']);
   const C = '33333333-4444-4555-8666-777777777777';

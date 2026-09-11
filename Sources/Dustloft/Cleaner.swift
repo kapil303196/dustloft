@@ -255,13 +255,42 @@ final class Cleaner: ObservableObject {
         return item.action
     }
 
+    /// The "Total reclaimed space: 10.79GB" line `docker system prune` prints.
+    ///
+    /// Returns 0 rather than the scan estimate when the line is missing, on the
+    /// same principle as the git gc measurement: a figure that is published is
+    /// either measured or not counted.
+    nonisolated static func dockerReclaimed(_ output: String) -> Int64 {
+        for line in output.split(separator: "\n")
+        where line.lowercased().contains("total reclaimed space") {
+            return Scanners.parseDockerSize(line.split(separator: " ").map(String.init)) ?? 0
+        }
+        return 0
+    }
+
     /// Whether there is an entry at this path at all.
     ///
     /// `fileExists` follows symlinks, so it answers "no" for a dangling one —
     /// which is a real directory entry that really does need removing. This
     /// uses lstat semantics instead.
     nonisolated static func entryExists(_ path: String) -> Bool {
-        (try? FileManager.default.attributesOfItem(atPath: path)) != nil
+        do {
+            _ = try FileManager.default.attributesOfItem(atPath: path)
+            return true
+        } catch let error as NSError {
+            // Only "there is nothing here" means gone. Anything else — an
+            // unmounted volume, a stale mount, a permission wall — is a
+            // question that could not be answered, and answering it "absent"
+            // turns a failure into a successful clean and, where this gates
+            // the "already gone" shortcut, skips the attempt entirely.
+            if error.domain == NSCocoaErrorDomain, error.code == NSFileNoSuchFileError {
+                return false
+            }
+            if error.domain == NSPOSIXErrorDomain, error.code == Int(ENOENT) {
+                return false
+            }
+            return true
+        }
     }
 
     // MARK: - Action execution (background thread only)
@@ -329,9 +358,12 @@ final class Cleaner: ObservableObject {
             if startedByUs {
                 _ = Shell.run("/usr/bin/osascript", ["-e", "quit app \"Docker\""], timeout: 30)
             }
-            // Docker's own "reclaimable" column, which is what this item's size
-            // came from, so no correction is needed.
-            return r.ok ? (true, nil, nil) : (false, r.err, nil)
+            guard r.ok else { return (false, r.err, nil) }
+            // The item's size came from `docker system df` at scan time, and
+            // results are cached between launches — so by now it can be well
+            // out of date in either direction. Prune prints what it actually
+            // freed, and that is a measurement rather than an estimate.
+            return (true, nil, dockerReclaimed(r.out))
 
         case .gitGC(let repo):
             guard let git = Shell.which("git") else { return (false, "git not found", nil) }

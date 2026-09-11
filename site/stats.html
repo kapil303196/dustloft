@@ -102,7 +102,9 @@ async function loadStats() {
   $('state').hidden = true;
   $('installs').textContent = compact(data.installs);
   $('cleaned').textContent = data.cleaned.human;
-  $('cleanedExact').textContent = data.cleaned.bytes.toLocaleString('en') + ' bytes';
+  // The grouped string, not the number: past 2^53 a JSON number has already
+  // lost the exact figure this line claims to be.
+  $('cleanedExact').textContent = (data.cleaned.grouped || '0') + ' bytes';
 
   const daily = data.daily || [];
   if (daily.some((d) => d.installs > 0)) {
