@@ -43,7 +43,8 @@ struct ReviewSheet: View {
                 ? "This cannot be moved to the Trash — it is either already there or owned by the system. Ticking this deletes it for good, right now."
                 : "These cannot be moved to the Trash — they are either already there or owned by the system. Ticking this deletes them for good, right now."
         }
-        return "Nothing rebuilds these. Most are moved to the Trash and stay recoverable until you empty it — but \(final) of them cannot be, being already there or owned by the system, and \(final == 1 ? "that one is" : "those are") deleted for good, right now."
+        let recoverable = permanent.count - final
+        return "Nothing rebuilds these. \(recoverable) of them go to the Trash and stay recoverable until you empty it. The other \(final) cannot — already there, or owned by the system — and \(final == 1 ? "that one is" : "those are") deleted for good, right now."
     }
 
     /// Selected rows, grouped by the section they came from and ordered with

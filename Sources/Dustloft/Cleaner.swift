@@ -171,15 +171,19 @@ final class Cleaner: ObservableObject {
             // line of the batch executed. Everything else means the script did
             // run, and per-item truth has to come from somewhere better than
             // the exit status of whichever command was last.
-            // "-128" on its own appears inside perfectly ordinary output — a
-            // path called chunk-1284 is enough — and matching it loosely would
-            // turn any failing command in the batch into "cancelled", which
-            // skips the ground-truth check below and discards every successful
-            // removal with it. The parenthesised form is osascript's.
+            // osascript says exactly: `execution error: User canceled. (-128)`.
+            // Matching a bare "-128" would be enough for a path called
+            // chunk-1284 to turn any failing command in the batch into
+            // "cancelled", which skips the ground-truth check below and
+            // discards every successful removal with it — so the code has to
+            // appear alongside osascript's own prefix, and the wording on its
+            // own (which is what actually changes between locales) is accepted
+            // in either spelling.
             let lowered = res.err.lowercased()
-            let cancelled = !res.ok && (lowered.contains("(-128)")
-                                        || lowered.contains("user canceled")
-                                        || lowered.contains("user cancelled"))
+            let cancelled = !res.ok
+                && (lowered.contains("user canceled")
+                    || lowered.contains("user cancelled")
+                    || (lowered.contains("(-128)") && lowered.contains("execution error")))
 
             for item in adminItems {
                 // An item dropped by validation was never in the script, so it
@@ -234,6 +238,14 @@ final class Cleaner: ObservableObject {
                         // perfectly successful rm as failed exactly as readily
                         // as the reverse. Asking the filesystem is the only
                         // answer that does not depend on what came last.
+                        //
+                        // It is not perfect either: a path recreated by its own
+                        // app during the batch's slow tail reads as "still
+                        // there", so a real removal is reported as a failure and
+                        // credited nothing. That is the direction to be wrong
+                        // in — the row stays visible and the published total
+                        // stays short — and the alternative is trusting an exit
+                        // status that demonstrably lies.
                         ok = !Cleaner.entryExists(path)
                         msg = ok ? nil : (res.ok ? "still present after the administrator step"
                                                  : (res.err.isEmpty ? "could not remove" : res.err))
