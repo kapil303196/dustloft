@@ -10,6 +10,14 @@ on:
       - 'site/**'
       - '**.md'
       - 'LICENSE'
+  # Swift only builds on a macOS runner, so until now the first time anything
+  # compiled was after it had already merged — and a failure there is a failure
+  # on main. Pull requests run the same job and stop before publishing.
+  pull_request:
+    paths-ignore:
+      - 'site/**'
+      - '**.md'
+      - 'LICENSE'
   workflow_dispatch:
 
 permissions:
@@ -59,13 +67,17 @@ jobs:
         run: ./tools/make_dmg.sh
 
       - name: Upload build artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: Dustloft-${{ steps.v.outputs.version }}
           path: dist/*.dmg
           if-no-files-found: error
 
+      # A pull request has proved it compiles, tests and packages. Publishing is
+      # what merging is for.
       - name: Publish release
+        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.v.outputs.version }}
