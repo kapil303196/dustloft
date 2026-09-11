@@ -121,7 +121,14 @@ final class Updater: ObservableObject {
 
             installStep = "Installing…"
             // ditto preserves the signature and extended attributes; cp does not.
-            let target = "/Applications/Dustloft.app"
+            // Replace the copy that is running: a standard account installs to
+            // ~/Applications. Anything run from a disk image or a translocated
+            // path is not a real install, so that goes to /Applications.
+            let running = Bundle.main.bundlePath
+            let target = running.hasSuffix("/Dustloft.app")
+                && !running.hasPrefix("/Volumes/")
+                && !running.contains("/AppTranslocation/")
+                ? running : "/Applications/Dustloft.app"
             let staged = FileManager.default.temporaryDirectory
                 .appendingPathComponent("Dustloft-new.app").path
             try? FileManager.default.removeItem(atPath: staged)

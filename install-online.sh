@@ -9,9 +9,19 @@ set -euo pipefail
 
 REPO="kapil303196/dustloft"
 APP="Dustloft"
-TARGET="/Applications/${APP}.app"
 
 say() { printf "==> %s\n" "$1"; }
+
+# /Applications is writable only by admin accounts. A standard account (common
+# on work Macs) gets "Permission denied", so fall back to the per-user
+# Applications folder, which macOS treats the same for launching and Spotlight.
+DEST="/Applications"
+if [ ! -w "$DEST" ]; then
+  DEST="$HOME/Applications"
+  mkdir -p "$DEST"
+  say "No write access to /Applications (not an admin account); using ${DEST}"
+fi
+TARGET="${DEST}/${APP}.app"
 
 say "Finding the latest release"
 URL=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
@@ -21,7 +31,10 @@ URL=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
 say "Downloading $(basename "$URL")"
 
 TMP="$(mktemp -d)"
-trap 'hdiutil detach "$TMP/mnt" -quiet >/dev/null 2>&1 || true; rm -rf "$TMP"' EXIT
+# -force: the image is read-only and we are done with it, and a plain detach can
+# sit retrying for a long time if Spotlight has touched the volume. It also keeps
+# rm -rf from descending into a volume that is still mounted.
+trap 'hdiutil detach "$TMP/mnt" -force -quiet >/dev/null 2>&1 || true; rm -rf "$TMP"' EXIT
 curl -fsSL -o "$TMP/dustloft.dmg" "$URL"
 
 say "Mounting"
