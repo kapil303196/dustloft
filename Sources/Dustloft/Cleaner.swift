@@ -136,6 +136,10 @@ final class Cleaner: ObservableObject {
             // "this run removed it" from "it was already gone", and the second
             // would credit a scan-time estimate to a run that did nothing.
             var existedBefore: Set<String> = []
+            // And their sizes, for the same reason the ordinary path measures
+            // at clean time: the scan figure can be hours old. It has to happen
+            // before the batch, because afterwards there is nothing to measure.
+            var sizeBefore: [String: Int64] = [:]
             let paths = adminItems.compactMap { item -> String? in
                 guard case .removePathAdmin(let p) = item.action else { return nil }
                 if let refusal = SafePath.validate(p) {
@@ -144,7 +148,12 @@ final class Cleaner: ObservableObject {
                 if SafePath.isSymlink(p) {
                     refusedAdmin.append((item.name, "refused: symlink, not removed as root")); return nil
                 }
-                if Cleaner.entryExists(p) { existedBefore.insert(p) }
+                if Cleaner.entryExists(p) {
+                    existedBefore.insert(p)
+                    // nil when du cannot read it, which root-owned trees often
+                    // are for this process — the scan's figure then stands.
+                    if let measured = Cleaner.sizeNow(p) { sizeBefore[p] = measured }
+                }
                 return p
             }
             if !paths.isEmpty {
@@ -230,6 +239,7 @@ final class Cleaner: ObservableObject {
                         ok = !Cleaner.entryExists(path)
                         msg = ok ? nil : (res.ok ? "still present after the administrator step"
                                                  : (res.err.isEmpty ? "could not remove" : res.err))
+                        if let measured = sizeBefore[path] { bytes = measured }
                     }
                 } else {
                     ok = res.ok
