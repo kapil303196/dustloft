@@ -279,7 +279,12 @@ struct ReviewSheet: View {
                             Text(o.name).font(DS.caption()).foregroundStyle(DS.text)
                                 .lineLimit(1).truncationMode(.middle)
                             if let m = o.message {
-                                Text(m).font(DS.caption()).foregroundStyle(DS.danger)
+                                // A message no longer implies a failure: a row
+                                // that succeeded with nothing to do says "already
+                                // gone", and painting that red next to a green
+                                // tick reads as a contradiction.
+                                Text(m).font(DS.caption())
+                                    .foregroundStyle(o.ok ? DS.textDim : DS.danger)
                                     .lineLimit(1)
                             }
                             Spacer()

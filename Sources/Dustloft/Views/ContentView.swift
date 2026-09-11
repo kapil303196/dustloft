@@ -165,19 +165,25 @@ struct RootView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
 
+                // First in the scroll view, above the hero, and its position
+                // is load-bearing rather than editorial. The card marks itself
+                // as shown when it appears, and that mark is what permits
+                // anything to be sent at all — so it has to be somewhere that
+                // is unarguably on screen. A ScrollView builds its children
+                // eagerly, so onAppear fires whether or not a card further down
+                // is below the fold; at the top of the scroll view it cannot be.
+                //
+                // Nor while the first-run sheet is covering the window: being
+                // in the view tree behind a modal is not being seen either.
+                if hasSeenWelcome && !showWelcome
+                    && !metrics.noticeSeen && !metrics.isSuppressedByEnvironment {
+                    MetricsNotice(metrics: metrics).padding(.bottom, DS.s4)
+                }
+
                 hero
 
                 if updater.updateAvailable {
                     UpdateBanner(updater: updater).padding(.bottom, DS.s4)
-                }
-
-                // Not while the first-run sheet is covering the window. The
-                // card marks itself as shown when it appears, and that mark is
-                // what permits anything to be sent at all — so it has to mean
-                // "was on screen", not "was in the view tree behind a modal".
-                if hasSeenWelcome && !showWelcome
-                    && !metrics.noticeSeen && !metrics.isSuppressedByEnvironment {
-                    MetricsNotice(metrics: metrics).padding(.bottom, DS.s4)
                 }
 
                 if engine.permissionDenied {

@@ -103,6 +103,11 @@ Rules, in the same spirit as the safety model — do not weaken these either:
 - **The card is drawn before anything is sent.** `isReporting` requires
   `noticeShown`, which the notice sets when it first appears. Without it, a
   first run where someone cleans straight away could report before being told.
+  Two things make that mark mean "was on screen": the card is rendered first in
+  the Overview's scroll view, because SwiftUI builds a `ScrollView`'s children
+  eagerly and `onAppear` would otherwise fire for a card below the fold; and it
+  is not rendered at all while the first-run sheet covers the window. Moving it
+  down the page, or into a lazy container, quietly breaks the guarantee.
 - **Off is one click, and permanent.** The first-run card leads with the literal
   three fields and carries the off switch; the switch then lives in the Overview
   footer. `DUSTLOFT_NO_METRICS=1` disables it without launching the app, and an
