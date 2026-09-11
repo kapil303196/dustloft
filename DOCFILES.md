@@ -135,6 +135,11 @@ measured at all, as with a root shell command, the row carries
 item Dustloft trashes is counted then, is offered again from the Trash on the
 next scan, and would otherwise be billed twice for space freed once.
 
+Neither rule claims "once, ever". Restoring something from the Trash by hand and
+cleaning it again counts it twice, and that is left alone deliberately: the only
+way to close it is a permanent local list of every path ever cleaned, which is a
+worse thing for this app to be keeping than the double-count is a problem.
+
 **The website is not the app.** dustloft.com loads Microsoft Clarity on every
 page, including `/privacy`. That is ordinary site analytics and is nothing to do
 with the app's counter, but a page describing one while silently doing the other

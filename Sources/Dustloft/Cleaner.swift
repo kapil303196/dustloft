@@ -38,8 +38,14 @@ final class Cleaner: ObservableObject {
     /// What Dustloft itself removed — items sent to the Trash included, since
     /// the person asked for those to go and they leave when the Trash is
     /// emptied. Everything shown against this figure says "cleaned" rather than
-    /// "freed" for that reason — and counted once, at the moment it leaves the
-    /// active filesystem, never again when the Trash itself is emptied.
+    /// "freed" for that reason — counted when it leaves the active filesystem,
+    /// and not again when the Trash is later emptied through Dustloft.
+    ///
+    /// Not a universal "once, ever": restoring something from the Trash by hand
+    /// and cleaning it again does count it twice. Closing that would mean
+    /// keeping a permanent local list of every path ever cleaned, which is a
+    /// worse thing to have than the double-count is a problem — the log is
+    /// deliberately append-only and nothing reads it back.
     ///
     /// Anything whose effect could not be measured is excluded too; see
     /// `CleanOutcome.countsAsCleaned`.
@@ -329,6 +335,24 @@ final class Cleaner: ObservableObject {
         return index == 3 && components[1] == "Volumes"
     }
 
+    /// What a path is worth right now, rather than when the scan ran.
+    ///
+    /// Scan results are cached — for hours, and for as long as the app stays
+    /// open — so `item.bytes` can be badly out of date by the time someone
+    /// cleans. DerivedData measured at 40 GB and since rebuilt down to 1 GB
+    /// would otherwise credit 40 GB to a total that only ever rises and then
+    /// gets published, which is the rule `git gc` and `docker prune` already
+    /// follow: measured, or not counted.
+    ///
+    /// The extra `du` is bounded by work that is about to happen anyway —
+    /// removing a tree walks every inode in it, and `du` walks the same tree
+    /// more cheaply. `nil` when it cannot be measured, so the caller keeps the
+    /// scan's figure rather than recording a zero for something real.
+    nonisolated static func sizeNow(_ path: String) -> Int64? {
+        let measured = Shell.diskUsage(path)
+        return measured > 0 ? measured : nil
+    }
+
     /// Whether there is an entry at this path at all.
     ///
     /// `lstat` rather than `FileManager`, and not for speed. Two distinctions
@@ -366,12 +390,14 @@ final class Cleaner: ObservableObject {
             // the scan-time estimate would be banked as space this run
             // reclaimed. It is still a success: the row should disappear.
             guard entryExists(p) else { return (true, "already gone", 0) }
+            let removing = sizeNow(p)
             do {
                 try FileManager.default.removeItem(atPath: p)
-                return (true, nil, nil)
+                return (true, nil, removing)
             } catch {
                 let r = Shell.run("/bin/rm", ["-rf", p], timeout: 900)
-                return r.ok ? (true, nil, nil) : (false, r.err.isEmpty ? "could not remove" : r.err, nil)
+                return r.ok ? (true, nil, removing)
+                            : (false, r.err.isEmpty ? "could not remove" : r.err, nil)
             }
 
         case .trashPath(let p):
@@ -380,9 +406,10 @@ final class Cleaner: ObservableObject {
             // its name, not the failure trashItem would otherwise report — and
             // the row has to clear either way.
             guard entryExists(p) else { return (true, "already gone", 0) }
+            let trashing = sizeNow(p)
             do {
                 try FileManager.default.trashItem(at: URL(fileURLWithPath: p), resultingItemURL: nil)
-                return (true, nil, nil)
+                return (true, nil, trashing)
             } catch {
                 // Deliberately no rm -rf fallback. This item was routed here
                 // because it cannot be recovered; quietly deleting it outright
