@@ -110,8 +110,11 @@ Rules, in the same spirit as the safety model — do not weaken these either:
   down the page, or into a lazy container, quietly breaks the guarantee.
 - **Off is one click, and permanent.** The first-run card leads with the literal
   three fields and carries the off switch; the switch then lives in the Overview
-  footer. `DUSTLOFT_NO_METRICS=1` disables it without launching the app, and an
-  unrecognised value fails closed.
+  footer. `launchctl setenv DUSTLOFT_NO_METRICS 1` disables it without launching
+  the app, and an unrecognised value fails closed. It has to be `launchctl` and
+  not a shell `export`: an app opened from the Dock or Finder inherits launchd's
+  environment, not a terminal's. Anywhere this is documented, say so — it is the
+  difference between an opt-out that works and one that only looks like it does.
 - **Aggregates only on the way out.** `/api/stats` returns totals. Nothing
   returns one install's row; the per-install value exists so a duplicate report
   is not counted twice, and for no other reason.

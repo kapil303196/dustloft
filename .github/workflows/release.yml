@@ -10,9 +10,9 @@ on:
       - 'site/**'
       - '**.md'
       - 'LICENSE'
-  # Swift only builds on a macOS runner, so until now the first time anything
-  # compiled was after it had already merged — and a failure there is a failure
-  # on main. Pull requests run the same job and stop before publishing.
+  # Swift only builds on a macOS runner, so until this was added the first time
+  # anything compiled was after it had already merged — and a failure there is a
+  # failure on main. Pull requests run the build job and stop before publishing.
   pull_request:
     paths-ignore:
       - 'site/**'
@@ -20,14 +20,22 @@ on:
       - 'LICENSE'
   workflow_dispatch:
 
+# Read-only by default, and it matters more than it looks: the build job runs
+# code from the branch under test — swift test, build.sh, make_dmg.sh — and
+# before this was split it did so holding a token that could push to main or
+# cut a release. Gating the publish *steps* was never enough, because the token
+# is handed to the job and not to the step. Write lives in the publish job
+# below, which runs nothing from the branch.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
     # A macOS runner is mandatory: SwiftUI, codesign and hdiutil do not exist
     # on Linux, so this project cannot be built anywhere else.
     runs-on: macos-15
+    outputs:
+      version: ${{ steps.v.outputs.version }}
 
     steps:
       - uses: actions/checkout@v4
@@ -67,21 +75,38 @@ jobs:
         run: ./tools/make_dmg.sh
 
       - name: Upload build artifact
-        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: Dustloft-${{ steps.v.outputs.version }}
-          path: dist/*.dmg
+          path: |
+            dist/*.dmg
+            dist/*.dmg.sha256
           if-no-files-found: error
 
-      # A pull request has proved it compiles, tests and packages. Publishing is
-      # what merging is for.
+  publish:
+    # A pull request has proved it compiles, tests and packages. Publishing is
+    # what merging is for.
+    if: github.event_name != 'pull_request'
+    needs: build
+    # Nothing from the branch runs here: it downloads what the build job
+    # produced and creates the release. That is why this job, and only this
+    # job, is trusted with a token that can write.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download the build
+        uses: actions/download-artifact@v4
+        with:
+          name: Dustloft-${{ needs.build.outputs.version }}
+          path: dist
+
       - name: Publish release
-        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.v.outputs.version }}
-          name: Dustloft ${{ steps.v.outputs.version }}
+          tag_name: v${{ needs.build.outputs.version }}
+          name: Dustloft ${{ needs.build.outputs.version }}
           files: |
             dist/*.dmg
             dist/*.dmg.sha256

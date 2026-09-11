@@ -16,6 +16,11 @@ on:
       - '.github/workflows/site-api.yml'
   workflow_dispatch:
 
+# This also runs code from the branch under test, so it gets no more than it
+# needs to check the branch out.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
