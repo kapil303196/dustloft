@@ -9,6 +9,13 @@ struct CleanOutcome: Identifiable {
     var bytes: Int64
     var ok: Bool
     var message: String?
+    /// Whether this may be added to a running total of space cleaned.
+    ///
+    /// False for work whose effect cannot be measured — a shell command run as
+    /// root, where `bytes` is an estimate of what it was *asked* to reclaim and
+    /// nothing afterwards can say what it actually did. Such an item is still
+    /// shown and still logged; it is only kept out of the arithmetic.
+    var countsAsCleaned: Bool = true
 }
 
 @MainActor
@@ -31,7 +38,8 @@ final class Cleaner: ObservableObject {
     /// What Dustloft itself removed — items sent to the Trash included, since
     /// the person asked for those to go and they leave when the Trash is
     /// emptied. Everything shown against this figure says "cleaned" rather than
-    /// "freed" for that reason.
+    /// "freed" for that reason. Anything whose effect could not be measured is
+    /// excluded; see `CleanOutcome.countsAsCleaned`.
     ///
     /// Deliberately not `freedBytes`: that figure is overwritten by the volume
     /// delta, which is the right number to show someone staring at their disk
@@ -39,7 +47,9 @@ final class Cleaner: ObservableObject {
     /// happened to do during the run. It cannot be used as a ceiling here
     /// either — an APFS snapshot routinely holds deleted space for hours, so a
     /// real 50 GB removal can show a delta of nothing.
-    var accountedBytes: Int64 { outcomes.filter { $0.ok }.reduce(0) { $0 + $1.bytes } }
+    var accountedBytes: Int64 {
+        outcomes.filter { $0.ok && $0.countsAsCleaned }.reduce(0) { $0 + $1.bytes }
+    }
 
     /// Executes the chosen items. Admin removals are collected and run under a
     /// single authorisation prompt rather than one dialog per path.
@@ -159,8 +169,18 @@ final class Cleaner: ObservableObject {
                     ok = false
                     msg = "still present after the administrator step"
                 }
+                // A shell command has no path to check afterwards, so it keeps
+                // the batch's exit status — which, for `a ; b`, is b's. The two
+                // that reach here (`tmutil thinlocalsnapshots`, `mdutil -E`)
+                // also carry an estimate of what they were asked to reclaim
+                // rather than a measurement of what they did, so neither the
+                // status nor the size can be trusted in a total that is
+                // published. Shown and logged as before; not counted.
+                var counts = true
+                if case .adminShell = item.action { counts = false }
                 outcomes.append(CleanOutcome(
-                    itemID: item.id, name: item.name, bytes: item.bytes, ok: ok, message: msg))
+                    itemID: item.id, name: item.name, bytes: item.bytes, ok: ok,
+                    message: msg, countsAsCleaned: counts))
                 OperationLog.record(action: item.action, name: item.name,
                                     bytes: item.bytes, ok: ok, message: msg)
                 if ok { freedBytes += item.bytes }

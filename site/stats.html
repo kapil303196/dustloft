@@ -44,9 +44,11 @@
 
 <div id="state" class="answer"><p>Loading…</p></div>
 
-<div class="figures" id="figures" hidden>
+<!-- Never hidden. The download count comes from GitHub and is worth seeing
+     whether or not a store is attached to the counters. -->
+<div class="figures" id="figures">
   <div class="figure"><b id="installs">—</b><span>Macs running Dustloft</span><small>Copies that have reported at least once</small></div>
-  <div class="figure"><b id="cleaned">—</b><span>Data cleaned</span><small id="cleanedExact">&nbsp;</small></div>
+  <div class="figure"><b id="cleaned">—</b><span>Data cleaned</span><small id="cleanedExact">Not counted yet</small></div>
   <div class="figure"><b id="downloads">—</b><span>Release downloads</span><small>Counted by GitHub, installs included or not</small></div>
 </div>
 
@@ -98,8 +100,6 @@ async function loadStats() {
   }
 
   $('state').hidden = true;
-  $('figures').hidden = false;
-
   $('installs').textContent = compact(data.installs);
   $('cleaned').textContent = data.cleaned.human;
   $('cleanedExact').textContent = data.cleaned.bytes.toLocaleString('en') + ' bytes';

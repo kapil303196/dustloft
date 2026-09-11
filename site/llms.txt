@@ -45,6 +45,7 @@ leaves it.
 ## Reference
 
 - [What Dustloft refuses to do](https://dustloft.com/safety): The complete list of protected locations, the three safety tiers, and the reasoning behind each rule.
+- [What Dustloft sends](https://dustloft.com/privacy): The literal request body, field by field, what happens to the IP address, and the two ways to switch it off. Also covers this website's own analytics, which are separate from the app.
 
 ## Notable technical findings documented here
 
