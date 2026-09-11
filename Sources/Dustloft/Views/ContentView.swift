@@ -108,9 +108,16 @@ struct RootView: View {
             // only things that ask are launch and a clean. Without this, an app
             // left open for a week reports once, and the daily floor the notice,
             // the README and the privacy page all promise is not one.
-            // reportIfNeeded is throttled, so an hourly nudge costs nothing.
+            //
+            // Fifteen minutes rather than an hour, because the ticker starts at
+            // launch and the clock it is checking is stamped a moment later, so
+            // a tick always lands just short of the mark. At an hour that means
+            // the twenty-fourth tick misses and the beat settles into a
+            // twenty-five hour cycle; at fifteen minutes the drift is fifteen
+            // minutes. reportIfNeeded is two defaults reads when throttled, so
+            // asking four times an hour costs nothing worth measuring.
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 3_600 * 1_000_000_000)
+                try? await Task.sleep(nanoseconds: 900 * 1_000_000_000)
                 if Task.isCancelled { break }
                 metrics.reportIfNeeded()
             }
