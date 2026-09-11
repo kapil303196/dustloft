@@ -1,0 +1,5 @@
+# The site deploys by uploading this folder as-is, so anything here that is
+# not ignored can end up publicly fetchable. `vercel env pull` and
+# `vercel integration add` both write credentials to .env.local.
+.env
+.env.*
