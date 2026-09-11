@@ -107,6 +107,14 @@ struct ReviewSheet: View {
         .animation(DS.quick, value: cleaner.finished)
         // A progress bar does not need a 620x560 window.
         .onAppear { if frozen.isEmpty { freeze() } }
+        // The tick is consent to one specific sentence. Change the ticked rows
+        // and that sentence can change from "stays recoverable until you empty
+        // the Trash" to "deleted for good, right now", so an acknowledgement
+        // given to the first must not carry over to the second. Watched out
+        // here rather than on the card itself, which is removed from the tree
+        // when nothing permanent is ticked and would miss the change that
+        // brings it back.
+        .onChange(of: permanentWarning) { _ in acknowledgePermanent = false }
         .frame(width: cleaner.isRunning && !cleaner.finished ? 400 : 620,
                height: cleaner.isRunning && !cleaner.finished ? 168 : 560)
         .background(DS.bg)

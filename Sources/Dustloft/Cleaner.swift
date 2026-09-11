@@ -171,19 +171,23 @@ final class Cleaner: ObservableObject {
             // line of the batch executed. Everything else means the script did
             // run, and per-item truth has to come from somewhere better than
             // the exit status of whichever command was last.
-            // osascript says exactly: `execution error: User canceled. (-128)`.
-            // Matching a bare "-128" would be enough for a path called
-            // chunk-1284 to turn any failing command in the batch into
-            // "cancelled", which skips the ground-truth check below and
-            // discards every successful removal with it — so the code has to
-            // appear alongside osascript's own prefix, and the wording on its
-            // own (which is what actually changes between locales) is accepted
-            // in either spelling.
+            // osascript writes `execution error: User canceled. (-128)`, and
+            // every word of that is localised — including the prefix. The
+            // parenthesised code is not, because it is formatting rather than
+            // message, so it is the only part of the line that means the same
+            // thing on a Mac set to any language. The English wording is still
+            // matched as well, in both spellings, for the case where the
+            // formatting ever changes.
+            //
+            // A bare "-128" would be too loose: a path called chunk-1284 would
+            // turn any failing command in the batch into "cancelled". The
+            // parentheses are what make it a code and not a coincidence, and a
+            // path containing literally "(-128)" would only cost a batch being
+            // reported as refused, with nothing credited — the safe direction.
             let lowered = res.err.lowercased()
-            let cancelled = !res.ok
-                && (lowered.contains("user canceled")
-                    || lowered.contains("user cancelled")
-                    || (lowered.contains("(-128)") && lowered.contains("execution error")))
+            let cancelled = !res.ok && (lowered.contains("(-128)")
+                                        || lowered.contains("user canceled")
+                                        || lowered.contains("user cancelled"))
 
             for item in adminItems {
                 // An item dropped by validation was never in the script, so it
@@ -449,6 +453,12 @@ final class Cleaner: ObservableObject {
             return (false, "handled in the batched admin step", nil)
 
         case .ollamaModel(let name):
+            // The only row counted at its scan-time figure on purpose. `ollama
+            // rm` reports nothing about size, but it fails outright on a model
+            // that is not there — so a success is itself evidence the listed
+            // model still existed, and a model's size does not drift the way a
+            // build directory's does. The figure is wrong only if a different
+            // model was pulled under the same tag in between.
             let r = Shell.tool("ollama", ["rm", name], timeout: 120)
             return r.ok ? (true, nil, nil) : (false, r.err, nil)
 
