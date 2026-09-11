@@ -73,11 +73,19 @@ overridable from the UI.
 ## 2b. Counting, and the promise around it
 
 Dustloft had no idea how many Macs it ran on or whether it had ever actually
-given anyone their disk back. It now sends **one line, about once a day**:
+given anyone their disk back. It now sends **one line, when its byte total
+changes and once a day even when it has not**:
 `{ id, cleaned, version }` — a random UUID belonging to that copy, the running
 total of bytes reclaimed, and the build number. That is the entire payload, and
 `MetricsReport` is written as a type so a fourth field cannot be added without a
 visible diff and a failing test.
+
+The cadence is a ceiling of one report a minute and a floor of one a day, which
+is why nothing anywhere says "once a day" flat: the daily beat is the minimum,
+not the maximum, and five cleans in ten minutes really are five reports. If
+`MetricsRules.minInterval` or `heartbeat` move, the wording in the notice, the
+README, `site/privacy.html`, `site/index.html`, `site/safety.html` and
+`site/llms.txt` moves with them.
 
 Rules, in the same spirit as the safety model — do not weaken these either:
 

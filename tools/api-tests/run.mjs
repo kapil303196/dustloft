@@ -23,9 +23,11 @@ const { default: ping, clientIP } = await import('../../site/api/ping.mjs');
 const { default: stats } = await import('../../site/api/stats.mjs');
 
 function mock(method, body, { ip = '203.0.113.7', headers = {} } = {}) {
-  // Spread last so a test can replace the forwarding headers outright; an
-  // explicit undefined ip drops the platform header so the fallback is used.
-  const base = ip === undefined ? {} : { 'x-real-ip': ip };
+  // Spread last so a test can replace the forwarding headers outright. Passing
+  // ip: null drops the platform header so the x-forwarded-for fallback is the
+  // thing under test — note that `undefined` would not, because that is exactly
+  // what triggers the destructuring default above.
+  const base = ip ? { 'x-real-ip': ip } : {};
   const req = { method, body, headers: { ...base, ...headers } };
   const res = {
     code: 0, payload: undefined, headers: {},
@@ -170,11 +172,21 @@ await t('a forged x-forwarded-for does not dodge the limiter', async () => {
     // randomising the part it controls must still land in the same bucket.
     const r = await post(
       { id: A, cleaned: 10 },
-      { headers: { 'x-forwarded-for': `10.0.0.${i}, 198.51.100.77` }, ip: undefined }
+      { headers: { 'x-forwarded-for': `10.0.0.${i}, 198.51.100.77` }, ip: null }
     );
     if (r.code === 429) limited++;
   }
   assert.ok(limited >= 5, `expected throttling, got ${limited}`);
+});
+
+await t('one identifier in two letter cases is one install', async () => {
+  await shim.client.cmd(['FLUSHALL']);
+  const upper = A.toUpperCase();
+  await post({ id: A, cleaned: 900 });
+  await post({ id: upper, cleaned: 900 }, { ip: '198.51.100.5' });
+  const s = (await get()).payload;
+  assert.equal(s.installs, 1);
+  assert.equal(s.cleaned.bytes, 900);
 });
 
 await t('a raw Buffer body is decoded, not rejected', async () => {

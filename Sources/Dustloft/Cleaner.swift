@@ -143,6 +143,16 @@ final class Cleaner: ObservableObject {
                     cont.resume(returning: Shell.runAsAdmin(script))
                 }
             }
+            // A refused authorisation is distinct from a command that ran and
+            // failed: osascript reports it as -128, and in that case not one
+            // line of the batch executed. Everything else means the script did
+            // run, and per-item truth has to come from somewhere better than
+            // the exit status of whichever command was last.
+            let lowered = res.err.lowercased()
+            let cancelled = !res.ok && (res.err.contains("-128")
+                                        || lowered.contains("user canceled")
+                                        || lowered.contains("user cancelled"))
+
             for item in adminItems {
                 // An item dropped by validation was never in the script, so it
                 // must not inherit the batch's success.
@@ -153,21 +163,26 @@ final class Cleaner: ObservableObject {
                                         bytes: item.bytes, ok: false, message: refusal.1)
                     continue
                 }
-                // The batch runs as `rm -rf a b c ; other-command`, and a shell
-                // reports the status of the last command in it. A removal that
-                // failed in the middle would otherwise be recorded — and, now,
-                // counted — as a success. Whether the path is still there is
-                // the only answer that does not depend on that.
-                var ok = res.ok
-                var msg = res.ok ? nil : (res.err.isEmpty ? "authorisation cancelled" : res.err)
-                // Only ever downgrades. A cancelled prompt ran nothing, so a
-                // path that happens to be absent for some other reason must not
-                // be turned into a success carrying the message "authorisation
-                // cancelled" — and counted as bytes cleaned.
-                if ok, case .removePathAdmin(let path) = item.action,
-                   FileManager.default.fileExists(atPath: path) {
+                let ok: Bool
+                let msg: String?
+                if cancelled {
+                    // Nothing in the batch ran, so nothing in it succeeded —
+                    // whatever the filesystem happens to look like.
                     ok = false
-                    msg = "still present after the administrator step"
+                    msg = "authorisation cancelled"
+                } else if case .removePathAdmin(let path) = item.action {
+                    // The path is the ground truth, in both directions. The
+                    // batch is `rm -rf … ; cmd1 ; cmd2` and a shell reports the
+                    // LAST command's status, so a failing mdutil marks a
+                    // perfectly successful rm as failed exactly as readily as
+                    // the reverse. Asking the filesystem is the only answer
+                    // that does not depend on which command happened to be last.
+                    ok = !FileManager.default.fileExists(atPath: path)
+                    msg = ok ? nil : (res.ok ? "still present after the administrator step"
+                                             : (res.err.isEmpty ? "could not remove" : res.err))
+                } else {
+                    ok = res.ok
+                    msg = res.ok ? nil : (res.err.isEmpty ? "could not run" : res.err)
                 }
                 // A shell command has no path to check afterwards, so it keeps
                 // the batch's exit status — which, for `a ; b`, is b's. The two

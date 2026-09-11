@@ -102,8 +102,8 @@ struct RootView: View {
         .task {
             // The daily beat only happens if something asks on the day, and the
             // only things that ask are launch and a clean. Without this, an app
-            // left open for a week reports once, and "about once a day" — which
-            // the notice, the README and the privacy page all say — is false.
+            // left open for a week reports once, and the daily floor the notice,
+            // the README and the privacy page all promise is not one.
             // reportIfNeeded is throttled, so an hourly nudge costs nothing.
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 3_600 * 1_000_000_000)

@@ -50,9 +50,10 @@ never uploaded, in whole or in part.
 Nothing about the contents of your disk ever leaves it. No file name, no path, no
 directory listing, no account, no email address.
 
-Dustloft does send one anonymous line, about once a day, so there is some idea of
-how many Macs it runs on and whether it has actually given anyone their disk back.
-That line is the whole of it:
+Dustloft does send one anonymous line — when the total below changes, and once a
+day even when it has not — so there is some idea of how many Macs it runs on and
+whether it has actually given anyone their disk back. That line is the whole of
+it:
 
 ```json
 { "id": "9f2c1e7a-…", "cleaned": 41203847610, "version": "1.0.27" }

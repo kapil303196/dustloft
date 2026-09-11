@@ -21,7 +21,7 @@ struct MetricsNotice: View {
                         Text("Dustloft counts installs and space reclaimed")
                             .font(DS.body().weight(.semibold))
                             .foregroundStyle(DS.text)
-                        Text("So there is some idea of how many Macs this runs on and whether it has actually given anyone their disk back. This is the entire message, sent about once a day:")
+                        Text("So there is some idea of how many Macs this runs on and whether it has actually given anyone their disk back. This is the entire message, sent when that total changes and once a day even if it has not:")
                             .font(DS.caption())
                             .foregroundStyle(DS.textDim)
                             .fixedSize(horizontal: false, vertical: true)

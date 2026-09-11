@@ -6,7 +6,8 @@
 Dustloft measures every real consumer of disk space on a Mac, sorts findings into
 three tiers (regenerable, needs-admin, permanent), and shows every item with its
 full path and real size before anything is removed. MIT licensed, no subscription,
-no account. It sends one anonymous line about once a day — a random identifier
+no account. It sends one anonymous line when its reclaimed total changes, and
+once a day even when it has not — a random identifier
 belonging to that copy of the app, its total bytes reclaimed, and its version —
 which can be switched off in the app. Nothing about the contents of a disk ever
 leaves it.

@@ -85,7 +85,11 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'expected a small JSON body' });
   }
 
-  const id = typeof body.id === 'string' ? body.id : '';
+  // Lower-cased before it is used as the dedup key. The regex accepts either
+  // case and the shipped client always sends lower, but one identifier arriving
+  // in two cases would otherwise be two installs — and its cumulative total
+  // would be added to the global figure twice.
+  const id = (typeof body.id === 'string' ? body.id : '').toLowerCase();
   if (!UUID.test(id)) return res.status(400).json({ error: 'invalid id' });
 
   const version =
