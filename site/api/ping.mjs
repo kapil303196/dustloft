@@ -92,8 +92,11 @@ export default async function handler(req, res) {
   const id = (typeof body.id === 'string' ? body.id : '').toLowerCase();
   if (!UUID.test(id)) return res.status(400).json({ error: 'invalid id' });
 
+  // An unparseable version becomes a row of its own rather than no row at all,
+  // so the version table always sums to the install count. It cannot collide
+  // with a real one: VERSION admits only digits and dots.
   const version =
-    typeof body.version === 'string' && VERSION.test(body.version) ? body.version : '';
+    typeof body.version === 'string' && VERSION.test(body.version) ? body.version : 'unknown';
 
   const raw = body.cleaned;
   if (typeof raw !== 'number' || !Number.isFinite(raw) || raw < 0) {
@@ -107,15 +110,16 @@ export default async function handler(req, res) {
   if (!configured) return res.status(202).json({ ok: true, recorded: false });
 
   try {
-    const ip = clientIP(req);
-    if (ip) {
-      const bucket =
-        'dustloft:rl:' + createHash('sha256').update(IP_SALT + ip).digest('hex').slice(0, 24);
-      const hits = Number(await redis(['EVAL', RATE_LIMIT, 1, bucket, 60]));
-      if (Number.isFinite(hits) && hits > MAX_REPORTS_PER_MINUTE) {
-        res.setHeader('Retry-After', '60');
-        return res.status(429).json({ error: 'too many reports' });
-      }
+    // No usable address is not a reason to skip the limit — it is a reason to
+    // apply one. Everything unattributable shares a single bucket, so the
+    // failure mode is a shared ceiling rather than no ceiling at all.
+    const ip = clientIP(req) || 'unattributed';
+    const bucket =
+      'dustloft:rl:' + createHash('sha256').update(IP_SALT + ip).digest('hex').slice(0, 24);
+    const hits = Number(await redis(['EVAL', RATE_LIMIT, 1, bucket, 60]));
+    if (Number.isFinite(hits) && hits > MAX_REPORTS_PER_MINUTE) {
+      res.setHeader('Retry-After', '60');
+      return res.status(429).json({ error: 'too many reports' });
     }
 
     const day = today();

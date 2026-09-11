@@ -179,6 +179,42 @@ await t('a forged x-forwarded-for does not dodge the limiter', async () => {
   assert.ok(limited >= 5, `expected throttling, got ${limited}`);
 });
 
+await t('the version table always sums to the install count', async () => {
+  await shim.client.cmd(['FLUSHALL']);
+  const C = '33333333-4444-4555-8666-777777777777';
+
+  // No version at all, and a version the server will not parse.
+  await post({ id: A, cleaned: 1 });
+  await post({ id: B, cleaned: 1, version: '1.0.26' }, { ip: '198.51.100.4' });
+  await post({ id: C, cleaned: 1, version: 'nightly-3' }, { ip: '198.51.100.6' });
+
+  let s = (await get()).payload;
+  const sum = (v) => Object.values(v).reduce((a, b) => a + b, 0);
+  assert.equal(s.installs, 3);
+  assert.equal(sum(s.versions), 3, JSON.stringify(s.versions));
+  assert.equal(s.versions.unknown, 2);
+
+  // Upgrading onto an unparseable build must move the row, not leave a ghost
+  // behind on the version the install used to be on.
+  await post({ id: B, cleaned: 1, version: 'nightly-4' }, { ip: '198.51.100.4' });
+  s = (await get()).payload;
+  assert.equal(sum(s.versions), 3, JSON.stringify(s.versions));
+  assert.equal(s.versions['1.0.26'], undefined);
+  assert.equal(s.versions.unknown, 3);
+});
+
+await t('an unattributable caller is still throttled', async () => {
+  await shim.client.cmd(['FLUSHALL']);
+  let limited = 0;
+  for (let i = 0; i < 40; i++) {
+    // No platform header and no x-forwarded-for at all. Skipping the limit here
+    // would hand anyone who can strip headers an unthrottled endpoint.
+    const r = await post({ id: A, cleaned: 5 }, { ip: null });
+    if (r.code === 429) limited++;
+  }
+  assert.ok(limited >= 5, `expected throttling, got ${limited}`);
+});
+
 await t('one identifier in two letter cases is one install', async () => {
   await shim.client.cmd(['FLUSHALL']);
   const upper = A.toUpperCase();

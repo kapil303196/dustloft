@@ -43,16 +43,19 @@ end
 
 -- Version counts track where installs are now, not how many reports each
 -- version sent, so moving an install off a version has to decrement it.
-if version ~= '' then
-  local was = redis.call('HGET', verOf, id)
-  if was ~= version then
-    if was then
-      local left = redis.call('HINCRBY', verCounts, was, -1)
-      if left <= 0 then redis.call('HDEL', verCounts, was) end
-    end
-    redis.call('HINCRBY', verCounts, version, 1)
-    redis.call('HSET', verOf, id, version)
+--
+-- Never skipped. Skipping when the version is missing would leave an install
+-- counted against whatever it last reported, or in no row at all, and the table
+-- would quietly stop summing to the install count.
+if version == '' then version = 'unknown' end
+local was = redis.call('HGET', verOf, id)
+if was ~= version then
+  if was then
+    local left = redis.call('HINCRBY', verCounts, was, -1)
+    if left <= 0 then redis.call('HDEL', verCounts, was) end
   end
+  redis.call('HINCRBY', verCounts, version, 1)
+  redis.call('HSET', verOf, id, version)
 end
 
 return { fresh, string.format('%d', delta) }

@@ -175,6 +175,12 @@ final class Cleaner: ObservableObject {
                 }
                 let ok: Bool
                 let msg: String?
+                // Zeroed for anything this run did not actually remove. The
+                // volume delta only overwrites freedBytes when it is positive,
+                // which an APFS snapshot routinely prevents — so the results
+                // screen would otherwise be free to claim gigabytes for a path
+                // that was gone before the prompt was ever shown.
+                var bytes = item.bytes
                 // A shell command has no path to check afterwards, so it keeps
                 // the batch's exit status — which, for `a ; b`, is b's. The two
                 // that reach here (`tmutil thinlocalsnapshots`, `mdutil -E`)
@@ -197,6 +203,7 @@ final class Cleaner: ObservableObject {
                         ok = true
                         msg = "already gone"
                         counts = false
+                        bytes = 0
                     } else {
                         // The path is the ground truth, in both directions. The
                         // batch is `rm -rf … ; cmd1 ; cmd2` and a shell reports
@@ -213,11 +220,11 @@ final class Cleaner: ObservableObject {
                     msg = res.ok ? nil : (res.err.isEmpty ? "could not run" : res.err)
                 }
                 outcomes.append(CleanOutcome(
-                    itemID: item.id, name: item.name, bytes: item.bytes, ok: ok,
+                    itemID: item.id, name: item.name, bytes: bytes, ok: ok,
                     message: msg, countsAsCleaned: counts))
                 OperationLog.record(action: item.action, name: item.name,
-                                    bytes: item.bytes, ok: ok, message: msg)
-                if ok { freedBytes += item.bytes }
+                                    bytes: bytes, ok: ok, message: msg)
+                if ok { freedBytes += bytes }
             }
             done += 1
             progress = done / total
@@ -282,6 +289,10 @@ final class Cleaner: ObservableObject {
 
         case .trashPath(let p):
             if let refusal = SafePath.validate(p) { return (false, refusal.reason, nil) }
+            // Same as above: gone since the scan is a success with nothing to
+            // its name, not the failure trashItem would otherwise report — and
+            // the row has to clear either way.
+            guard entryExists(p) else { return (true, "already gone", 0) }
             do {
                 try FileManager.default.trashItem(at: URL(fileURLWithPath: p), resultingItemURL: nil)
                 return (true, nil, nil)
