@@ -1,9 +1,9 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Git repositories are taking up space. Repack them, do not delete them — Dustloft</title>
-<meta name="description" content="A .git directory can reach several gigabytes, and it is the one folder on a developer machine that is genuinely irreplaceable. Here is how to shrink one safely and how to check whether its history exists anywhere else.">
+<title>Git repositories taking up space: repack, do not delete</title>
+<meta name="description" content="A .git directory can reach several gigabytes and is the one irreplaceable folder on a developer machine. How to shrink one safely with git gc.">
 <link rel="canonical" href="https://dustloft.com/blog/git-repositories-taking-up-space">
-<meta property="og:title" content="Git repositories are taking up space. Repack them, do not delete them"><meta property="og:description" content="A .git directory can reach several gigabytes, and it is the one folder on a developer machine that is genuinely irreplaceable. Here is how to shrink one safely and how to check whether its history exists anywhere else.">
+<meta property="og:title" content="Git repositories are taking up space. Repack them, do not delete them"><meta property="og:description" content="A .git directory can reach several gigabytes and is the one irreplaceable folder on a developer machine. How to shrink one safely with git gc.">
 <meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#141013">
 <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
@@ -13,12 +13,11 @@
 <meta property="og:url" content="https://dustloft.com/blog/git-repositories-taking-up-space">
 <meta property="og:image" content="https://dustloft.com/img/overview.png">
 <meta name="twitter:image" content="https://dustloft.com/img/overview.png">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Guide", "item": "https://dustloft.com/blog/git-repositories-taking-up-space"}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com/"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Guide", "item": "https://dustloft.com/blog/git-repositories-taking-up-space"}]}</script>
 <link rel="icon" href="/img/mark-v3.png">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="preload" href="/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/blog/_shared.css">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Git repositories are taking up space. Repack them, do not delete them", "description": "A .git directory can reach several gigabytes, and it is the one folder on a developer machine that is genuinely irreplaceable. Here is how to shrink one safely and how to check whether its history exists anywhere else.", "url": "https://dustloft.com/blog/git-repositories-taking-up-space", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.com"}, "datePublished": "2026-09-10", "dateModified": "2026-09-10", "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Git repositories are taking up space. Repack them, do not delete them", "description": "A .git directory can reach several gigabytes, and it is the one folder on a developer machine that is genuinely irreplaceable. Here is how to shrink one safely and how to check whether its history exists anywhere else.", "url": "https://dustloft.com/blog/git-repositories-taking-up-space", "image": "https://dustloft.com/img/overview.png", "author": {"@type": "Person", "name": "Kapil Upadhyay", "url": "https://github.com/kapil303196", "sameAs": ["https://github.com/kapil303196"], "worksFor": {"@id": "https://logicspark.io/#org"}}, "publisher": {"@id": "https://logicspark.io/#org"}, "datePublished": "2026-09-10", "dateModified": "2026-09-12", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://dustloft.com/blog/git-repositories-taking-up-space"}, "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is it safe to delete a .git folder?", "acceptedAnswer": {"@type": "Answer", "text": "Only if the history exists elsewhere and you have verified that, not assumed it. Deleting .git destroys every commit, branch and tag in that repository, and no cleaning tool should ever offer it as a space-saving action."}}, {"@type": "Question", "name": "How do I make a .git directory smaller?", "acceptedAnswer": {"@type": "Answer", "text": "Run git gc --prune=now inside the repository. It repacks loose objects and drops unreachable ones, often cutting the directory substantially, and no reachable history is lost."}}, {"@type": "Question", "name": "Does having a GitHub remote mean my code is backed up?", "acceptedAnswer": {"@type": "Answer", "text": "No. A remote is a configured address, not proof that anything was pushed to it. Run git ls-remote origin — if it returns no refs, the remote is empty and your local clone is the only copy that exists."}}]}</script>
 <script>
 (function(c,l,a,r,i,t,y){
@@ -28,17 +27,18 @@
 })(window, document, "clarity", "script", "yfsb7st26m");
 </script>
 </head><body>
+<a class="skip" href="#main">Skip to content</a>
 <header><div class="wrap">
 <a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
 <nav><a href="/blog/">Guides</a><a href="/safety">Safety</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
 </div></header>
-<article><div class="wrap">
+<main id="main"><article><div class="wrap">
 <h1>Git repositories are taking up space. Repack them, do not delete them</h1>
-<p class="meta">Guide · 6 min read · Updated September 2026</p>
+<p class="meta">Guide · 6 min read · By <a href="https://github.com/kapil303196" rel="author">Kapil Upadhyay</a> at <a href="https://logicspark.io">Logicspark</a> · Published <time datetime="2026-09-10">10 September 2026</time> · Updated <time datetime="2026-09-12">12 September 2026</time></p>
 <div class="answer"><p><strong>Short answer:</strong> Run git gc to repack loose objects — it can reclaim most of a bloated .git without losing a single commit. Never delete a .git directory to save space until you have confirmed the history exists somewhere else, and a configured remote is not the same as confirming it.</p></div>
 
 <p>Repository history is the one thing on a developer's disk with no rebuild path. Caches come back. Dependencies reinstall. Commits do not.</p>
-<p>They also get large. A repository with years of history, large binaries, or a lot of churn can carry a <code>.git</code> directory of several gigabytes. On the machine these guides are written from, one project's <code>.git</code> was 2.2 GB.</p>
+<p>They also get large. A repository with years of history, large binaries, or a lot of churn can carry a <code>.git</code> directory of several gigabytes. On the machine these guides are written from, one project's <code>.git</code> was 2.2 GB. Which ones are worth the trouble is a measurement question first: <a href="/blog/find-large-files-mac-terminal">run <code>du -kxd 1</code> across your projects directory</a> before running anything else.</p>
 
 <h2>Repack first — it usually is enough</h2>
 <p>Git accumulates loose objects as you work and only consolidates them periodically. Forcing that consolidation is safe and often dramatic:</p>
@@ -65,13 +65,13 @@ du -sh .git</code></pre>
 </tbody></table>
 
 <h2>Shrink the project, keep the history</h2>
-<p>Most of a project folder's size is usually not the repository at all. <a href="/blog/node-modules-taking-up-space-mac">Dependencies and build output</a> are typically far larger than <code>.git</code>, fully regenerable, and the right thing to remove first.</p>
+<p>Most of a project folder's size is usually not the repository at all. <a href="/blog/node-modules-taking-up-space-mac">Dependencies and build output</a> are typically far larger than <code>.git</code>, fully regenerable, and the right thing to remove first. On an Apple-platform project, <a href="/blog/xcode-derived-data-simulators">DerivedData</a> belongs on that same list.</p>
 <div class="cta">
 <h3>See exactly what is on your own disk</h3>
 <p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
 <a class="btn" href="/#install">Install Dustloft</a>
 </div>
-</div></article>
+</div></article></main>
 <footer><div class="wrap">Dustloft — MIT licensed. No ads, no accounts, no subscription. ·
 <a href="/">Home</a> · <a href="/blog/">All guides</a> ·
 <a href="https://github.com/kapil303196/dustloft">Source</a><br><br>

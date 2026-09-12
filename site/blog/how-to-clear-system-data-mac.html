@@ -1,9 +1,9 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>How to clear System Data on a Mac without breaking anything — Dustloft</title>
-<meta name="description" content="A step-by-step guide to safely reclaiming System Data on macOS, with the exact Terminal commands, what each one does, and which things you must never delete.">
+<title>How to clear System Data on a Mac without breaking anything</title>
+<meta name="description" content="A step-by-step guide to reclaiming System Data on macOS: the exact Terminal commands, what each one does, and which things you must never delete.">
 <link rel="canonical" href="https://dustloft.com/blog/how-to-clear-system-data-mac">
-<meta property="og:title" content="How to clear System Data on a Mac without breaking anything"><meta property="og:description" content="A step-by-step guide to safely reclaiming System Data on macOS, with the exact Terminal commands, what each one does, and which things you must never delete.">
+<meta property="og:title" content="How to clear System Data on a Mac without breaking anything"><meta property="og:description" content="A step-by-step guide to reclaiming System Data on macOS: the exact Terminal commands, what each one does, and which things you must never delete.">
 <meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#141013">
 <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
@@ -13,13 +13,13 @@
 <meta property="og:url" content="https://dustloft.com/blog/how-to-clear-system-data-mac">
 <meta property="og:image" content="https://dustloft.com/img/overview.png">
 <meta name="twitter:image" content="https://dustloft.com/img/overview.png">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Guide", "item": "https://dustloft.com/blog/how-to-clear-system-data-mac"}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com/"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Guide", "item": "https://dustloft.com/blog/how-to-clear-system-data-mac"}]}</script>
 <link rel="icon" href="/img/mark-v3.png">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="preload" href="/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/blog/_shared.css">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "How to clear System Data on a Mac without breaking anything", "description": "A step-by-step guide to safely reclaiming System Data on macOS, with the exact Terminal commands, what each one does, and which things you must never delete.", "url": "https://dustloft.com/blog/how-to-clear-system-data-mac", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.com"}, "datePublished": "2026-09-08", "dateModified": "2026-09-08"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "How to clear System Data on a Mac without breaking anything", "description": "A step-by-step guide to safely reclaiming System Data on macOS, with the exact Terminal commands, what each one does, and which things you must never delete.", "url": "https://dustloft.com/blog/how-to-clear-system-data-mac", "image": "https://dustloft.com/img/overview.png", "author": {"@type": "Person", "name": "Kapil Upadhyay", "url": "https://github.com/kapil303196", "sameAs": ["https://github.com/kapil303196"], "worksFor": {"@id": "https://logicspark.io/#org"}}, "publisher": {"@id": "https://logicspark.io/#org"}, "datePublished": "2026-09-08", "dateModified": "2026-09-12", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://dustloft.com/blog/how-to-clear-system-data-mac"}, "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I clear System Data on my Mac?", "acceptedAnswer": {"@type": "Answer", "text": "Measure first with du -kxd 1 to find what is actually inside it, then work from the largest item down. Caches, build output and unused Docker images are safe. App containers, device backups and .git directories are not."}}, {"@type": "Question", "name": "Does deleting System Data speed up a Mac?", "acceptedAnswer": {"@type": "Answer", "text": "Not directly. It frees disk space. macOS does slow down when a disk is nearly full, so reclaiming space on a drive above 90% full often helps indirectly."}}, {"@type": "Question", "name": "Why does du -sh miss folders on Mac?", "acceptedAnswer": {"@type": "Answer", "text": "The shell glob does not match names starting with a dot, so hidden folders such as ~/.cache and ~/.Trash are skipped entirely. Use du -kxd 1 ~ instead."}}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "HowTo", "name": "How to clear System Data on a Mac without breaking anything", "description": "Measure System Data before deleting anything, then work from the largest item down.", "url": "https://dustloft.com/blog/how-to-clear-system-data-mac", "image": "https://dustloft.com/img/overview.png", "step": [{"@type": "HowToStep", "position": 1, "name": "Step 1 \u2014 See where the space actually went", "text": "Open Terminal and run du -kxd 1 ~ 2>/dev/null | sort -rn | head -20. It measures every folder in your home directory in one pass. The flags matter: -x stays on one filesystem so it does not wander into mounted volumes, -d 1 stops at one level deep, and -k reports in kilobytes so sort -rn orders correctly. Repeat it one level down on whatever is largest. Do not use du -sh ~/*, which silently skips every hidden folder.", "url": "https://dustloft.com/blog/how-to-clear-system-data-mac#step1"}, {"@type": "HowToStep", "position": 2, "name": "Step 2 \u2014 Empty the Trash properly", "text": "Check what is in it first with du -kxd 1 ~/.Trash | sort -rn | head, because deleted applications often leave root-owned files that refuse to delete normally. If normal emptying fails, the items are owned by root and need elevation.", "url": "https://dustloft.com/blog/how-to-clear-system-data-mac#step2"}, {"@type": "HowToStep", "position": 3, "name": "Step 3 \u2014 Remove leftovers from apps you uninstalled", "text": "Uninstalling never removes these. Run du -kxd 1 ~/Library/Application\\ Support ~/Library/Containers 2>/dev/null | sort -rn | head -20 and look for folders belonging to applications you no longer have. Folder names are reverse-DNS bundle identifiers, so com.microsoft.teams2 belongs to Teams. If the application is gone, its folder is dead weight. Leave anything starting com.apple. alone.", "url": "https://dustloft.com/blog/how-to-clear-system-data-mac#step3"}, {"@type": "HowToStep", "position": 4, "name": "Step 4 \u2014 Reclaim developer space", "text": "If you write code, this is usually where the bulk is. Count dependency folders with find ~/Projects -type d -name node_modules -prune | wc -l, remove unused Docker images with docker system prune -a, and list local AI models with ollama list. docker system prune -a is safe because it never touches named volumes, which is where database data lives. Never add --volumes unless you know precisely what you are discarding.", "url": "https://dustloft.com/blog/how-to-clear-system-data-mac#step4"}, {"@type": "HowToStep", "position": 5, "name": "Step 5 \u2014 Check for one enormous file", "text": "Run mdfind -onlyin ~ \"kMDItemFSSize > 1000000000\" 2>/dev/null. Forgotten screen recordings, video editing scratch caches and virtual machine disks all show up here.", "url": "https://dustloft.com/blog/how-to-clear-system-data-mac#step5"}]}</script>
 <script>
 (function(c,l,a,r,i,t,y){
     c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -28,18 +28,19 @@
 })(window, document, "clarity", "script", "yfsb7st26m");
 </script>
 </head><body>
+<a class="skip" href="#main">Skip to content</a>
 <header><div class="wrap">
 <a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
 <nav><a href="/blog/">Guides</a><a href="/safety">Safety</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
 </div></header>
-<article><div class="wrap">
+<main id="main"><article><div class="wrap">
 <h1>How to clear System Data on a Mac without breaking anything</h1>
-<p class="meta">Guide · 8 min read · Updated September 2026</p>
+<p class="meta">Guide · 8 min read · By <a href="https://github.com/kapil303196" rel="author">Kapil Upadhyay</a> at <a href="https://logicspark.io">Logicspark</a> · Published <time datetime="2026-09-08">8 September 2026</time> · Updated <time datetime="2026-09-12">12 September 2026</time></p>
 <div class="answer"><p><strong>Short answer:</strong> find out what is inside System Data before deleting anything. Use <code>du -kxd 1</code> to measure each folder, work from the largest item down, and never delete a <code>.git</code> directory, anything inside a cloud-synced folder, or a Docker volume.</p></div>
 
-<p>Every guide that tells you to empty <code>~/Library/Caches</code> is aiming at the wrong target. This one starts by measuring.</p>
+<p>Every guide that tells you to empty <code>~/Library/Caches</code> is aiming at the wrong target. This one starts by measuring, because <a href="/blog/why-is-system-data-so-large-on-mac">System Data is a label rather than a category</a> and what sits behind it differs on every machine.</p>
 
-<h2>Step 1 — See where the space actually went</h2>
+<h2 id="step1">Step 1 — See where the space actually went</h2>
 <p>Open Terminal and run this. It measures every folder in your home directory in one pass:</p>
 <pre><code>du -kxd 1 ~ 2>/dev/null | sort -rn | head -20</code></pre>
 <p>The flags matter. <code>-x</code> stays on one filesystem so it does not wander into mounted volumes, <code>-d 1</code> stops at one level deep, and <code>-k</code> reports in kilobytes so <code>sort -rn</code> orders correctly.</p>
@@ -47,19 +48,19 @@
 <pre><code>du -kxd 1 ~/Library 2>/dev/null | sort -rn | head -20</code></pre>
 
 <h3>A warning about the obvious command</h3>
-<p>Almost every guide online suggests <code>du -sh ~/*</code>. That command <strong>silently skips every hidden folder</strong>, because the shell glob <code>*</code> does not match names beginning with a dot. On the machine used for this guide it hid 55 GB: <code>~/.ollama</code> at 16 GB, <code>~/.cache</code> at 10 GB and <code>~/.Trash</code> at 9.3 GB were all invisible. Use <code>du -kxd 1 ~</code> instead, which includes them.</p>
+<p>Almost every guide online suggests <code>du -sh ~/*</code>. That command <strong>silently skips every hidden folder</strong>, because the shell glob <code>*</code> does not match names beginning with a dot. On the machine used for this guide it hid 55 GB: <code>~/.ollama</code> at 16 GB, <code>~/.cache</code> at 10 GB and <code>~/.Trash</code> at 9.3 GB were all invisible. Use <code>du -kxd 1 ~</code> instead, which includes them. The <a href="/blog/find-large-files-mac-terminal">full set of measurement commands</a>, including how to list individual files over 1 GB, is covered separately.</p>
 
-<h2>Step 2 — Empty the Trash properly</h2>
+<h2 id="step2">Step 2 — Empty the Trash properly</h2>
 <p>Check what is in it first, because deleted applications often leave root-owned files that refuse to delete normally:</p>
 <pre><code>du -kxd 1 ~/.Trash | sort -rn | head</code></pre>
 <p>If normal emptying fails, the items are owned by root and need elevation.</p>
 
-<h2>Step 3 — Remove leftovers from apps you uninstalled</h2>
+<h2 id="step3">Step 3 — Remove leftovers from apps you uninstalled</h2>
 <p>Uninstalling never removes these. Look for folders belonging to applications you no longer have:</p>
 <pre><code>du -kxd 1 ~/Library/Application\ Support ~/Library/Containers 2>/dev/null | sort -rn | head -20</code></pre>
 <p>Folder names are reverse-DNS bundle identifiers, so <code>com.microsoft.teams2</code> belongs to Teams. If the application is gone, its folder is dead weight. Leave anything starting <code>com.apple.</code> alone.</p>
 
-<h2>Step 4 — Reclaim developer space</h2>
+<h2 id="step4">Step 4 — Reclaim developer space</h2>
 <p>If you write code, this is usually where the bulk is:</p>
 <pre><code># Dependency folders — restored by npm install
 find ~/Projects -type d -name node_modules -prune | wc -l
@@ -69,9 +70,9 @@ docker system prune -a
 
 # Local AI models
 ollama list</code></pre>
-<p>Docker deserves a note. <code>docker system prune -a</code> is safe because it never touches named volumes, which is where database data lives. Never add <code>--volumes</code> unless you know precisely what you are discarding.</p>
+<p>Docker deserves a note. <code>docker system prune -a</code> is safe because it never touches named volumes, which is where database data lives. Never add <code>--volumes</code> unless you know precisely what you are discarding. If <code>Docker.raw</code> stays large after a prune, <a href="/blog/docker-raw-taking-up-space-mac">sparse files explain why</a>.</p>
 
-<h2>Step 5 — Check for one enormous file</h2>
+<h2 id="step5">Step 5 — Check for one enormous file</h2>
 <pre><code>mdfind -onlyin ~ "kMDItemFSSize > 1000000000" 2>/dev/null</code></pre>
 <p>Forgotten screen recordings, video editing scratch caches and virtual machine disks all show up here.</p>
 
@@ -95,7 +96,7 @@ ollama list</code></pre>
 <p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
 <a class="btn" href="/#install">Install Dustloft</a>
 </div>
-</div><p>Two related references: <a href="/blog/is-it-safe-to-delete-library-caches">whether clearing ~/Library/Caches is worth it</a>, and <a href="/safety">the full list of locations Dustloft refuses to touch</a>.</p></article>
+</div><p>Two related references: <a href="/blog/is-it-safe-to-delete-library-caches">whether clearing ~/Library/Caches is worth it</a>, and <a href="/safety">the full list of locations Dustloft refuses to touch</a>.</p></article></main>
 <footer><div class="wrap">Dustloft — MIT licensed. No ads, no accounts, no subscription. ·
 <a href="/">Home</a> · <a href="/blog/">All guides</a> ·
 <a href="https://github.com/kapil303196/dustloft">Source</a><br><br>

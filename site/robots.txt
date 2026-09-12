@@ -20,9 +20,12 @@ Allow: /
 # Anthropic — support.claude.com/en/articles/8896518
 User-agent: ClaudeBot
 Allow: /
+User-agent: Claude-User
+Allow: /
+User-agent: Claude-SearchBot
+Allow: /
 # Claude-Web is carried over from the previous robots.txt. Anthropic's current
-# list does not mention it (it documents ClaudeBot, Claude-User and
-# Claude-SearchBot), so treat this line as historical rather than sourced.
+# page documents only the three above, so treat this line as historical.
 User-agent: Claude-Web
 Allow: /
 

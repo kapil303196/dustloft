@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>How to find what is taking up space on your Mac using Terminal — Dustloft</title>
+<title>Find what is taking up space on your Mac using Terminal</title>
 <meta name="description" content="The du, df and mdfind commands that actually work on macOS, including the common mistake that silently hides tens of gigabytes of hidden folders.">
 <link rel="canonical" href="https://dustloft.com/blog/find-large-files-mac-terminal">
 <meta property="og:title" content="How to find what is taking up space on your Mac using Terminal"><meta property="og:description" content="The du, df and mdfind commands that actually work on macOS, including the common mistake that silently hides tens of gigabytes of hidden folders.">
@@ -13,12 +13,11 @@
 <meta property="og:url" content="https://dustloft.com/blog/find-large-files-mac-terminal">
 <meta property="og:image" content="https://dustloft.com/img/overview.png">
 <meta name="twitter:image" content="https://dustloft.com/img/overview.png">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Guide", "item": "https://dustloft.com/blog/find-large-files-mac-terminal"}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com/"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Guide", "item": "https://dustloft.com/blog/find-large-files-mac-terminal"}]}</script>
 <link rel="icon" href="/img/mark-v3.png">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="preload" href="/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/blog/_shared.css">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "How to find what is taking up space on your Mac using Terminal", "description": "The du, df and mdfind commands that actually work on macOS, including the common mistake that silently hides tens of gigabytes of hidden folders.", "url": "https://dustloft.com/blog/find-large-files-mac-terminal", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.com"}, "datePublished": "2026-09-08", "dateModified": "2026-09-08"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "How to find what is taking up space on your Mac using Terminal", "description": "The du, df and mdfind commands that actually work on macOS, including the common mistake that silently hides tens of gigabytes of hidden folders.", "url": "https://dustloft.com/blog/find-large-files-mac-terminal", "image": "https://dustloft.com/img/overview.png", "author": {"@type": "Person", "name": "Kapil Upadhyay", "url": "https://github.com/kapil303196", "sameAs": ["https://github.com/kapil303196"], "worksFor": {"@id": "https://logicspark.io/#org"}}, "publisher": {"@id": "https://logicspark.io/#org"}, "datePublished": "2026-09-08", "dateModified": "2026-09-12", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://dustloft.com/blog/find-large-files-mac-terminal"}, "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I find what is taking up space on my Mac using Terminal?", "acceptedAnswer": {"@type": "Answer", "text": "Run du -kxd 1 ~ | sort -rn | head -20 to rank folders by size, then repeat on whichever is largest. Use mdfind with a kMDItemFSSize filter to list individual files over 1 GB."}}, {"@type": "Question", "name": "Why does du -sh ~/* miss folders?", "acceptedAnswer": {"@type": "Answer", "text": "The shell glob does not match names beginning with a dot, so hidden folders such as ~/.cache, ~/.Trash and ~/.ollama are skipped silently. Use du -kxd 1 ~ instead."}}, {"@type": "Question", "name": "Which disk should I check with df on macOS?", "acceptedAnswer": {"@type": "Answer", "text": "Check /System/Volumes/Data. On modern macOS your files live on the Data volume; checking / reports the read-only system volume."}}]}</script>
 <script>
 (function(c,l,a,r,i,t,y){
@@ -28,13 +27,14 @@
 })(window, document, "clarity", "script", "yfsb7st26m");
 </script>
 </head><body>
+<a class="skip" href="#main">Skip to content</a>
 <header><div class="wrap">
 <a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
 <nav><a href="/blog/">Guides</a><a href="/safety">Safety</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
 </div></header>
-<article><div class="wrap">
+<main id="main"><article><div class="wrap">
 <h1>How to find what is taking up space on your Mac using Terminal</h1>
-<p class="meta">Guide · 5 min read · Updated September 2026</p>
+<p class="meta">Guide · 5 min read · By <a href="https://github.com/kapil303196" rel="author">Kapil Upadhyay</a> at <a href="https://logicspark.io">Logicspark</a> · Published <time datetime="2026-09-08">8 September 2026</time> · Updated <time datetime="2026-09-12">12 September 2026</time></p>
 <div class="answer"><p><strong>Short answer:</strong> use <code>du -kxd 1 ~ | sort -rn | head -20</code> to see which folders are largest, and <code>mdfind -onlyin ~ "kMDItemFSSize > 1000000000"</code> to find individual files over 1 GB. Avoid <code>du -sh ~/*</code>, which silently skips every hidden folder.</p></div>
 
 <h2>Start with the volume</h2>
@@ -65,11 +65,11 @@
 <pre><code>find ~ -xdev -type f -size +1G 2>/dev/null</code></pre>
 
 <h2>Beware sparse files</h2>
-<p>Some files report a size they do not occupy. Disk images and virtual machine disks are the usual culprits — a Docker disk image can claim 494 GB while using 9 GB. <code>du</code> reports what is truly allocated; <code>ls -lh</code> does not. When the two disagree, trust <code>du</code>.</p>
+<p>Some files report a size they do not occupy. Disk images and virtual machine disks are the usual culprits — <a href="/blog/docker-raw-taking-up-space-mac">a Docker disk image can claim 494 GB while using 9 GB</a>. <code>du</code> reports what is truly allocated; <code>ls -lh</code> does not. When the two disagree, trust <code>du</code>.</p>
 
 <h2>Checking Time Machine snapshots</h2>
 <pre><code>tmutil listlocalsnapshots /</code></pre>
-<p>Local snapshots are a well-known cause of space vanishing into System Data. They are usually reclaimed automatically under pressure, but can be thinned manually if needed.</p>
+<p>Local snapshots are a well-known cause of space vanishing into System Data. They are usually reclaimed automatically under pressure, but can be thinned manually if needed. They are also the largest contributor to <a href="/blog/purgeable-space-mac">purgeable space</a>, which is why Finder and <code>df -h</code> can report different amounts of free disk.</p>
 
 <h2>A worked example</h2>
 <pre><code>$ df -h /System/Volumes/Data
@@ -88,7 +88,7 @@ $ du -kxd 1 ~ 2>/dev/null | sort -rn | head -5
 <p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
 <a class="btn" href="/#install">Install Dustloft</a>
 </div>
-</div><p>Once you can see the big folders, the usual suspects are <a href="/blog/whatsapp-messages-media-mac">messaging media</a> and <a href="/blog/node-modules-taking-up-space-mac">dependency trees</a>.</p></article>
+</div><p>Once you can see the big folders, the usual suspects are <a href="/blog/whatsapp-messages-media-mac">messaging media</a> and <a href="/blog/node-modules-taking-up-space-mac">dependency trees</a>.</p></article></main>
 <footer><div class="wrap">Dustloft — MIT licensed. No ads, no accounts, no subscription. ·
 <a href="/">Home</a> · <a href="/blog/">All guides</a> ·
 <a href="https://github.com/kapil303196/dustloft">Source</a><br><br>

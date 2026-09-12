@@ -1,9 +1,9 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>node_modules and build output: the 66 GB most developers never look at — Dustloft</title>
-<meta name="description" content="Dependency folders and stale build caches accumulate across every project you have ever cloned. Here is how to measure them, which ones regenerate, and the one deletion that quietly breaks a library.">
+<title>node_modules and build output: the 66 GB you never see</title>
+<meta name="description" content="Dependency folders reached 46 GB and stale build output 20 GB on one Mac. How to measure them, and the one deletion that quietly breaks a library.">
 <link rel="canonical" href="https://dustloft.com/blog/node-modules-taking-up-space-mac">
-<meta property="og:title" content="node_modules and build output: the 66 GB most developers never look at"><meta property="og:description" content="Dependency folders and stale build caches accumulate across every project you have ever cloned. Here is how to measure them, which ones regenerate, and the one deletion that quietly breaks a library.">
+<meta property="og:title" content="node_modules and build output: the 66 GB most developers never look at"><meta property="og:description" content="Dependency folders reached 46 GB and stale build output 20 GB on one Mac. How to measure them, and the one deletion that quietly breaks a library.">
 <meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#141013">
 <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
@@ -13,12 +13,11 @@
 <meta property="og:url" content="https://dustloft.com/blog/node-modules-taking-up-space-mac">
 <meta property="og:image" content="https://dustloft.com/img/overview.png">
 <meta name="twitter:image" content="https://dustloft.com/img/overview.png">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Guide", "item": "https://dustloft.com/blog/node-modules-taking-up-space-mac"}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com/"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Guide", "item": "https://dustloft.com/blog/node-modules-taking-up-space-mac"}]}</script>
 <link rel="icon" href="/img/mark-v3.png">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="preload" href="/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/blog/_shared.css">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "node_modules and build output: the 66 GB most developers never look at", "description": "Dependency folders and stale build caches accumulate across every project you have ever cloned. Here is how to measure them, which ones regenerate, and the one deletion that quietly breaks a library.", "url": "https://dustloft.com/blog/node-modules-taking-up-space-mac", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.com"}, "datePublished": "2026-09-10", "dateModified": "2026-09-10", "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "node_modules and build output: the 66 GB most developers never look at", "description": "Dependency folders and stale build caches accumulate across every project you have ever cloned. Here is how to measure them, which ones regenerate, and the one deletion that quietly breaks a library.", "url": "https://dustloft.com/blog/node-modules-taking-up-space-mac", "image": "https://dustloft.com/img/overview.png", "author": {"@type": "Person", "name": "Kapil Upadhyay", "url": "https://github.com/kapil303196", "sameAs": ["https://github.com/kapil303196"], "worksFor": {"@id": "https://logicspark.io/#org"}}, "publisher": {"@id": "https://logicspark.io/#org"}, "datePublished": "2026-09-10", "dateModified": "2026-09-12", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://dustloft.com/blog/node-modules-taking-up-space-mac"}, "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is it safe to delete node_modules?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Running the project's install command restores it exactly. The only cost is the time and bandwidth of that reinstall, which is why stale copies in projects you no longer touch are the best candidates."}}, {"@type": "Question", "name": "How do I find every node_modules folder on my Mac?", "acceptedAnswer": {"@type": "Answer", "text": "Search within your project directories rather than the whole disk: find ~/Projects -type d -name node_modules -prune -print. Scoping it avoids traversing Library and system paths, which is slow and returns nothing useful."}}, {"@type": "Question", "name": "Does deleting build output break anything?", "acceptedAnswer": {"@type": "Answer", "text": "Not for your own projects, where the next build regenerates it. It does break things inside node_modules, because a dist or build folder in a dependency is the compiled package that gets imported, not build output you can recreate."}}]}</script>
 <script>
 (function(c,l,a,r,i,t,y){
@@ -28,14 +27,15 @@
 })(window, document, "clarity", "script", "yfsb7st26m");
 </script>
 </head><body>
+<a class="skip" href="#main">Skip to content</a>
 <header><div class="wrap">
 <a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
 <nav><a href="/blog/">Guides</a><a href="/safety">Safety</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
 </div></header>
-<article><div class="wrap">
+<main id="main"><article><div class="wrap">
 <h1>node_modules and build output: the 66 GB most developers never look at</h1>
-<p class="meta">Guide · 6 min read · Updated September 2026</p>
-<div class="answer"><p><strong>Short answer:</strong> node_modules folders and build output are fully regenerable — a reinstall or a rebuild brings them back. The risk is not deleting them, it is deleting the wrong ones: a dist or build directory inside node_modules is the published package itself, and removing it breaks the dependency until you reinstall.</p></div>
+<p class="meta">Guide · 6 min read · By <a href="https://github.com/kapil303196" rel="author">Kapil Upadhyay</a> at <a href="https://logicspark.io">Logicspark</a> · Published <time datetime="2026-09-10">10 September 2026</time> · Updated <time datetime="2026-09-12">12 September 2026</time></p>
+<div class="answer"><p><strong>Short answer:</strong> on the Mac these guides are written from, node_modules folders held 46 GB and stale build output another 20 GB, 66 GB between them. Both are fully regenerable on macOS — a reinstall or a rebuild brings them back. The risk is not deleting them, it is deleting the wrong ones: a dist or build directory inside node_modules is the published package itself, and removing it breaks the dependency until you reinstall.</p></div>
 
 <p>Dependencies are the clearest example of storage you already own but never see. Every clone, every experiment, every project you abandoned in 2023 still carries its full dependency tree.</p>
 <p>On the Mac these guides are written from, dependency folders came to 46 GB and stale build output added another 20 GB across 42 forgotten <code>.next</code> caches.</p>
@@ -44,7 +44,7 @@
 <p>Scope the search to where your code actually lives. Searching all of <code>$HOME</code> wastes minutes traversing <code>Library</code> and returns noise:</p>
 <pre><code>find ~/Projects -type d -name node_modules -prune -print0 \
   | xargs -0 du -sh | sort -rh | head -20</code></pre>
-<p>The <code>-prune</code> matters. Without it, <code>find</code> descends into every nested dependency tree and the run takes far longer for an identical result.</p>
+<p>The <code>-prune</code> matters. Without it, <code>find</code> descends into every nested dependency tree and the run takes far longer for an identical result. If you do not know where your code lives any more, <a href="/blog/find-large-files-mac-terminal">rank your home folder by size first</a> and start from the largest directory.</p>
 
 <h2>The deletion that breaks things</h2>
 <p>Build output is safe to remove from your own projects. Inside a dependency it is a different thing entirely.</p>
@@ -69,7 +69,7 @@
 <p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
 <a class="btn" href="/#install">Install Dustloft</a>
 </div>
-</div></article>
+</div></article></main>
 <footer><div class="wrap">Dustloft — MIT licensed. No ads, no accounts, no subscription. ·
 <a href="/">Home</a> · <a href="/blog/">All guides</a> ·
 <a href="https://github.com/kapil303196/dustloft">Source</a><br><br>

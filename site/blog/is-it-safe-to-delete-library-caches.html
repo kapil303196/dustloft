@@ -1,9 +1,9 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Is it safe to delete ~/Library/Caches? Mostly yes, and mostly pointless — Dustloft</title>
-<meta name="description" content="Emptying ~/Library/Caches is the most repeated Mac advice and one of the least effective. Here is why the gigabytes are almost never in Caches, and which neighbouring folders actually hold them.">
+<title>Is it safe to delete ~/Library/Caches? Yes, mostly pointless</title>
+<meta name="description" content="Emptying ~/Library/Caches is the most repeated Mac advice and one of the least effective. The gigabytes are next door, in Application Support.">
 <link rel="canonical" href="https://dustloft.com/blog/is-it-safe-to-delete-library-caches">
-<meta property="og:title" content="Is it safe to delete ~/Library/Caches? Mostly yes, and mostly pointless"><meta property="og:description" content="Emptying ~/Library/Caches is the most repeated Mac advice and one of the least effective. Here is why the gigabytes are almost never in Caches, and which neighbouring folders actually hold them.">
+<meta property="og:title" content="Is it safe to delete ~/Library/Caches? Mostly yes, and mostly pointless"><meta property="og:description" content="Emptying ~/Library/Caches is the most repeated Mac advice and one of the least effective. The gigabytes are next door, in Application Support.">
 <meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#141013">
 <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
@@ -13,12 +13,11 @@
 <meta property="og:url" content="https://dustloft.com/blog/is-it-safe-to-delete-library-caches">
 <meta property="og:image" content="https://dustloft.com/img/overview.png">
 <meta name="twitter:image" content="https://dustloft.com/img/overview.png">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Guide", "item": "https://dustloft.com/blog/is-it-safe-to-delete-library-caches"}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com/"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Guide", "item": "https://dustloft.com/blog/is-it-safe-to-delete-library-caches"}]}</script>
 <link rel="icon" href="/img/mark-v3.png">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="preload" href="/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/blog/_shared.css">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Is it safe to delete ~/Library/Caches? Mostly yes, and mostly pointless", "description": "Emptying ~/Library/Caches is the most repeated Mac advice and one of the least effective. Here is why the gigabytes are almost never in Caches, and which neighbouring folders actually hold them.", "url": "https://dustloft.com/blog/is-it-safe-to-delete-library-caches", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.com"}, "datePublished": "2026-09-10", "dateModified": "2026-09-10", "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Is it safe to delete ~/Library/Caches? Mostly yes, and mostly pointless", "description": "Emptying ~/Library/Caches is the most repeated Mac advice and one of the least effective. Here is why the gigabytes are almost never in Caches, and which neighbouring folders actually hold them.", "url": "https://dustloft.com/blog/is-it-safe-to-delete-library-caches", "image": "https://dustloft.com/img/overview.png", "author": {"@type": "Person", "name": "Kapil Upadhyay", "url": "https://github.com/kapil303196", "sameAs": ["https://github.com/kapil303196"], "worksFor": {"@id": "https://logicspark.io/#org"}}, "publisher": {"@id": "https://logicspark.io/#org"}, "datePublished": "2026-09-10", "dateModified": "2026-09-12", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://dustloft.com/blog/is-it-safe-to-delete-library-caches"}, "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is it safe to delete files in ~/Library/Caches?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. By definition a cache is data an application can rebuild, so the worst outcome is an app being briefly slower or asking you to sign in again. Quit applications first so they do not rewrite entries while you are deleting."}}, {"@type": "Question", "name": "Will deleting caches speed up my Mac?", "acceptedAnswer": {"@type": "Answer", "text": "Generally no. Caches exist to make things faster, so removing them usually makes the next few operations slower while they rebuild. Clear them to reclaim space or to resolve corrupted state, not for performance."}}, {"@type": "Question", "name": "Why did deleting caches barely free any space?", "acceptedAnswer": {"@type": "Answer", "text": "Because the large folders are not caches. Application Support and Containers hold databases, message media and app data that no cleaner should treat as disposable, and they are usually many times the size of Caches."}}]}</script>
 <script>
 (function(c,l,a,r,i,t,y){
@@ -28,14 +27,15 @@
 })(window, document, "clarity", "script", "yfsb7st26m");
 </script>
 </head><body>
+<a class="skip" href="#main">Skip to content</a>
 <header><div class="wrap">
 <a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
 <nav><a href="/blog/">Guides</a><a href="/safety">Safety</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
 </div></header>
-<article><div class="wrap">
+<main id="main"><article><div class="wrap">
 <h1>Is it safe to delete ~/Library/Caches? Mostly yes, and mostly pointless</h1>
-<p class="meta">Guide · 5 min read · Updated September 2026</p>
-<div class="answer"><p><strong>Short answer:</strong> Yes, ~/Library/Caches is safe to empty — everything in it is designed to be rebuilt. It is also rarely worth doing, because the folder is usually small. The large folders sit next to it: Application Support and Containers, which hold real data and are not caches at all.</p></div>
+<p class="meta">Guide · 5 min read · By <a href="https://github.com/kapil303196" rel="author">Kapil Upadhyay</a> at <a href="https://logicspark.io">Logicspark</a> · Published <time datetime="2026-09-10">10 September 2026</time> · Updated <time datetime="2026-09-12">12 September 2026</time></p>
+<div class="answer"><p><strong>Short answer:</strong> Yes, ~/Library/Caches on macOS is safe to empty — everything in it is designed to be rebuilt. It is also rarely worth doing: on most Macs that folder is a few gigabytes at most, while its neighbours Application Support, Containers and Group Containers routinely measure an order of magnitude larger. Those hold real data and are not caches at all.</p></div>
 
 <p>"Delete everything in <code>~/Library/Caches</code>" is the most repeated piece of Mac storage advice in existence. It is safe. It is also, on most machines, close to useless.</p>
 
@@ -65,16 +65,16 @@ du -sh ~/Library/Application\ Support ~/Library/Containers ~/Library/Group\ Cont
 <p>The useful property is that the tier travels with the item, not the folder. A cache inside <code>Application Support</code> is still regenerable; a message database inside it is not.</p>
 
 <h2>Caches that are actually large</h2>
-<p>A few are genuinely worth targeting, because they are both large and unambiguously regenerable: browser caches, <code>~/Library/Caches/Homebrew</code>, package manager caches, and the media caches written by Adobe and DaVinci Resolve, which can reach tens of gigabytes on a machine used for video work.</p>
+<p>A few are genuinely worth targeting, because they are both large and unambiguously regenerable: browser caches, <code>~/Library/Caches/Homebrew</code>, <a href="/blog/node-modules-taking-up-space-mac">package manager caches</a>, and the media caches written by Adobe and DaVinci Resolve, which can reach tens of gigabytes on a machine used for video work.</p>
 
 <h2>Read next</h2>
-<p>If you are trying to account for a large <em>System Data</em> figure, <a href="/blog/why-is-system-data-so-large-on-mac">the breakdown guide</a> covers where the space usually is. The <a href="/safety">safety reference</a> lists every location Dustloft refuses to touch and why.</p>
+<p>If you are trying to account for a large <em>System Data</em> figure, <a href="/blog/why-is-system-data-so-large-on-mac">the breakdown guide</a> covers where the space usually is, and <a href="/blog/how-to-clear-system-data-mac">the step-by-step walkthrough</a> works through it in order of size. The <a href="/safety">safety reference</a> lists every location Dustloft refuses to touch and why.</p>
 <div class="cta">
 <h3>See exactly what is on your own disk</h3>
 <p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
 <a class="btn" href="/#install">Install Dustloft</a>
 </div>
-</div></article>
+</div></article></main>
 <footer><div class="wrap">Dustloft — MIT licensed. No ads, no accounts, no subscription. ·
 <a href="/">Home</a> · <a href="/blog/">All guides</a> ·
 <a href="https://github.com/kapil303196/dustloft">Source</a><br><br>
