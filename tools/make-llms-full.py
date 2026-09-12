@@ -168,10 +168,10 @@ def inline(node, in_code: bool = False) -> str:
                 out.append(inner)
         elif t in ("img", "svg"):
             continue
-        elif t in WRAPPER:
+        elif t in WRAPPER and not in_code:
             # Sibling wrappers often sit flush against each other in the
             # minified HTML; keep their text from fusing into one word.
-            inner = inline(kid, in_code).strip()
+            inner = inline(kid).strip()
             if inner:
                 out.append(" " + inner + " ")
         else:
@@ -206,7 +206,7 @@ def render(node, blocks: list[str], depth: int = 0) -> None:
             level = int(t[1])
             text = inline(kid).strip()
             if text:
-                blocks.append("#" * min(level + 1, 6) + " " + text)
+                blocks.append("#" * max(2, min(level, 6)) + " " + text)
 
         elif t == "p":
             text = inline(kid).strip()
@@ -215,8 +215,7 @@ def render(node, blocks: list[str], depth: int = 0) -> None:
 
         elif t == "pre":
             code = find(kid, "code") or kid
-            body = inline(code, True)
-            body = html.unescape(body).strip("\n").rstrip()
+            body = inline(code, True).strip("\n").rstrip()
             if body:
                 blocks.append("```\n" + body + "\n```")
 

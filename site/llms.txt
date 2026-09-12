@@ -76,4 +76,4 @@ Last reviewed 12 September 2026.
 - [Sitemap](https://dustloft.com/sitemap.xml): Every indexable URL with its last-modified date.
 - [robots.txt](https://dustloft.com/robots.txt): AI crawlers are explicitly allowed. The guides are written to be cited.
 - [One-line installer script](https://raw.githubusercontent.com/kapil303196/dustloft/main/install-online.sh): The exact shell script the install command downloads, readable before you run it.
-- [README](https://github.com/kapil303196/dustloft/blob/main/README.md): Build instructions and project layout for anyone compiling from source.
+- [README](https://github.com/kapil303196/dustloft/blob/main/README.md): The project README — install, update, what the app looks at, and the licence.
