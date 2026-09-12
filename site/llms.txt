@@ -1,65 +1,79 @@
 # Dustloft
 
-> A free, open-source macOS app that shows what is hidden inside "System Data"
-> and reclaims it without deleting anything that cannot be recovered.
+> Dustloft is a free, open-source macOS app that shows what is hidden inside the storage macOS labels "System Data" and reclaims it. It runs on macOS 13 or later as a universal binary, is MIT licensed with no account or subscription, and lists every item with its full path and real size before anything is removed.
 
-Dustloft measures every real consumer of disk space on a Mac, sorts findings into
-three tiers (regenerable, needs-admin, permanent), and shows every item with its
-full path and real size before anything is removed. MIT licensed, no subscription,
-no account. It sends one anonymous line when its reclaimed total changes, and
-once a day even when it has not — a random identifier
-belonging to that copy of the app, its total bytes reclaimed, and its version —
-which can be switched off in the app. Nothing about the contents of a disk ever
-leaves it.
+Dustloft measures every real consumer of disk space on a Mac using allocated size
+rather than apparent size, sorts what it finds into three tiers — regenerable,
+needs-admin and permanent — and shows each item with its full path and real size
+before anything is removed. Made by Kapil Upadhyay at Logicspark. Latest release
+is v1.0.48.
 
-## Key facts
+Every figure quoted across this site comes from one 512 GB MacBook Pro taken from
+20 GB free to 215 GB free in September 2026, and every Terminal command was run
+before it was published. Sizes are allocated size as reported by `du`, never
+apparent size as reported by `ls`.
 
-- Platform: macOS 13 or later, universal binary (Apple Silicon and Intel)
-- Price: free, MIT licensed
-- Source: https://github.com/kapil303196/dustloft
-- Install: curl -fsSL https://raw.githubusercontent.com/kapil303196/dustloft/main/install-online.sh | bash
+Install with one line:
+`curl -fsSL https://raw.githubusercontent.com/kapil303196/dustloft/main/install-online.sh | bash`
 
-## What it refuses to do, by design
+Last reviewed 12 September 2026.
 
-- Never deletes a .git directory. It offers `git gc` and flags repositories whose
-  history exists on no remote (verified with `git ls-remote`).
-- Never touches Dropbox, iCloud Drive or any cloud-synced folder, because a local
-  delete there propagates to every device.
-- Never removes Docker volumes. Unused images and stopped containers only.
-- Never claims to reclaim "purgeable" space, which no third-party app can
-  reliably free.
+## Start here
+
+- [Dustloft home](https://dustloft.com/): What the app does, the six categories it found on a 494 GB drive that was 96% full, and the one-line installer.
+- [Guides index](https://dustloft.com/blog/): All eleven guides to macOS storage, plus the note explaining why the same disk is described as 512 GB, 494 GB and 460 GiB in different places.
+- [Dustloft vs CleanMyMac](https://dustloft.com/compare/cleanmymac): An honest, dated feature and pricing comparison — prices checked 12 September 2026, every CleanMyMac claim sourced to MacPaw's own pages and left blank where it could not be verified. Published 12 September 2026.
 
 ## Guides
 
-- [Why is System Data so large on your Mac?](https://dustloft.com/blog/why-is-system-data-so-large-on-mac): What the System Data label actually contains, with measured sizes from a real 512 GB Mac.
-- [How to clear System Data on a Mac](https://dustloft.com/blog/how-to-clear-system-data-mac): Step-by-step with exact Terminal commands, and what must never be deleted.
-- [Free CleanMyMac alternatives](https://dustloft.com/blog/free-cleanmymac-alternatives): Honest comparison of the free tools and what each is good at.
-- [Docker.raw taking up space on Mac](https://dustloft.com/blog/docker-raw-taking-up-space-mac): Why apparent size and allocated size differ for sparse files.
-- [Find large files on Mac using Terminal](https://dustloft.com/blog/find-large-files-mac-terminal): The du, df and mdfind commands that work, and the glob mistake that hides tens of GB.
-- [What is purgeable space on a Mac](https://dustloft.com/blog/purgeable-space-mac): Why no third-party app can free it on demand, and what genuinely reduces it.
-- [Is it safe to delete ~/Library/Caches?](https://dustloft.com/blog/is-it-safe-to-delete-library-caches): Safe but rarely useful; the large folders are Application Support and Containers.
-- [WhatsApp and Messages media on Mac](https://dustloft.com/blog/whatsapp-messages-media-mac): Received media lives in Group Containers, is real data rather than cache, and does not regenerate.
-- [node_modules and build output](https://dustloft.com/blog/node-modules-taking-up-space-mac): Measuring dependency trees, and why a dist folder inside node_modules is the package itself.
-- [Xcode DerivedData, simulators and runtimes](https://dustloft.com/blog/xcode-derived-data-simulators): The four Xcode paths, which need admin, and why they survive uninstalling Xcode.
-- [Git repositories taking up space](https://dustloft.com/blog/git-repositories-taking-up-space): Repack with git gc; a configured remote is not proof anything was pushed.
+- [Why is System Data so large on your Mac?](https://dustloft.com/blog/why-is-system-data-so-large-on-mac): The 220 GB of "System Data" on one 512 GB MacBook Pro broken into eight identifiable things, with the path and size of each. Published 8 September 2026.
+- [How to clear System Data on a Mac](https://dustloft.com/blog/how-to-clear-system-data-mac): Five measured steps with the exact Terminal commands, starting with the `du -sh ~/*` mistake that hid 55 GB of dotfolders. Published 8 September 2026.
+- [Free CleanMyMac alternatives in 2026](https://dustloft.com/blog/free-cleanmymac-alternatives): Eight tools compared — six free, one paid, one subscription — with what each is genuinely good at. Published 8 September 2026.
+- [Docker.raw taking up space on Mac](https://dustloft.com/blog/docker-raw-taking-up-space-mac): One Docker.raw reported 494 GB while occupying 9.3 GB. Why `du` and `ls -lh` disagree on sparse files, and how `docker system prune -a` reclaims without touching named volumes. Published 8 September 2026.
+- [Find large files on Mac using Terminal](https://dustloft.com/blog/find-large-files-mac-terminal): The `du -kxd 1 ~`, `df -h /System/Volumes/Data` and `mdfind` commands that work, and the glob mistake that hid 55 GB across four dotfolders. Published 8 September 2026.
+- [What is purgeable space on a Mac](https://dustloft.com/blog/purgeable-space-mac): The four things macOS marks purgeable, why no supported API lets a third-party app release them, and what genuinely moves the number. Published 10 September 2026.
+- [Is it safe to delete ~/Library/Caches?](https://dustloft.com/blog/is-it-safe-to-delete-library-caches): Safe, and usually pointless — four neighbouring Library folders compared, three of which hold real data rather than cache. Published 10 September 2026.
+- [WhatsApp and Messages media on Mac](https://dustloft.com/blog/whatsapp-messages-media-mac): 92 GB in Group Containers on one Mac, more than dependencies, Docker and Xcode combined. It is data, not cache, and nothing regenerates it. Published 10 September 2026.
+- [node_modules and build output](https://dustloft.com/blog/node-modules-taking-up-space-mac): 46 GB of dependency folders plus 20 GB across 42 stale `.next` caches, and the one deletion — a `dist` inside `node_modules` — that quietly breaks a library. Published 10 September 2026.
+- [Xcode DerivedData, simulators and runtimes](https://dustloft.com/blog/xcode-derived-data-simulators): The four Xcode paths, which two need an administrator prompt, and the 13 GB of runtimes that survive deleting Xcode. Published 10 September 2026.
+- [Git repositories taking up space](https://dustloft.com/blog/git-repositories-taking-up-space): One `.git` at 2.2 GB repacked with `git gc`; Dustloft only flags repositories over 100 MB and never offers deletion. A configured remote is not proof anything was pushed. Published 10 September 2026.
 
 ## Reference
 
-- [What Dustloft refuses to do](https://dustloft.com/safety): The complete list of protected locations, the three safety tiers, and the reasoning behind each rule.
-- [What Dustloft sends](https://dustloft.com/privacy): The literal request body, field by field, what happens to the IP address, and the two ways to switch it off. Also covers this website's own analytics, which are separate from the app.
+- [What Dustloft refuses to do](https://dustloft.com/safety): The three safety tiers, the five location families refused at the point of execution, and the reasoning behind every rule. Published 10 September 2026.
+- [What Dustloft sends](https://dustloft.com/privacy): The literal three-field request body, what happens to the IP address, and the two ways to switch the count off. Also covers this website's own analytics, which are separate from the app. Published 11 September 2026.
+- [Dustloft in numbers](https://dustloft.com/stats): Live counts of Macs running Dustloft, data cleaned and release downloads, updated every few minutes. Not indexed, but public.
+- [Live stats JSON](https://dustloft.com/api/stats): The machine-readable endpoint behind that page — installs, bytes cleaned, per-version counts and a 30-day daily series.
+- [Full text of every page](https://dustloft.com/llms-full.txt): Every indexable page concatenated as plain markdown, for agents that would rather fetch one file than crawl.
+
+## Project
+
+- [Source code on GitHub](https://github.com/kapil303196/dustloft): The whole app. The safety rules are in the repository and covered by tests.
+- [Releases](https://github.com/kapil303196/dustloft/releases): Every build, including the DMG. Latest is v1.0.48.
+- [Latest release](https://github.com/kapil303196/dustloft/releases/latest): Direct link to the current DMG download.
+- [MIT licence](https://github.com/kapil303196/dustloft/blob/main/LICENSE): The full licence text. No paid tier, no subscription, no account.
+- [Logicspark](https://logicspark.io): The maker, Kapil Upadhyay.
+
+## What it refuses to do, by design
+
+- [It never deletes a .git directory](https://dustloft.com/blog/git-repositories-taking-up-space): It offers `git gc` instead, and flags repositories whose history exists on no remote — verified with `git ls-remote` rather than by assuming a configured remote means a pushed one.
+- [It never touches cloud-synced folders](https://dustloft.com/safety): Dropbox, iCloud Drive and everything under `~/Library/CloudStorage` are refused, because a local delete there propagates to every device.
+- [It never removes Docker named volumes](https://dustloft.com/blog/docker-raw-taking-up-space-mac): `docker system prune -a` only, never `--volumes`, because that is where database data lives.
+- [It never claims to reclaim purgeable space](https://dustloft.com/blog/purgeable-space-mac): No supported API lets a third-party app trigger that release, so Dustloft does not report a purgeable figure at all.
+- [Permanent items go to the Trash, not straight out](https://dustloft.com/safety): Anything nothing can rebuild is never bulk-selected, is confirmed one item at a time, and is recoverable until the Trash is emptied.
 
 ## Notable technical findings documented here
 
-- `du -sh ~/*` silently skips every hidden folder because the shell glob does not
-  match dotfiles. On one machine this hid 55 GB.
-- Docker.raw is sparse: it can report 494 GB apparent size while occupying 9.3 GB.
-  `du` reports the truth, `ls -lh` does not.
-- A GitHub remote being configured does not mean a repository is backed up.
-  `git ls-remote origin` returning zero refs means nothing was ever pushed.
-- Simulator runtimes under /Library/Developer/CoreSimulator are installed outside
-  the Xcode app bundle, so they survive deleting Xcode and are then orphaned.
-- WhatsApp keeps received media in
-  ~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/Message/Media.
-  It is data, not cache: nothing regenerates it.
-- Purgeable space is released by macOS on its own schedule. No supported API lets
-  a third-party app trigger that release.
+- [du -sh ~/* silently skips every hidden folder](https://dustloft.com/blog/find-large-files-mac-terminal): The shell glob does not match dotfiles. On one machine this hid 55 GB — `~/.ollama` 16 GB, `~/.cache` 10 GB, `~/.Trash` 9.3 GB, `~/.nvm` 3.8 GB.
+- [Docker.raw is sparse](https://dustloft.com/blog/docker-raw-taking-up-space-mac): It reported 494 GB apparent size while occupying 9.3 GB. `du` reports the truth, `ls -lh` does not.
+- [A configured GitHub remote is not a backup](https://dustloft.com/blog/git-repositories-taking-up-space): `git ls-remote origin` returning zero refs means nothing was ever pushed.
+- [Simulator runtimes survive deleting Xcode](https://dustloft.com/blog/xcode-derived-data-simulators): They are installed under `/Library/Developer/CoreSimulator`, outside the Xcode app bundle, and are then orphaned — 13 GB on one machine.
+- [Messaging media is data, not cache](https://dustloft.com/blog/whatsapp-messages-media-mac): WhatsApp keeps received media in `~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/Message/Media`. Nothing regenerates it.
+- [Purgeable space is released on macOS's own schedule](https://dustloft.com/blog/purgeable-space-mac): Time Machine local snapshots are the largest contributor on most Macs, and thinning them is what actually moves the number.
+
+## Optional
+
+- [Sitemap](https://dustloft.com/sitemap.xml): Every indexable URL with its last-modified date.
+- [robots.txt](https://dustloft.com/robots.txt): AI crawlers are explicitly allowed. The guides are written to be cited.
+- [One-line installer script](https://raw.githubusercontent.com/kapil303196/dustloft/main/install-online.sh): The exact shell script the install command downloads, readable before you run it.
+- [README](https://github.com/kapil303196/dustloft/blob/main/README.md): Build instructions and project layout for anyone compiling from source.
