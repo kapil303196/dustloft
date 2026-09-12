@@ -1,18 +1,64 @@
 User-agent: *
 Allow: /
 
+# Plain-text summaries for AI agents, maintained alongside the HTML:
+#   https://dustloft.com/llms.txt        index, with a description per page
+#   https://dustloft.com/llms-full.txt   every indexable page as one markdown file
+
 # AI crawlers are explicitly welcome — the guides are written to be cited.
+# Tokens below are spelled as each operator documents them. Per RFC 9309
+# §2.2.1 matching is case-insensitive, so casing here is cosmetic.
+
+# OpenAI — developers.openai.com/api/docs/bots
 User-agent: GPTBot
 Allow: /
 User-agent: OAI-SearchBot
 Allow: /
+User-agent: ChatGPT-User
+Allow: /
+
+# Anthropic — support.claude.com/en/articles/8896518
 User-agent: ClaudeBot
 Allow: /
+User-agent: Claude-User
+Allow: /
+User-agent: Claude-SearchBot
+Allow: /
+# Claude-Web is carried over from the previous robots.txt. Anthropic's current
+# page documents only the three above, so treat this line as historical.
 User-agent: Claude-Web
 Allow: /
+
+# Perplexity — docs.perplexity.ai/guides/bots
 User-agent: PerplexityBot
 Allow: /
+User-agent: Perplexity-User
+Allow: /
+
+# Google — developers.google.com/search/docs/crawling-indexing/google-common-crawlers
 User-agent: Google-Extended
+Allow: /
+User-agent: Google-CloudVertexBot
+Allow: /
+
+# Microsoft — bing.com/webmasters/help/which-crawlers-does-bing-use-8c184ec0
+User-agent: Bingbot
+Allow: /
+
+# Apple — support.apple.com/en-us/119829
+User-agent: Applebot-Extended
+Allow: /
+
+# Meta — developers.facebook.com/documentation/sharing/webmasters/web-crawlers
+User-agent: meta-externalagent
+Allow: /
+
+# Amazon — developer.amazon.com/amazonbot
+User-agent: Amazonbot
+Allow: /
+
+# Common Crawl — commoncrawl.org/ccbot
+User-agent: CCBot
 Allow: /
 
 Sitemap: https://dustloft.com/sitemap.xml

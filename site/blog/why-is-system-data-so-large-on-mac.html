@@ -1,9 +1,9 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Why is System Data so large on your Mac? — Dustloft</title>
-<meta name="description" content="System Data is not one thing. It is every file macOS cannot file elsewhere. Here is what is actually inside it, with the real sizes found on a 512 GB MacBook Pro.">
+<meta name="description" content="System Data is not one thing. It is every file macOS cannot file elsewhere. What is actually inside it, with real sizes from a 512 GB MacBook Pro.">
 <link rel="canonical" href="https://dustloft.com/blog/why-is-system-data-so-large-on-mac">
-<meta property="og:title" content="Why is System Data so large on your Mac?"><meta property="og:description" content="System Data is not one thing. It is every file macOS cannot file elsewhere. Here is what is actually inside it, with the real sizes found on a 512 GB MacBook Pro.">
+<meta property="og:title" content="Why is System Data so large on your Mac?"><meta property="og:description" content="System Data is not one thing. It is every file macOS cannot file elsewhere. What is actually inside it, with real sizes from a 512 GB MacBook Pro.">
 <meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#141013">
 <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
@@ -13,12 +13,11 @@
 <meta property="og:url" content="https://dustloft.com/blog/why-is-system-data-so-large-on-mac">
 <meta property="og:image" content="https://dustloft.com/img/overview.png">
 <meta name="twitter:image" content="https://dustloft.com/img/overview.png">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Guide", "item": "https://dustloft.com/blog/why-is-system-data-so-large-on-mac"}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com/"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Guide", "item": "https://dustloft.com/blog/why-is-system-data-so-large-on-mac"}]}</script>
 <link rel="icon" href="/img/mark-v3.png">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="preload" href="/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/blog/_shared.css">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Why is System Data so large on your Mac?", "description": "System Data is not one thing. It is every file macOS cannot file elsewhere. Here is what is actually inside it, with the real sizes found on a 512 GB MacBook Pro.", "url": "https://dustloft.com/blog/why-is-system-data-so-large-on-mac", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.com"}, "datePublished": "2026-09-08", "dateModified": "2026-09-08"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Why is System Data so large on your Mac?", "description": "System Data is not one thing. It is every file macOS cannot file elsewhere. Here is what is actually inside it, with the real sizes found on a 512 GB MacBook Pro.", "url": "https://dustloft.com/blog/why-is-system-data-so-large-on-mac", "image": "https://dustloft.com/img/overview.png", "author": {"@type": "Person", "name": "Kapil Upadhyay", "url": "https://github.com/kapil303196", "sameAs": ["https://github.com/kapil303196"], "worksFor": {"@id": "https://logicspark.io/#org"}}, "publisher": {"@id": "https://logicspark.io/#org"}, "datePublished": "2026-09-08", "dateModified": "2026-09-12", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://dustloft.com/blog/why-is-system-data-so-large-on-mac"}, "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Why is System Data so large on my Mac?", "acceptedAnswer": {"@type": "Answer", "text": "macOS files everything it cannot categorise under System Data \u2014 caches, app containers, virtual machine disks, downloaded models, old device backups and local snapshots. Nothing prunes it automatically and there is no built-in way to inspect it."}}, {"@type": "Question", "name": "Is it safe to delete System Data on a Mac?", "acceptedAnswer": {"@type": "Answer", "text": "Parts of it are, parts are not. Caches and build output rebuild themselves. App containers and device backups contain real data that cannot be recovered. Identify each item before deleting anything."}}, {"@type": "Question", "name": "How much System Data is normal?", "acceptedAnswer": {"@type": "Answer", "text": "Between 10 and 30 GB is typical on a well-maintained Mac. Anything above 60 GB usually indicates a specific large cause such as a forgotten screen recording, a video editing cache or a container disk image."}}]}</script>
 <script>
 (function(c,l,a,r,i,t,y){
@@ -28,13 +27,14 @@
 })(window, document, "clarity", "script", "yfsb7st26m");
 </script>
 </head><body>
+<a class="skip" href="#main">Skip to content</a>
 <header><div class="wrap">
 <a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
 <nav><a href="/blog/">Guides</a><a href="/safety">Safety</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
 </div></header>
-<article><div class="wrap">
+<main id="main"><article><div class="wrap">
 <h1>Why is System Data so large on your Mac?</h1>
-<p class="meta">Guide · 6 min read · Updated September 2026</p>
+<p class="meta">Guide · 6 min read · By <a href="https://github.com/kapil303196" rel="author">Kapil Upadhyay</a> at <a href="https://logicspark.io">Logicspark</a> · Published <time datetime="2026-09-08">8 September 2026</time> · Updated <time datetime="2026-09-12">12 September 2026</time></p>
 <div class="answer"><p><strong>Short answer:</strong> “System Data” is not a category. It is the bucket macOS uses for every file it cannot file anywhere else — caches, app containers, virtual machine disks, downloaded AI models, old device backups and local snapshots. It grows quietly because nothing ever cleans it up, and macOS gives you no way to look inside it.</p></div>
 
 <p>If you open <strong>System Settings → General → Storage</strong> and see a grey block labelled <em>System Data</em> taking 100 GB or more, you are not looking at system files. You are looking at everything macOS declined to classify.</p>
@@ -72,12 +72,19 @@
 <blockquote><p><strong>“Reclaim your purgeable space.”</strong> Purgeable space is managed by macOS itself. No third-party application can reliably free it, and any tool claiming otherwise is overpromising. <a href="/blog/purgeable-space-mac">Why that is, in full</a>.</p></blockquote>
 
 <h2>How to find out what yours is</h2>
-<p>The numbers above are from one machine. Yours will differ. The next guide walks through <a href="/blog/how-to-clear-system-data-mac">clearing System Data safely</a>, and if you would rather not use Terminal, <a href="/">Dustloft</a> does the same measurement and shows you every item with its real size before anything is deleted.</p><div class="cta">
+<p>The numbers above are from one machine. Yours will differ, and <a href="/blog/find-large-files-mac-terminal">the Terminal commands that measure it</a> are covered separately. The next guide walks through <a href="/blog/how-to-clear-system-data-mac">clearing System Data safely</a>, and if you would rather not use Terminal, <a href="/">Dustloft</a> does the same measurement and shows you every item with its real size before anything is deleted.</p><h2>Common questions</h2>
+<h3>Why is System Data so large on my Mac?</h3>
+<p>macOS files everything it cannot categorise under System Data — caches, app containers, virtual machine disks, downloaded models, old device backups and local snapshots. Nothing prunes it automatically and there is no built-in way to inspect it.</p>
+<h3>Is it safe to delete System Data on a Mac?</h3>
+<p>Parts of it are, parts are not. Caches and build output rebuild themselves. App containers and device backups contain real data that cannot be recovered. Identify each item before deleting anything.</p>
+<h3>How much System Data is normal?</h3>
+<p>Between 10 and 30 GB is typical on a well-maintained Mac. Anything above 60 GB usually indicates a specific large cause such as a forgotten screen recording, a video editing cache or a container disk image.</p>
+<div class="cta">
 <h3>See exactly what is on your own disk</h3>
 <p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
 <a class="btn" href="/#install">Install Dustloft</a>
 </div>
-</div></article>
+</div></article></main>
 <footer><div class="wrap">Dustloft — MIT licensed. No ads, no accounts, no subscription. ·
 <a href="/">Home</a> · <a href="/blog/">All guides</a> ·
 <a href="https://github.com/kapil303196/dustloft">Source</a><br><br>

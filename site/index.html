@@ -3,8 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Dustloft — you already own the storage macOS is hiding from you</title>
-<meta name="description" content="Macs routinely hide 50–200 GB behind a label called “System Data”. Dustloft shows you exactly what it is and hands the space back, without ever deleting something you can’t get back. Free, open source, no subscription.">
+<title>Dustloft — free Mac cleaner for hidden System Data</title>
+<meta name="description" content="Dustloft is a free, open-source macOS app that shows what is hidden inside “System Data” and reclaims it. macOS 13 or later, MIT licensed, no subscription.">
+<!-- Google Search Console: paste the verification tag here when the property is claimed.
+     <meta name="google-site-verification" content="..."> -->
 <link rel="canonical" href="https://dustloft.com/">
 <meta property="og:title" content="You already own the storage macOS is hiding from you">
 <meta property="og:description" content="One Mac was 96% full. 195 GB of it was invisible. Dustloft finds it in about two minutes.">
@@ -23,16 +25,27 @@
 <meta property="og:url" content="https://dustloft.com/">
 <meta name="twitter:image" content="https://dustloft.com/img/overview.png">
 <link rel="icon" href="/img/mark-v3.png">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<!-- Self-hosted: the Google Fonts stylesheet was render-blocking on a second
+     origin, so the font request could not even start until it came back. -->
+<link rel="preload" href="/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:'Bricolage Grotesque';font-style:normal;font-weight:400 800;font-display:swap;
+  src:url(/fonts/bricolage-grotesque-latin-ext.woff2) format('woff2');
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Bricolage Grotesque';font-style:normal;font-weight:400 800;font-display:swap;
+  src:url(/fonts/bricolage-grotesque-latin.woff2) format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+</style>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
+  "@id": "https://dustloft.com/#app",
   "name": "Dustloft",
   "applicationCategory": "UtilitiesApplication",
+  "applicationSubCategory": "Disk space analyzer",
   "operatingSystem": "macOS 13.0 or later",
-  "description": "Shows what macOS hides as System Data and reclaims it safely.",
+  "description": "Dustloft is a free, open-source macOS app that shows what is hidden inside the storage macOS labels “System Data” and reclaims it. It runs on macOS 13 or later as a universal binary, is MIT licensed with no account or subscription, and lists every item with its full path and real size before anything is removed.",
   "offers": {
     "@type": "Offer",
     "price": "0",
@@ -42,7 +55,9 @@
   },
   "url": "https://dustloft.com/",
   "downloadUrl": "https://github.com/kapil303196/dustloft/releases/latest",
-  "softwareVersion": "1.0.26",
+  "installUrl": "https://github.com/kapil303196/dustloft/releases/latest",
+  "releaseNotes": "https://github.com/kapil303196/dustloft/releases",
+  "codeRepository": "https://github.com/kapil303196/dustloft",
   "datePublished": "2026-09-10",
   "license": "https://opensource.org/licenses/MIT",
   "image": "https://dustloft.com/img/overview.png",
@@ -50,29 +65,35 @@
     "https://dustloft.com/img/overview.png",
     "https://dustloft.com/img/review.png"
   ],
-  "installUrl": "https://github.com/kapil303196/dustloft/releases/latest",
-  "releaseNotes": "https://github.com/kapil303196/dustloft/releases",
-  "applicationSubCategory": "Disk space analyzer",
-  "author": {
-    "@type": "Organization",
-    "name": "Logicspark",
-    "url": "https://logicspark.io"
-  },
-  "maintainer": {
-    "@type": "Organization",
-    "name": "Logicspark",
-    "url": "https://logicspark.io"
-  },
+  "featureList": [
+    "Measures allocated disk size rather than apparent size",
+    "Sorts findings into regenerable, needs-admin and permanent tiers",
+    "Shows every item with its full path and real size before removal",
+    "Refuses to delete .git directories, offering git gc instead",
+    "Refuses to touch Dropbox, iCloud Drive or any cloud-synced folder",
+    "Refuses to remove Docker named volumes",
+    "Does not claim to reclaim purgeable space",
+    "Universal binary for Apple Silicon and Intel"
+  ],
+  "author": { "@id": "https://dustloft.com/#kapil" },
+  "publisher": { "@id": "https://logicspark.io/#org" },
+  "maintainer": { "@id": "https://logicspark.io/#org" },
+  "isPartOf": { "@id": "https://dustloft.com/#website" },
   "isAccessibleForFree": true
 }
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
-{"@type":"Question","name":"Why is my System Data so large on Mac?","acceptedAnswer":{"@type":"Answer","text":"macOS files everything it cannot categorise under System Data — caches, app containers, virtual machine disks, downloaded models, old device backups and local snapshots. It grows quietly and there is no built-in way to look inside it."}},
-{"@type":"Question","name":"How do I clear System Data on a Mac?","acceptedAnswer":{"@type":"Answer","text":"Find out what is inside it before deleting anything. Dustloft measures every real consumer of space, sorts it by how recoverable it is, and shows each item with its full path and size before anything is removed."}},
-{"@type":"Question","name":"Is Dustloft safe?","acceptedAnswer":{"@type":"Answer","text":"The source is public and the safety rules are enforced in code and covered by tests. It never deletes a .git directory, never touches Dropbox or iCloud Drive, and never removes Docker volumes."}},
-{"@type":"Question","name":"Does Dustloft work on Intel Macs?","acceptedAnswer":{"@type":"Answer","text":"Yes. Every release is a universal binary verified to contain both Apple Silicon and Intel architectures."}},
-{"@type":"Question","name":"How much does Dustloft cost?","acceptedAnswer":{"@type":"Answer","text":"Nothing. MIT licensed, no account, no subscription."}},{"@type":"Question","name":"Does Dustloft send anything from my Mac?","acceptedAnswer":{"@type":"Answer","text":"One anonymous line, sent when that total changes and once a day even when it has not: a random identifier belonging to that copy of the app, the total number of bytes it has reclaimed, and its version number. No name, no email, no account, no file names and no paths. It can be switched off inside the app, or before first launch by running launchctl setenv DUSTLOFT_NO_METRICS 1 — a shell export will not do, because an app opened from the Dock inherits launchd's environment rather than the shell's. Scanning itself happens entirely on your machine."}}]}
+{"@type": "Question", "name": "What is Dustloft?", "acceptedAnswer": {"@type": "Answer", "text": "Dustloft is a free, open-source macOS app that shows what is hidden inside the storage macOS labels “System Data” and reclaims it. It runs on macOS 13 or later as a universal binary, is MIT licensed with no account or subscription, and lists every item with its full path and real size before anything is removed."}},
+{"@type": "Question", "name": "How much does Dustloft cost?", "acceptedAnswer": {"@type": "Answer", "text": "Nothing. It is MIT licensed with no subscription, no account, no ads and no upsell."}},
+{"@type": "Question", "name": "Will it delete something I need?", "acceptedAnswer": {"@type": "Answer", "text": "Not without showing you first. Everything is listed with its full path and real size, and you untick anything you want to keep. Items that cannot be recovered are never bulk-selected and need a separate confirmation. Quick Clean only touches things that rebuild themselves."}},
+{"@type": "Question", "name": "Why is my System Data so large?", "acceptedAnswer": {"@type": "Answer", "text": "macOS files everything it cannot categorise under that one label — caches, app containers, virtual machine disks, downloaded models, old device backups, local snapshots. It grows quietly and there is no built-in way to look inside. That is the exact problem Dustloft was built for."}},
+{"@type": "Question", "name": "Why does it need Full Disk Access?", "acceptedAnswer": {"@type": "Answer", "text": "Without it macOS hides the Trash, app containers and device backups, so sizes come out far lower than reality — and it asks separately for Desktop, Downloads and Documents. Dustloft asks once, up front, and explains why. macOS applies the permission only to a freshly launched app, so it restarts itself once."}},
+{"@type": "Question", "name": "Why the “unidentified developer” warning?", "acceptedAnswer": {"@type": "Answer", "text": "Notarisation requires a paid Apple Developer membership. The build is signed but not notarised. The one-line installer avoids the warning legitimately, because quarantine is applied to browser downloads and not to curl."}},
+{"@type": "Question", "name": "Does emptying the Trash actually free the space?", "acceptedAnswer": {"@type": "Answer", "text": "Usually, but not always. Root-owned items left by uninstalled apps often refuse to delete and sit there indefinitely. Dustloft spots those and removes them under a single administrator prompt."}},
+{"@type": "Question", "name": "How is it different from CleanMyMac?", "acceptedAnswer": {"@type": "Answer", "text": "Free, open source, no subscription. It also declines to do several things commercial cleaners advertise: it will not claim to reclaim purgeable space, will not delete a .git directory, and will not touch a cloud-synced folder. Fewer promises, no surprises. There is a full comparison, including where CleanMyMac is the better choice."}},
+{"@type": "Question", "name": "Does it work on Intel Macs?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Every release is a universal binary built in CI and verified with lipo to contain both architectures."}},
+{"@type": "Question", "name": "Does anything leave my Mac?", "acceptedAnswer": {"@type": "Answer", "text": "Almost nothing, and nothing about your files. Dustloft sends one anonymous line when its reclaimed total changes, and once a day even when it has not — a random identifier belonging to that copy of the app, the total bytes it has reclaimed, and its version — so there is some idea of how many Macs it runs on and whether it has actually helped. No name, no email, no account, no file names, no paths. Switch it off in the app, or run launchctl setenv DUSTLOFT_NO_METRICS 1 before first launch — a shell export will not do, because an app opened from the Dock inherits launchd's environment and not your shell's. The privacy note shows the exact message. Its other network request is checking GitHub for a newer version; scanning happens entirely on your machine."}}]}
 </script>
 <style>
 :root{
@@ -221,6 +242,13 @@ section{padding:clamp(3.2rem,8vw,6rem) 0;border-top:1px solid var(--line)}
 .rules li{display:flex;gap:.8rem;align-items:flex-start}
 .rules svg{flex:none;margin-top:.35rem}
 .rules span{color:var(--ink2)}.rules b{color:var(--ink);font-weight:600}
+.spec-wrap{margin-top:1.6rem;overflow-x:auto;border:1px solid var(--line);border-radius:15px;background:var(--bg2)}
+.spec{width:100%;border-collapse:collapse;font-size:.95rem;text-align:left}
+.spec th,.spec td{padding:.85rem 1.1rem;border-bottom:1px solid var(--line);vertical-align:top}
+.spec tr:last-child th,.spec tr:last-child td{border-bottom:0}
+.spec th{color:var(--ink);font-weight:600;white-space:nowrap;width:1%}
+.spec td{color:var(--ink2)}
+@media(max-width:560px){.spec th{white-space:normal}}
 
 blockquote{margin:0;padding:clamp(1.4rem,4vw,2.3rem);border:1px solid var(--line);border-radius:15px;background:var(--bg2)}
 blockquote p{margin:0 0 1rem;color:var(--ink2)}blockquote p:last-of-type{margin:0}
@@ -392,25 +420,35 @@ footer a{color:var(--ink2)}
       "name": "Dustloft",
       "description": "Find out what macOS hides as System Data, and get that space back safely.",
       "inLanguage": "en-US",
+      "about": { "@id": "https://dustloft.com/#app" },
       "publisher": {
-        "@id": "https://dustloft.com/#org"
+        "@id": "https://logicspark.io/#org"
       }
     },
     {
       "@type": "Organization",
-      "@id": "https://dustloft.com/#org",
-      "name": "Dustloft",
-      "url": "https://dustloft.com/",
+      "@id": "https://logicspark.io/#org",
+      "name": "Logicspark",
+      "url": "https://logicspark.io",
       "logo": {
         "@type": "ImageObject",
         "url": "https://dustloft.com/img/apple-touch-icon.png",
         "width": 180,
         "height": 180
       },
+      "founder": { "@id": "https://dustloft.com/#kapil" },
       "sameAs": [
-        "https://github.com/kapil303196/dustloft",
-        "https://logicspark.io"
+        "https://github.com/kapil303196",
+        "https://github.com/kapil303196/dustloft"
       ]
+    },
+    {
+      "@type": "Person",
+      "@id": "https://dustloft.com/#kapil",
+      "name": "Kapil Upadhyay",
+      "url": "https://github.com/kapil303196",
+      "sameAs": ["https://github.com/kapil303196"],
+      "worksFor": { "@id": "https://logicspark.io/#org" }
     }
   ]
 }
@@ -425,7 +463,9 @@ footer a{color:var(--ink2)}
     <a href="#inside">What's hiding</a><a href="#safety">Safety</a><a href="/blog/">Guides</a><a href="#install">Install</a>
     <a class="stars" href="https://github.com/kapil303196/dustloft" id="ghstars">
       <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
-      <span id="ghcount">GitHub</span></a>
+      <!-- min-width reserves the space the star count expands into, so the
+           nav does not shift when the GitHub fetch lands. -->
+      <span id="ghcount" style="display:inline-block;min-width:9ch">GitHub</span></a>
   </nav>
 </div></header>
 
@@ -434,7 +474,7 @@ footer a{color:var(--ink2)}
   <div class="hero">
     <span class="warn">⚠ Your Mac is not telling you the whole story</span>
     <h1>You’re about to pay for storage <span class="hide">you already own.</span></h1>
-    <p class="lede">Macs routinely hide 50–200&nbsp;GB behind one unhelpful label: <em>System Data</em>. Buy a bigger Mac and you pay hundreds for space that was already sitting on your disk. Dustloft finds it in about two minutes.</p>
+    <p class="lede">Dustloft is a free, open-source macOS app that shows what is hidden inside the storage macOS labels <em>System Data</em>, and reclaims it. Macs routinely hold 50–200&nbsp;GB there, and macOS gives you no way to look inside. Dustloft measures it in about two minutes, then lists every item with its full path and real size before anything is removed.</p>
     <div class="term" id="term">
       <div class="term-bar" aria-hidden="true">
         <i style="background:oklch(.65 .19 25)"></i><i style="background:oklch(.80 .15 85)"></i><i style="background:oklch(.72 .17 145)"></i>
@@ -577,6 +617,33 @@ footer a{color:var(--ink2)}
   </div>
 </section>
 
+<!-- A plain specification table. Everything here is stated somewhere on the
+     site already; gathering it in one place gives both readers and answer
+     engines a single place to find what the app is and what it requires. -->
+<section id="glance">
+  <div class="wrap">
+    <h2 class="reveal">Dustloft at a glance</h2>
+    <div class="spec-wrap reveal">
+    <table class="spec">
+      <tbody>
+        <tr><th scope="row">What it is</th><td>A macOS app that measures what is inside “System Data” and reclaims it</td></tr>
+        <tr><th scope="row">Price</th><td>Free. No subscription, no account, no ads, no upsell</td></tr>
+        <tr><th scope="row">Licence</th><td>MIT</td></tr>
+        <tr><th scope="row">Requires</th><td>macOS 13.0 or later</td></tr>
+        <tr><th scope="row">Architecture</th><td>Universal binary — Apple Silicon and Intel, verified in CI with <code>lipo</code></td></tr>
+        <tr><th scope="row">Install</th><td>The one-line installer below, or the <a href="https://github.com/kapil303196/dustloft/releases/latest">DMG</a></td></tr>
+        <tr><th scope="row">Permissions</th><td>Full Disk Access. No kernel extension, no background daemon and no privileged helper — administrator actions go through a single macOS password prompt</td></tr>
+        <tr><th scope="row">Signing</th><td>Signed, not notarised. Notarisation requires a paid Apple Developer membership</td></tr>
+        <tr><th scope="row">What leaves your Mac</th><td>One anonymous line: a random identifier, total bytes reclaimed, and a version number. <a href="/privacy">Switchable off</a></td></tr>
+        <tr><th scope="row">Local log</th><td><code>~/Library/Logs/Dustloft/operations.log</code> — tab-separated, never uploaded</td></tr>
+        <tr><th scope="row">Source</th><td><a href="https://github.com/kapil303196/dustloft">github.com/kapil303196/dustloft</a></td></tr>
+        <tr><th scope="row">Made by</th><td>Kapil Upadhyay at <a href="https://logicspark.io">Logicspark</a></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
 <section>
   <div class="wrap two">
     <div><h2 class="reveal">The near-miss that wrote the rules</h2>
@@ -594,7 +661,10 @@ footer a{color:var(--ink2)}
   <div class="wrap">
     <h2 class="reveal">Nothing goes until you’ve seen it</h2>
     <p class="sec-lede reveal">Every item, with its full path and real size. Untick anything you want to keep — the total follows along.</p>
-    <figure class="reveal"><img src="/img/review.png" loading="lazy" decoding="async" width="1600" height="941" alt="Dustloft’s review screen listing 66 items totalling 26.36 GB, each with a checkbox, full path and size">
+    <figure class="reveal"><picture>
+      <source srcset="/img/review.webp" type="image/webp">
+      <img src="/img/review.png" loading="lazy" decoding="async" width="1600" height="941" alt="Dustloft’s review screen listing 66 items totalling 26.36 GB, each with a checkbox, full path and size">
+    </picture>
       <figcaption>Real disk usage, not apparent size — a sparse Docker image reporting 494 GB is shown at the 9.3 GB it actually occupies.</figcaption></figure>
   </div>
 </section>
@@ -618,12 +688,14 @@ footer a{color:var(--ink2)}
       <p class="trust reveal" style="margin-top:1rem">Universal build — Apple Silicon and Intel. Prefer a disk image? <a href="https://github.com/kapil303196/dustloft/releases/latest">Download the DMG</a>.</p>
     </div>
     <div class="faq reveal" id="faq">
+      <details><summary>What is Dustloft?</summary><p>Dustloft is a free, open-source macOS app that shows what is hidden inside the storage macOS labels “System Data” and reclaims it. It runs on macOS 13 or later as a universal binary, is MIT licensed with no account or subscription, and lists every item with its full path and real size before anything is removed.</p></details>
+      <details><summary>How much does Dustloft cost?</summary><p>Nothing. It is MIT licensed with no subscription, no account, no ads and no upsell.</p></details>
       <details><summary>Will it delete something I need?</summary><p>Not without showing you first. Everything is listed with its full path and real size, and you untick anything you want to keep. Items that cannot be recovered are never bulk-selected and need a separate confirmation. Quick Clean only touches things that rebuild themselves.</p></details>
       <details><summary>Why is my System Data so large?</summary><p>macOS files everything it cannot categorise under that one label — caches, app containers, virtual machine disks, downloaded models, old device backups, local snapshots. It grows quietly and there is no built-in way to look inside. That is the exact problem Dustloft was built for.</p></details>
       <details><summary>Why does it need Full Disk Access?</summary><p>Without it macOS hides the Trash, app containers and device backups, so sizes come out far lower than reality — and it asks separately for Desktop, Downloads and Documents. Dustloft asks once, up front, and explains why. macOS applies the permission only to a freshly launched app, so it restarts itself once.</p></details>
       <details><summary>Why the “unidentified developer” warning?</summary><p>Notarisation requires a paid Apple Developer membership. The build is signed but not notarised. The one-line installer avoids the warning legitimately, because quarantine is applied to browser downloads and not to <code>curl</code>.</p></details>
       <details><summary>Does emptying the Trash actually free the space?</summary><p>Usually, but not always. Root-owned items left by uninstalled apps often refuse to delete and sit there indefinitely. Dustloft spots those and removes them under a single administrator prompt.</p></details>
-      <details><summary>How is it different from CleanMyMac?</summary><p>Free, open source, no subscription. It also declines to do several things commercial cleaners advertise: it will not claim to reclaim purgeable space, will not delete a <code>.git</code> directory, and will not touch a cloud-synced folder. Fewer promises, no surprises.</p></details>
+      <details><summary>How is it different from CleanMyMac?</summary><p>Free, open source, no subscription. It also declines to do several things commercial cleaners advertise: it will not claim to reclaim purgeable space, will not delete a <code>.git</code> directory, and will not touch a cloud-synced folder. Fewer promises, no surprises. There is a <a href="/compare/cleanmymac">full comparison, including where CleanMyMac is the better choice</a>.</p></details>
       <details><summary>Does it work on Intel Macs?</summary><p>Yes. Every release is a universal binary built in CI and verified with <code>lipo</code> to contain both architectures.</p></details>
       <details><summary>Does anything leave my Mac?</summary><p>Almost nothing, and nothing about your files. Dustloft sends one anonymous line when its reclaimed total changes, and once a day even when it has not — a random identifier belonging to that copy of the app, the total bytes it has reclaimed, and its version — so there is some idea of how many Macs it runs on and whether it has actually helped. No name, no email, no account, no file names, no paths. Switch it off in the app, or run <code>launchctl setenv DUSTLOFT_NO_METRICS 1</code> before first launch — a shell <code>export</code> will not do, because an app opened from the Dock inherits launchd's environment and not your shell's. The <a href="/privacy">privacy note</a> shows the exact message. Its other network request is checking GitHub for a newer version; scanning happens entirely on your machine.</p></details>
     </div>

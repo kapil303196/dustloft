@@ -1,0 +1,125 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dustloft vs CleanMyMac: an honest comparison</title>
+<meta name="description" content="A free MIT-licensed disk tool against a paid all-in-one suite. What each one does, what each costs, and when CleanMyMac is the better choice.">
+<link rel="canonical" href="https://dustloft.com/compare/cleanmymac">
+<meta property="og:title" content="Dustloft vs CleanMyMac: an honest comparison"><meta property="og:description" content="A free MIT-licensed disk tool against a paid all-in-one suite. What each one does, what each costs, and when CleanMyMac is the better choice.">
+<meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#141013">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<meta property="og:site_name" content="Dustloft">
+<meta property="og:locale" content="en_US">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<meta property="og:url" content="https://dustloft.com/compare/cleanmymac">
+<meta property="og:image" content="https://dustloft.com/img/overview.png">
+<meta name="twitter:image" content="https://dustloft.com/img/overview.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com/"}, {"@type": "ListItem", "position": 2, "name": "Comparisons", "item": "https://dustloft.com/compare/cleanmymac"}]}</script>
+<link rel="icon" href="/img/mark-v3.png">
+<link rel="preload" href="/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/blog/_shared.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Dustloft vs CleanMyMac: an honest comparison", "description": "A free MIT-licensed disk tool against a paid all-in-one suite. What each one does, what each costs, and when CleanMyMac is the better choice.", "url": "https://dustloft.com/compare/cleanmymac", "image": "https://dustloft.com/img/overview.png", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://dustloft.com/compare/cleanmymac"}, "author": {"@type": "Person", "name": "Kapil Upadhyay", "url": "https://github.com/kapil303196", "sameAs": ["https://github.com/kapil303196"], "worksFor": {"@id": "https://logicspark.io/#org"}}, "publisher": {"@id": "https://logicspark.io/#org"}, "datePublished": "2026-09-12", "dateModified": "2026-09-12", "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is Dustloft a replacement for CleanMyMac?", "acceptedAnswer": {"@type": "Answer", "text": "Only for part of it. Dustloft measures and reclaims disk space, which is one of the jobs CleanMyMac does. It has no malware scanner, no app uninstaller and no performance tools, so if you bought CleanMyMac for those, Dustloft does not replace them."}}, {"@type": "Question", "name": "How much does CleanMyMac cost compared to Dustloft?", "acceptedAnswer": {"@type": "Answer", "text": "CleanMyMac is a subscription, advertised from $3.33 per month on macpaw.com as checked on 12 September 2026. Dustloft is free under the MIT licence, with no paid tier, no account and no upsell."}}, {"@type": "Question", "name": "Is a free Mac cleaner safe to use?", "acceptedAnswer": {"@type": "Answer", "text": "It depends entirely on what the tool will and will not delete. Dustloft publishes its safety rules, enforces them in code and covers them with tests: it never deletes a .git directory, never touches a cloud-synced folder, never removes Docker named volumes, and does not claim to free purgeable space. Being able to read the source is the point."}}]}</script>
+<script>
+(function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+})(window, document, "clarity", "script", "yfsb7st26m");
+</script>
+</head><body>
+<a class="skip" href="#main">Skip to content</a>
+<header><div class="wrap">
+<a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
+<nav><a href="/blog/">Guides</a><a href="/safety">Safety</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
+</div></header>
+<main id="main"><article><div class="wrap">
+<h1>Dustloft vs CleanMyMac: an honest comparison</h1>
+<p class="meta">Comparison · 6 min read · By <a href="https://github.com/kapil303196" rel="author">Kapil Upadhyay</a> at <a href="https://logicspark.io">Logicspark</a> · Published <time datetime="2026-09-12">12 September 2026</time></p>
+<div class="answer"><p><strong>Short answer:</strong> These are not the same kind of product. Dustloft is a free, MIT-licensed macOS app that does one job — it measures what is actually filling your disk, including everything macOS hides behind the <em>System Data</em> label, and reclaims it. CleanMyMac is a paid, notarised all-in-one suite that also scans for malware, uninstalls applications and runs maintenance routines. If you want those extras, buy CleanMyMac. If you want to know precisely what is occupying your disk and remove it without paying or trusting a closed binary, use Dustloft.</p></div>
+
+<p>Writing a comparison page about your own product is an obvious conflict of interest, so this one sticks to two rules. Every claim about Dustloft can be checked against <a href="https://github.com/kapil303196/dustloft">its source code</a>. Every claim about CleanMyMac comes from MacPaw's own pages, is dated, and is left blank where it could not be verified rather than guessed.</p>
+
+<h2>What each one is</h2>
+<p><strong>Dustloft</strong> is a disk tool. It measures every real consumer of space on a Mac using allocated size rather than apparent size, sorts what it finds into three tiers — regenerable, needs-admin and permanent — and shows each item with its full path and real size before anything is removed. It runs on macOS 13 or later, weighs one application bundle, and installs no background agent.</p>
+<p><strong>CleanMyMac</strong>, per <a href="https://macpaw.com/cleanmymac" rel="nofollow">macpaw.com/cleanmymac</a> as of 12 September 2026, describes itself as an "all-in-one Mac cleaner and maintenance app" that "handles junk, duplicates, malware, and performance issues". Its Smart Care routine advertises five tasks in one: deep clean, threat scan, performance boost, software update and storage declutter. The page states the app is notarised by Apple and has 29 million downloads.</p>
+
+<h2>Price, checked 12 September 2026</h2>
+<p>Software pricing moves, and regional stores differ. These figures were read from the vendors' own listings on the date given; check the links before relying on them.</p>
+<table><thead><tr><th>Product</th><th>Model</th><th>Price as listed</th><th>Source</th></tr></thead><tbody>
+<tr><td>Dustloft</td><td>Free, MIT licence</td><td>$0, with no paid tier</td><td><a href="https://github.com/kapil303196/dustloft">Repository</a></td></tr>
+<tr><td>CleanMyMac</td><td>Subscription</td><td>From $3.33/month as advertised</td><td><a href="https://macpaw.com/cleanmymac" rel="nofollow">macpaw.com</a></td></tr>
+<tr><td>DaisyDisk</td><td>One-off purchase</td><td>$9.99</td><td><a href="https://apps.apple.com/us/app/daisydisk/id411643860" rel="nofollow">Mac App Store</a></td></tr>
+</tbody></table>
+<p>DaisyDisk is in the table because it is the other app people weigh up at this point, and because it is not really a rival to either: it is a visualiser, and a good one. Nothing stops you using it alongside Dustloft.</p>
+
+<h2>Feature by feature</h2>
+<p>A dash means the behaviour is not documented on the vendor's public pages and was not verified. It does not mean the app cannot do it.</p>
+<table><thead><tr><th>&nbsp;</th><th>Dustloft</th><th>CleanMyMac</th></tr></thead><tbody>
+<tr><td>Cost</td><td>Free</td><td>Subscription, from $3.33/month advertised</td></tr>
+<tr><td>Licence</td><td>MIT, open source</td><td>Proprietary</td></tr>
+<tr><td>Source code readable</td><td>Yes, in full</td><td>No</td></tr>
+<tr><td>Notarised by Apple</td><td>No — signed but not notarised, which needs a paid Apple Developer membership</td><td>Yes, per MacPaw's page</td></tr>
+<tr><td>Explains what “System Data” contains</td><td>Yes, item by item with full paths</td><td>—</td></tr>
+<tr><td>Malware scanning</td><td>No</td><td>Yes, advertised</td></tr>
+<tr><td>Application uninstaller</td><td>No</td><td>Yes, advertised</td></tr>
+<tr><td>Performance and maintenance tools</td><td>No</td><td>Yes, advertised</td></tr>
+<tr><td>Claims to free purgeable space</td><td>No — and it states that <a href="/blog/purgeable-space-mac">no third-party app reliably can</a></td><td>—</td></tr>
+<tr><td>Deletes <code>.git</code> directories</td><td>Never; offers <code>git gc</code> instead</td><td>—</td></tr>
+<tr><td>Touches cloud-synced folders</td><td>Never</td><td>—</td></tr>
+<tr><td>Removes Docker named volumes</td><td>Never</td><td>—</td></tr>
+<tr><td>Background agent or daemon</td><td>None</td><td>—</td></tr>
+<tr><td>Support</td><td>GitHub issues only</td><td>Commercial support</td></tr>
+</tbody></table>
+
+<h2>When CleanMyMac is the better choice</h2>
+<p>There are several, and pretending otherwise would be dishonest.</p>
+<ul>
+<li><strong>You want one app for everything.</strong> Malware scanning, uninstalling applications and maintenance routines are real jobs that Dustloft does not do at all.</li>
+<li><strong>You want it notarised.</strong> Dustloft is signed but not notarised, because notarisation requires a paid Apple Developer membership. That means macOS shows a warning unless you use the one-line installer. If that is a dealbreaker, it is a fair one.</li>
+<li><strong>You want somebody to call.</strong> A subscription buys commercial support. An MIT-licensed project run by one person buys you a GitHub issue tracker.</li>
+<li><strong>You do not want to think about it.</strong> CleanMyMac is built to be pressed once. Dustloft deliberately shows you a list and asks you to make decisions.</li>
+</ul>
+
+<h2>When Dustloft is the better choice</h2>
+<ul>
+<li><strong>You want to know where the space went.</strong> That is the entire product. Most of what fills a modern Mac is <a href="/blog/why-is-system-data-so-large-on-mac">hidden behind one unhelpful label</a>, and the fix starts with measuring it.</li>
+<li><strong>You would rather read the code than trust a claim.</strong> The safety rules are in the repository and covered by tests.</li>
+<li><strong>You are a developer.</strong> Dependency trees, build output, Docker images, Xcode runtimes and stale Git repositories are where the space usually is. There are guides for <a href="/blog/node-modules-taking-up-space-mac">node_modules</a>, <a href="/blog/docker-raw-taking-up-space-mac">Docker.raw</a> and <a href="/blog/xcode-derived-data-simulators">Xcode DerivedData</a>.</li>
+<li><strong>You object to paying rent on a cleaning tool.</strong> Free, and no upsell inside the app.</li>
+</ul>
+
+<h2>The part that matters more than features: what it refuses to do</h2>
+<p>Any tool that deletes files is only as good as its restraint. Dustloft's limits are deliberate, enforced in code and covered by tests, and the <a href="/safety">full list is published</a>:</p>
+<ul>
+<li>It never deletes a <code>.git</code> directory. It offers <code>git gc</code>, and flags repositories whose history exists nowhere else — verified with <code>git ls-remote</code> rather than by assuming a configured remote means a pushed one.</li>
+<li>It never touches Dropbox, iCloud Drive or any cloud-synced folder, because a local delete there propagates to every device you own.</li>
+<li>It never removes Docker named volumes, which is where database data lives.</li>
+<li>It never claims to reclaim purgeable space, because no third-party app reliably can.</li>
+</ul>
+<p>Items that nothing can rebuild are never bulk-selected, are confirmed one at a time, and go to the Trash rather than being deleted outright. Emptying the Trash is still final — <a href="/safety">the safety page says so plainly</a>.</p>
+
+<h2>What leaves your Mac</h2>
+<p>Dustloft sends one anonymous line when its running total of reclaimed bytes changes, and once a day even when it has not: a random identifier belonging to that copy of the app, a byte total and a version number. No name, no email, no account, no file names, no paths. The <a href="/privacy">privacy page</a> prints the literal request body and links the source file that builds it, and the count can be switched off. Scanning happens entirely on your machine.</p>
+
+<h2>Trying both</h2>
+<p>Nothing stops you. CleanMyMac has a trial, Dustloft is free, and they can sit on the same Mac. If you want to start by simply finding out what is on your disk, the <a href="/blog/how-to-clear-system-data-mac">step-by-step guide</a> does it with Terminal commands and no application at all — including the <code>du</code> flag mistake that hides tens of gigabytes from most guides. The other <a href="/blog/free-cleanmymac-alternatives">free alternatives are compared here</a>.</p>
+
+<h2>Common questions</h2>
+<h3>Is Dustloft a replacement for CleanMyMac?</h3>
+<p>Only for part of it. Dustloft measures and reclaims disk space, which is one of the jobs CleanMyMac does. It has no malware scanner, no app uninstaller and no performance tools, so if you bought CleanMyMac for those, Dustloft does not replace them.</p>
+<h3>How much does CleanMyMac cost compared to Dustloft?</h3>
+<p>CleanMyMac is a subscription, advertised from $3.33 per month on macpaw.com as checked on 12 September 2026. Dustloft is free under the MIT licence, with no paid tier, no account and no upsell.</p>
+<h3>Is a free Mac cleaner safe to use?</h3>
+<p>It depends entirely on what the tool will and will not delete. Dustloft publishes its safety rules, enforces them in code and covers them with tests: it never deletes a <code>.git</code> directory, never touches a cloud-synced folder, never removes Docker named volumes, and does not claim to free purgeable space. Being able to read the source is the point.</p>
+
+<div class="cta">
+<h3>See exactly what is on your own disk</h3>
+<p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
+<a class="btn" href="/#install">Install Dustloft</a>
+</div>
+</div></article></main>
+<footer><div class="wrap">Dustloft — MIT licensed. No ads, no accounts, no subscription. ·
+<a href="/">Home</a> · <a href="/blog/">All guides</a> ·
+<a href="https://github.com/kapil303196/dustloft">Source</a><br><br>
+Made with ♥ in India by <a href="https://logicspark.io">Logicspark</a></div></footer>
+</body></html>

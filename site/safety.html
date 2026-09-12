@@ -1,9 +1,9 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>What Dustloft refuses to do — Dustloft</title>
-<meta name="description" content="The complete list of locations Dustloft will never delete, the three safety tiers, and the reasoning behind each rule. Every refusal is enforced in code and covered by tests.">
+<meta name="description" content="The complete list of locations Dustloft will never delete, the three safety tiers, and the reasoning behind each. Every refusal is enforced in code.">
 <link rel="canonical" href="https://dustloft.com/safety">
-<meta property="og:title" content="What Dustloft refuses to do"><meta property="og:description" content="The complete list of locations Dustloft will never delete, the three safety tiers, and the reasoning behind each rule. Every refusal is enforced in code and covered by tests.">
+<meta property="og:title" content="What Dustloft refuses to do"><meta property="og:description" content="The complete list of locations Dustloft will never delete, the three safety tiers, and the reasoning behind each. Every refusal is enforced in code.">
 <meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#141013">
 <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
@@ -13,12 +13,11 @@
 <meta property="og:url" content="https://dustloft.com/safety">
 <meta property="og:image" content="https://dustloft.com/img/overview.png">
 <meta name="twitter:image" content="https://dustloft.com/img/overview.png">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com"}, {"@type": "ListItem", "position": 2, "name": "Safety", "item": "https://dustloft.com/safety"}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com/"}, {"@type": "ListItem", "position": 2, "name": "Safety", "item": "https://dustloft.com/safety"}]}</script>
 <link rel="icon" href="/img/mark-v3.png">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="preload" href="/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/blog/_shared.css">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "What Dustloft refuses to do", "description": "The complete list of locations Dustloft will never delete, the three safety tiers, and the reasoning behind each rule. Every refusal is enforced in code and covered by tests.", "url": "https://dustloft.com/safety", "author": {"@type": "Organization", "name": "Logicspark", "url": "https://logicspark.io"}, "publisher": {"@type": "Organization", "name": "Dustloft", "url": "https://dustloft.com"}, "datePublished": "2026-09-10", "dateModified": "2026-09-10", "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "What Dustloft refuses to do", "description": "The complete list of locations Dustloft will never delete, the three safety tiers, and the reasoning behind each rule. Every refusal is enforced in code and covered by tests.", "url": "https://dustloft.com/safety", "image": "https://dustloft.com/img/overview.png", "author": {"@type": "Person", "name": "Kapil Upadhyay", "url": "https://github.com/kapil303196", "sameAs": ["https://github.com/kapil303196"], "worksFor": {"@id": "https://logicspark.io/#org"}}, "publisher": {"@id": "https://logicspark.io/#org"}, "datePublished": "2026-09-10", "dateModified": "2026-09-12", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://dustloft.com/safety"}, "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is Dustloft safe to use?", "acceptedAnswer": {"@type": "Answer", "text": "Its safety rules are enforced in code rather than left to the user. It never deletes a .git directory, never touches Dropbox or iCloud Drive, never removes Docker named volumes, and never bulk-selects anything unrecoverable. The source is public and the rules are covered by tests."}}, {"@type": "Question", "name": "Can Dustloft delete something I cannot get back?", "acceptedAnswer": {"@type": "Answer", "text": "Anything that cannot be rebuilt is classified permanent, which excludes it from one-click cleaning and bulk selection, requires its own confirmation, and is then moved to the Trash rather than deleted outright, so the decision stays reversible until you empty it. The exception is an item already in the Trash, which has nowhere further to go: emptying it deletes it for good, and the confirmation says that instead of promising recoverability."}}, {"@type": "Question", "name": "Does Dustloft send any data anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "Nothing about your disk leaves it. Scanning, the list of findings and the operations log all stay on your machine. The single exception is an anonymous count, sent when its total changes and once a day even when it has not: a random identifier belonging to that copy of the app, the total bytes it has reclaimed, and its version. There is no account, no name, no email, no file names and no paths, and it can be switched off in the app."}}]}</script>
 <script>
 (function(c,l,a,r,i,t,y){
@@ -28,13 +27,14 @@
 })(window, document, "clarity", "script", "yfsb7st26m");
 </script>
 </head><body>
+<a class="skip" href="#main">Skip to content</a>
 <header><div class="wrap">
 <a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
 <nav><a href="/blog/">Guides</a><a href="/safety">Safety</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a></nav>
 </div></header>
-<article><div class="wrap">
+<main id="main"><article><div class="wrap">
 <h1>What Dustloft refuses to do</h1>
-<p class="meta">Safety · 6 min read · Updated September 2026</p>
+<p class="meta">Safety · 6 min read · By <a href="https://github.com/kapil303196" rel="author">Kapil Upadhyay</a> at <a href="https://logicspark.io">Logicspark</a> · Published <time datetime="2026-09-10">10 September 2026</time> · Updated <time datetime="2026-09-12">12 September 2026</time></p>
 <div class="answer"><p><strong>Short answer:</strong> Dustloft sorts every finding into regenerable, needs-admin or permanent, and hard-refuses a fixed list of locations regardless of what you select: Dropbox, iCloud Drive, other cloud-sync folders, Docker named volumes and any .git directory. These are compiled-in rules, not preferences, and they cannot be overridden from the interface.</p></div>
 
 <p>Most cleaning tools are judged on how much they free. That number is the easiest thing to optimise and the reason the category has a bad reputation — the fastest way to a large figure is to delete something that mattered.</p>
@@ -81,12 +81,19 @@
 <h2>Why these particular rules</h2>
 <p>They are not hypothetical. The list was written after a manual cleanup that freed a great deal of space and came close to destroying a git repository whose history existed nowhere else — the remote was configured, so deletion looked obviously safe, and nothing had ever been pushed to it. Every rule above exists because something nearly went wrong.</p>
 <p>The source is public and the safety rules are covered by tests, so none of this has to be taken on trust: <a href="https://github.com/kapil303196/dustloft">read the code</a>.</p>
+<h2>Common questions</h2>
+<h3>Is Dustloft safe to use?</h3>
+<p>Its safety rules are enforced in code rather than left to the user. It never deletes a .git directory, never touches Dropbox or iCloud Drive, never removes Docker named volumes, and never bulk-selects anything unrecoverable. The source is public and the rules are covered by tests.</p>
+<h3>Can Dustloft delete something I cannot get back?</h3>
+<p>Anything that cannot be rebuilt is classified permanent, which excludes it from one-click cleaning and bulk selection, requires its own confirmation, and is then moved to the Trash rather than deleted outright, so the decision stays reversible until you empty it. The exception is an item already in the Trash, which has nowhere further to go: emptying it deletes it for good, and the confirmation says that instead of promising recoverability.</p>
+<h3>Does Dustloft send any data anywhere?</h3>
+<p>Nothing about your disk leaves it. Scanning, the list of findings and the operations log all stay on your machine. The single exception is an anonymous count, sent when its total changes and once a day even when it has not: a random identifier belonging to that copy of the app, the total bytes it has reclaimed, and its version. There is no account, no name, no email, no file names and no paths, and it can be switched off in the app.</p>
 <div class="cta">
 <h3>See exactly what is on your own disk</h3>
 <p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
 <a class="btn" href="/#install">Install Dustloft</a>
 </div>
-</div></article>
+</div></article></main>
 <footer><div class="wrap">Dustloft — MIT licensed. No ads, no accounts, no subscription. ·
 <a href="/">Home</a> · <a href="/blog/">All guides</a> ·
 <a href="https://github.com/kapil303196/dustloft">Source</a><br><br>
