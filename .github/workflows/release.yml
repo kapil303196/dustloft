@@ -10,6 +10,12 @@ on:
     paths-ignore:
       - 'site/**'
       - 'tools/api-tests/**'
+      # The site's own tooling lives in tools/ but builds nothing for the app,
+      # so it must not cut a release either.
+      - 'tools/site-sitemap.sh'
+      - 'tools/make-llms-full.py'
+      - 'tools/indexnow.sh'
+      - 'tools/deploy-site.sh'
       - '.github/workflows/site-api.yml'
       - '**.md'
       - 'LICENSE'
@@ -20,6 +26,12 @@ on:
     paths-ignore:
       - 'site/**'
       - 'tools/api-tests/**'
+      # The site's own tooling lives in tools/ but builds nothing for the app,
+      # so it must not cut a release either.
+      - 'tools/site-sitemap.sh'
+      - 'tools/make-llms-full.py'
+      - 'tools/indexnow.sh'
+      - 'tools/deploy-site.sh'
       - '.github/workflows/site-api.yml'
       - '**.md'
       - 'LICENSE'
