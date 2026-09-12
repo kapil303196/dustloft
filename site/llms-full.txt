@@ -329,6 +329,20 @@ Docker's disk image defaults to a maximum near the free space available at insta
 
 If you would rather see this measured alongside everything else on your disk, [Dustloft](https://dustloft.com/) reports allocated size rather than apparent size for exactly this reason, and offers a Docker prune that never touches volumes.
 
+## Common questions
+
+### Why is Docker.raw so large on my Mac?
+
+Docker stores its Linux VM as a sparse file that grows as images and containers are written and does not automatically shrink when they are deleted. Run docker system prune -a to reclaim the space.
+
+### Is it safe to delete Docker.raw?
+
+It removes every image, container and volume on your machine. Prefer docker system prune -a, which reclaims unused data while leaving named volumes intact.
+
+### Why do ls and du report different sizes for Docker.raw?
+
+ls reports apparent size, which for a sparse file includes regions never written to disk. du reports blocks actually allocated. For sparse files only du is meaningful.
+
 ### See exactly what is on your own disk
 
 Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.
@@ -427,6 +441,20 @@ Two of the top five are hidden folders that `du -sh ~/*` would never have shown.
 
 If you would rather not do this by hand, [Dustloft](https://dustloft.com/) runs the same measurements, groups the results by how recoverable each item is, and shows every path and size before anything is deleted.
 
+## Common questions
+
+### How do I find what is taking up space on my Mac using Terminal?
+
+Run du -kxd 1 ~ | sort -rn | head -20 to rank folders by size, then repeat on whichever is largest. Use mdfind with a kMDItemFSSize filter to list individual files over 1 GB.
+
+### Why does du -sh ~/* miss folders?
+
+The shell glob does not match names beginning with a dot, so hidden folders such as ~/.cache, ~/.Trash and ~/.ollama are skipped silently. Use du -kxd 1 ~ instead.
+
+### Which disk should I check with df on macOS?
+
+Check /System/Volumes/Data. On modern macOS your files live on the Data volume; checking / reports the read-only system volume.
+
 ### See exactly what is on your own disk
 
 Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.
@@ -490,6 +518,20 @@ No third-party tool can reliably reclaim **purgeable space**. That is managed by
 ### Related reading
 
 [Why is System Data so large on your Mac?](https://dustloft.com/blog/why-is-system-data-so-large-on-mac) [How to clear System Data without breaking anything](https://dustloft.com/blog/how-to-clear-system-data-mac)
+
+## Common questions
+
+### What is the best free alternative to CleanMyMac?
+
+There is no single replacement. GrandPerspective and OmniDiskSweeper show what fills a disk, AppCleaner and Pearcleaner remove app leftovers, OnyX handles system maintenance, and Dustloft explains and reclaims System Data. All are free.
+
+### Is CleanMyMac worth paying for?
+
+It works, but it is a subscription and every job it does has a free equivalent. The main thing you pay for is having them in one interface.
+
+### Can any Mac cleaner reclaim purgeable space?
+
+No. Purgeable space is managed by macOS and no third-party application can reliably free it. Tools advertising this are overpromising.
 
 ### See exactly what is on your own disk
 
@@ -556,6 +598,20 @@ This is the check that produced Dustloft. A repository with a GitHub remote conf
 ## Shrink the project, keep the history
 
 Most of a project folder's size is usually not the repository at all. [Dependencies and build output](https://dustloft.com/blog/node-modules-taking-up-space-mac) are typically far larger than `.git`, fully regenerable, and the right thing to remove first. On an Apple-platform project, [DerivedData](https://dustloft.com/blog/xcode-derived-data-simulators) belongs on that same list.
+
+## Common questions
+
+### Is it safe to delete a .git folder?
+
+Only if the history exists elsewhere and you have verified that, not assumed it. Deleting .git destroys every commit, branch and tag in that repository, and no cleaning tool should ever offer it as a space-saving action.
+
+### How do I make a .git directory smaller?
+
+Run git gc --prune=now inside the repository. It repacks loose objects and drops unreachable ones, often cutting the directory substantially, and no reachable history is lost.
+
+### Does having a GitHub remote mean my code is backed up?
+
+No. A remote is a configured address, not proof that anything was pushed to it. Run git ls-remote origin — if it returns no refs, the remote is empty and your local clone is the only copy that exists.
 
 ### See exactly what is on your own disk
 
@@ -665,6 +721,20 @@ If that returns **0**, the remote exists but is empty — nothing was ever pushe
 
 Working through this on one 512 GB MacBook Pro took it from 20 GB free to 215 GB free, without deleting a single irreplaceable file. If you would rather not do it by hand, [Dustloft](https://dustloft.com/) automates exactly these steps and refuses, in code, to touch anything on the list above.
 
+## Common questions
+
+### How do I clear System Data on my Mac?
+
+Measure first with du -kxd 1 to find what is actually inside it, then work from the largest item down. Caches, build output and unused Docker images are safe. App containers, device backups and .git directories are not.
+
+### Does deleting System Data speed up a Mac?
+
+Not directly. It frees disk space. macOS does slow down when a disk is nearly full, so reclaiming space on a drive above 90% full often helps indirectly.
+
+### Why does du -sh miss folders on Mac?
+
+The shell glob does not match names starting with a dot, so hidden folders such as ~/.cache and ~/.Trash are skipped entirely. Use du -kxd 1 ~ instead.
+
 ### See exactly what is on your own disk
 
 Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.
@@ -730,6 +800,20 @@ A few are genuinely worth targeting, because they are both large and unambiguous
 
 If you are trying to account for a large *System Data* figure, [the breakdown guide](https://dustloft.com/blog/why-is-system-data-so-large-on-mac) covers where the space usually is, and [the step-by-step walkthrough](https://dustloft.com/blog/how-to-clear-system-data-mac) works through it in order of size. The [safety reference](https://dustloft.com/safety) lists every location Dustloft refuses to touch and why.
 
+## Common questions
+
+### Is it safe to delete files in ~/Library/Caches?
+
+Yes. By definition a cache is data an application can rebuild, so the worst outcome is an app being briefly slower or asking you to sign in again. Quit applications first so they do not rewrite entries while you are deleting.
+
+### Will deleting caches speed up my Mac?
+
+Generally no. Caches exist to make things faster, so removing them usually makes the next few operations slower while they rebuild. Clear them to reclaim space or to resolve corrupted state, not for performance.
+
+### Why did deleting caches barely free any space?
+
+Because the large folders are not caches. Application Support and Containers hold databases, message media and app data that no cleaner should treat as disposable, and they are usually many times the size of Caches.
+
 ### See exactly what is on your own disk
 
 Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.
@@ -787,6 +871,20 @@ Deleting `node_modules` does not touch the package manager's own cache. Those li
 
 [Xcode leftovers](https://dustloft.com/blog/xcode-derived-data-simulators) and [Docker's disk image](https://dustloft.com/blog/docker-raw-taking-up-space-mac) are the other two that dominate developer machines, and [repository history](https://dustloft.com/blog/git-repositories-taking-up-space) is worth understanding before you delete any project folder wholesale.
 
+## Common questions
+
+### Is it safe to delete node_modules?
+
+Yes. Running the project's install command restores it exactly. The only cost is the time and bandwidth of that reinstall, which is why stale copies in projects you no longer touch are the best candidates.
+
+### How do I find every node_modules folder on my Mac?
+
+Search within your project directories rather than the whole disk: find ~/Projects -type d -name node_modules -prune -print. Scoping it avoids traversing Library and system paths, which is slow and returns nothing useful.
+
+### Does deleting build output break anything?
+
+Not for your own projects, where the next build regenerates it. It does break things inside node_modules, because a dist or build folder in a dependency is the compiled package that gets imported, not build output you can recreate.
+
 ### See exactly what is on your own disk
 
 Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.
@@ -838,6 +936,20 @@ Since you cannot force the release, the working approach is to shrink what is be
 ## Where the rest of your space went
 
 Purgeable is usually a smaller share of the problem than people expect. The bigger share sits in [what macOS labels System Data](https://dustloft.com/blog/why-is-system-data-so-large-on-mac) — genuinely occupied storage with no interface to inspect it. If you want the walkthrough for clearing that safely, [start here](https://dustloft.com/blog/how-to-clear-system-data-mac).
+
+## Common questions
+
+### Can a cleaning app free purgeable space on a Mac?
+
+No. Purgeable space is managed by macOS itself and released when the system decides a write needs the room. Third-party applications have no supported way to trigger that release, so any tool advertising purgeable-space cleaning is overstating what it does.
+
+### Why does my Mac show free space that I cannot use?
+
+Finder reports available space as free plus purgeable. A copy or install can appear to fail while that combined figure still looks healthy, because macOS has not yet released the purgeable portion. The space is real, but it arrives only when the system reclaims it.
+
+### How do I actually get the space back?
+
+Reduce what is being held rather than trying to force a release: thin Time Machine local snapshots with tmutil, remove caches and build output that regenerate, and clear large files you no longer need. That shrinks the underlying storage rather than shuffling the label.
 
 ### See exactly what is on your own disk
 
@@ -895,6 +1007,20 @@ This is why Dustloft classifies messaging media as **permanent** rather than reg
 ## Where the rest of it is
 
 Messaging media is one category of what macOS files under that unhelpful label. [The full breakdown is here](https://dustloft.com/blog/why-is-system-data-so-large-on-mac), and the [safety model](https://dustloft.com/safety) explains which categories can be cleaned in bulk and which cannot. Group Containers sits one directory away from `~/Library/Caches`, which is the folder most advice points at and [rarely the one holding the gigabytes](https://dustloft.com/blog/is-it-safe-to-delete-library-caches).
+
+## Common questions
+
+### Where does WhatsApp store files on a Mac?
+
+Inside ~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/Message/Media. Group Containers is hidden from Finder by default, which is why the folder grows for years without anyone noticing it.
+
+### Is it safe to delete WhatsApp media on a Mac?
+
+It frees real space but it is permanent. These are the actual photos and videos from your chats, not a cache, and nothing regenerates them unless the sender still has them and sends them again.
+
+### Does deleting media on my Mac delete it on my phone?
+
+No. The Mac copy is separate from your phone's. Removing it locally does not touch your phone, and it does not delete anything for the people you were chatting with.
 
 ### See exactly what is on your own disk
 
@@ -962,6 +1088,20 @@ Two pieces of advice circulate widely and are both wrong:
 
 The numbers above are from one machine. Yours will differ, and [the Terminal commands that measure it](https://dustloft.com/blog/find-large-files-mac-terminal) are covered separately. The next guide walks through [clearing System Data safely](https://dustloft.com/blog/how-to-clear-system-data-mac), and if you would rather not use Terminal, [Dustloft](https://dustloft.com/) does the same measurement and shows you every item with its real size before anything is deleted.
 
+## Common questions
+
+### Why is System Data so large on my Mac?
+
+macOS files everything it cannot categorise under System Data — caches, app containers, virtual machine disks, downloaded models, old device backups and local snapshots. Nothing prunes it automatically and there is no built-in way to inspect it.
+
+### Is it safe to delete System Data on a Mac?
+
+Parts of it are, parts are not. Caches and build output rebuild themselves. App containers and device backups contain real data that cannot be recovered. Identify each item before deleting anything.
+
+### How much System Data is normal?
+
+Between 10 and 30 GB is typical on a well-maintained Mac. Anything above 60 GB usually indicates a specific large cause such as a forgotten screen recording, a video editing cache or a container disk image.
+
 ### See exactly what is on your own disk
 
 Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.
@@ -1024,6 +1164,20 @@ That removes devices whose runtime is already gone — the safest subset, and of
 ## The rest of a developer machine
 
 Xcode is rarely alone. [Dependency folders and build output](https://dustloft.com/blog/node-modules-taking-up-space-mac) usually cost more, and [Docker's disk image](https://dustloft.com/blog/docker-raw-taking-up-space-mac) is the other common surprise. Before removing a project folder outright rather than just its build output, [check that its repository history exists somewhere else](https://dustloft.com/blog/git-repositories-taking-up-space).
+
+## Common questions
+
+### Is it safe to delete DerivedData?
+
+Yes. DerivedData holds build products, indexes and module caches that Xcode regenerates on the next build. The only cost is a slower first build and a rebuilt symbol index.
+
+### Can I delete Xcode simulator devices?
+
+Yes, though each deleted device loses whatever was installed inside it, including app data and any state you had set up for testing. Xcode recreates the devices themselves on demand.
+
+### Why do I still have Xcode files after uninstalling Xcode?
+
+Simulator runtimes and caches under /Library/Developer/CoreSimulator are installed outside the Xcode application bundle, so dragging Xcode to the Trash leaves them in place. They are orphaned at that point and safe to remove.
 
 ### See exactly what is on your own disk
 
@@ -1110,6 +1264,20 @@ They are not hypothetical. The list was written after a manual cleanup that free
 
 The source is public and the safety rules are covered by tests, so none of this has to be taken on trust: [read the code](https://github.com/kapil303196/dustloft).
 
+## Common questions
+
+### Is Dustloft safe to use?
+
+Its safety rules are enforced in code rather than left to the user. It never deletes a .git directory, never touches Dropbox or iCloud Drive, never removes Docker named volumes, and never bulk-selects anything unrecoverable. The source is public and the rules are covered by tests.
+
+### Can Dustloft delete something I cannot get back?
+
+Anything that cannot be rebuilt is classified permanent, which excludes it from one-click cleaning and bulk selection, requires its own confirmation, and is then moved to the Trash rather than deleted outright, so the decision stays reversible until you empty it. The exception is an item already in the Trash, which has nowhere further to go: emptying it deletes it for good, and the confirmation says that instead of promising recoverability.
+
+### Does Dustloft send any data anywhere?
+
+Nothing about your disk leaves it. Scanning, the list of findings and the operations log all stay on your machine. The single exception is an anonymous count, sent when its total changes and once a day even when it has not: a random identifier belonging to that copy of the app, the total bytes it has reclaimed, and its version. There is no account, no name, no email, no file names and no paths, and it can be switched off in the app.
+
 ### See exactly what is on your own disk
 
 Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.
@@ -1195,6 +1363,24 @@ On launch, Dustloft asks the GitHub Releases API whether a newer version exists.
 
 The client is one file — [Sources/Dustloft/Metrics.swift](https://github.com/kapil303196/dustloft/blob/main/Sources/Dustloft/Metrics.swift) — and the payload is pinned by [a test that fails if a fourth field is ever added](https://github.com/kapil303196/dustloft/blob/main/Tests/DustloftTests/MetricsTests.swift). The server is two short files in the same repository. If this page and the code ever disagree, the code is what runs.
 
+## Common questions
+
+### What does Dustloft send?
+
+One line, sent when its byte total changes and once a day even when it has not, with three fields: a random identifier the app generated for itself, the total number of bytes that copy has reclaimed, and its version number. Nothing else.
+
+### Can Dustloft see my files?
+
+It reads your disk to measure it, and none of that leaves the machine. No file name, no path and no directory listing is ever sent, and the log of what was removed is written to your own disk and uploaded nowhere.
+
+### How do I switch it off?
+
+The card shown on first run has a Turn it off button, and the switch stays in the Overview footer afterwards. To disable it before the app is ever launched, run launchctl setenv DUSTLOFT_NO_METRICS 1. Turning it off stops it permanently; there is no final report.
+
+### Does the Dustloft website track visitors?
+
+Yes, separately from the app. dustloft.com loads Microsoft Clarity, which records page usage and session replays and sets cookies, governed by Microsoft's privacy statement. It is website analytics and has nothing to do with the app: installing Dustloft does not opt you into it, and visiting the site sends nothing to the app's counter.
+
 ### See exactly what is on your own disk
 
 Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.
@@ -1228,7 +1414,7 @@ Software pricing moves, and regional stores differ. These figures were read from
 | --- | --- | --- | --- |
 | Dustloft | Free, MIT licence | $0, with no paid tier | [Repository](https://github.com/kapil303196/dustloft) |
 | CleanMyMac | Subscription | From $3.33/month as advertised | [macpaw.com](https://macpaw.com/cleanmymac) |
-| DaisyDisk | One-off purchase | $9.99 | Mac App Store listing |
+| DaisyDisk | One-off purchase | $9.99 | [Mac App Store](https://apps.apple.com/us/app/daisydisk/id411643860) |
 
 DaisyDisk is in the table because it is the other app people weigh up at this point, and because it is not really a rival to either: it is a visualiser, and a good one. Nothing stops you using it alongside Dustloft.
 
@@ -1287,6 +1473,20 @@ Dustloft sends one anonymous line when its running total of reclaimed bytes chan
 ## Trying both
 
 Nothing stops you. CleanMyMac has a trial, Dustloft is free, and they can sit on the same Mac. If you want to start by simply finding out what is on your disk, the [step-by-step guide](https://dustloft.com/blog/how-to-clear-system-data-mac) does it with Terminal commands and no application at all — including the `du` flag mistake that hides tens of gigabytes from most guides. The other [free alternatives are compared here](https://dustloft.com/blog/free-cleanmymac-alternatives).
+
+## Common questions
+
+### Is Dustloft a replacement for CleanMyMac?
+
+Only for part of it. Dustloft measures and reclaims disk space, which is one of the jobs CleanMyMac does. It has no malware scanner, no app uninstaller and no performance tools, so if you bought CleanMyMac for those, Dustloft does not replace them.
+
+### How much does CleanMyMac cost compared to Dustloft?
+
+CleanMyMac is a subscription, advertised from $3.33 per month on macpaw.com as checked on 12 September 2026. Dustloft is free under the MIT licence, with no paid tier, no account and no upsell.
+
+### Is a free Mac cleaner safe to use?
+
+It depends entirely on what the tool will and will not delete. Dustloft publishes its safety rules, enforces them in code and covers them with tests: it never deletes a `.git` directory, never touches a cloud-synced folder, never removes Docker named volumes, and does not claim to free purgeable space. Being able to read the source is the point.
 
 ### See exactly what is on your own disk
 

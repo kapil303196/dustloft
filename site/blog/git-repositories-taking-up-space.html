@@ -66,6 +66,13 @@ du -sh .git</code></pre>
 
 <h2>Shrink the project, keep the history</h2>
 <p>Most of a project folder's size is usually not the repository at all. <a href="/blog/node-modules-taking-up-space-mac">Dependencies and build output</a> are typically far larger than <code>.git</code>, fully regenerable, and the right thing to remove first. On an Apple-platform project, <a href="/blog/xcode-derived-data-simulators">DerivedData</a> belongs on that same list.</p>
+<h2>Common questions</h2>
+<h3>Is it safe to delete a .git folder?</h3>
+<p>Only if the history exists elsewhere and you have verified that, not assumed it. Deleting .git destroys every commit, branch and tag in that repository, and no cleaning tool should ever offer it as a space-saving action.</p>
+<h3>How do I make a .git directory smaller?</h3>
+<p>Run git gc --prune=now inside the repository. It repacks loose objects and drops unreachable ones, often cutting the directory substantially, and no reachable history is lost.</p>
+<h3>Does having a GitHub remote mean my code is backed up?</h3>
+<p>No. A remote is a configured address, not proof that anything was pushed to it. Run git ls-remote origin — if it returns no refs, the remote is empty and your local clone is the only copy that exists.</p>
 <div class="cta">
 <h3>See exactly what is on your own disk</h3>
 <p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>

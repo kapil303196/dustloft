@@ -69,6 +69,13 @@ du -sh ~/Library/Application\ Support ~/Library/Containers ~/Library/Group\ Cont
 
 <h2>Read next</h2>
 <p>If you are trying to account for a large <em>System Data</em> figure, <a href="/blog/why-is-system-data-so-large-on-mac">the breakdown guide</a> covers where the space usually is, and <a href="/blog/how-to-clear-system-data-mac">the step-by-step walkthrough</a> works through it in order of size. The <a href="/safety">safety reference</a> lists every location Dustloft refuses to touch and why.</p>
+<h2>Common questions</h2>
+<h3>Is it safe to delete files in ~/Library/Caches?</h3>
+<p>Yes. By definition a cache is data an application can rebuild, so the worst outcome is an app being briefly slower or asking you to sign in again. Quit applications first so they do not rewrite entries while you are deleting.</p>
+<h3>Will deleting caches speed up my Mac?</h3>
+<p>Generally no. Caches exist to make things faster, so removing them usually makes the next few operations slower while they rebuild. Clear them to reclaim space or to resolve corrupted state, not for performance.</p>
+<h3>Why did deleting caches barely free any space?</h3>
+<p>Because the large folders are not caches. Application Support and Containers hold databases, message media and app data that no cleaner should treat as disposable, and they are usually many times the size of Caches.</p>
 <div class="cta">
 <h3>See exactly what is on your own disk</h3>
 <p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>

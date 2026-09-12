@@ -81,6 +81,13 @@
 <h2>Why these particular rules</h2>
 <p>They are not hypothetical. The list was written after a manual cleanup that freed a great deal of space and came close to destroying a git repository whose history existed nowhere else — the remote was configured, so deletion looked obviously safe, and nothing had ever been pushed to it. Every rule above exists because something nearly went wrong.</p>
 <p>The source is public and the safety rules are covered by tests, so none of this has to be taken on trust: <a href="https://github.com/kapil303196/dustloft">read the code</a>.</p>
+<h2>Common questions</h2>
+<h3>Is Dustloft safe to use?</h3>
+<p>Its safety rules are enforced in code rather than left to the user. It never deletes a .git directory, never touches Dropbox or iCloud Drive, never removes Docker named volumes, and never bulk-selects anything unrecoverable. The source is public and the rules are covered by tests.</p>
+<h3>Can Dustloft delete something I cannot get back?</h3>
+<p>Anything that cannot be rebuilt is classified permanent, which excludes it from one-click cleaning and bulk selection, requires its own confirmation, and is then moved to the Trash rather than deleted outright, so the decision stays reversible until you empty it. The exception is an item already in the Trash, which has nowhere further to go: emptying it deletes it for good, and the confirmation says that instead of promising recoverability.</p>
+<h3>Does Dustloft send any data anywhere?</h3>
+<p>Nothing about your disk leaves it. Scanning, the list of findings and the operations log all stay on your machine. The single exception is an anonymous count, sent when its total changes and once a day even when it has not: a random identifier belonging to that copy of the app, the total bytes it has reclaimed, and its version. There is no account, no name, no email, no file names and no paths, and it can be switched off in the app.</p>
 <div class="cta">
 <h3>See exactly what is on your own disk</h3>
 <p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>

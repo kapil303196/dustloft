@@ -17,11 +17,10 @@ Stdlib only: no pandoc, no pip install.
 from __future__ import annotations
 
 import html
-import os
 import re
 import subprocess
 import sys
-from datetime import date, timezone, datetime
+from datetime import datetime
 from html.parser import HTMLParser
 from pathlib import Path
 

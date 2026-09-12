@@ -91,7 +91,14 @@ ollama list</code></pre>
 <p>If that returns <strong>0</strong>, the remote exists but is empty — nothing was ever pushed, and the local <code>.git</code> is the only copy in existence. Run <code>git gc --prune=now</code> to shrink it instead of deleting it.</p>
 
 <h2>The result</h2>
-<p>Working through this on one 512 GB MacBook Pro took it from 20 GB free to 215 GB free, without deleting a single irreplaceable file. If you would rather not do it by hand, <a href="/">Dustloft</a> automates exactly these steps and refuses, in code, to touch anything on the list above.</p><div class="cta">
+<p>Working through this on one 512 GB MacBook Pro took it from 20 GB free to 215 GB free, without deleting a single irreplaceable file. If you would rather not do it by hand, <a href="/">Dustloft</a> automates exactly these steps and refuses, in code, to touch anything on the list above.</p><h2>Common questions</h2>
+<h3>How do I clear System Data on my Mac?</h3>
+<p>Measure first with du -kxd 1 to find what is actually inside it, then work from the largest item down. Caches, build output and unused Docker images are safe. App containers, device backups and .git directories are not.</p>
+<h3>Does deleting System Data speed up a Mac?</h3>
+<p>Not directly. It frees disk space. macOS does slow down when a disk is nearly full, so reclaiming space on a drive above 90% full often helps indirectly.</p>
+<h3>Why does du -sh miss folders on Mac?</h3>
+<p>The shell glob does not match names starting with a dot, so hidden folders such as ~/.cache and ~/.Trash are skipped entirely. Use du -kxd 1 ~ instead.</p>
+<div class="cta">
 <h3>See exactly what is on your own disk</h3>
 <p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
 <a class="btn" href="/#install">Install Dustloft</a>

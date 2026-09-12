@@ -66,7 +66,14 @@ docker system prune -a</code></pre>
 <h2>Preventing it</h2>
 <p>Docker's disk image defaults to a maximum near the free space available at install time, which on a large drive can be hundreds of gigabytes. Setting an explicit ceiling in Settings → Resources caps how far it can grow.</p>
 
-<p>If you would rather see this measured alongside everything else on your disk, <a href="/">Dustloft</a> reports allocated size rather than apparent size for exactly this reason, and offers a Docker prune that never touches volumes.</p><div class="cta">
+<p>If you would rather see this measured alongside everything else on your disk, <a href="/">Dustloft</a> reports allocated size rather than apparent size for exactly this reason, and offers a Docker prune that never touches volumes.</p><h2>Common questions</h2>
+<h3>Why is Docker.raw so large on my Mac?</h3>
+<p>Docker stores its Linux VM as a sparse file that grows as images and containers are written and does not automatically shrink when they are deleted. Run docker system prune -a to reclaim the space.</p>
+<h3>Is it safe to delete Docker.raw?</h3>
+<p>It removes every image, container and volume on your machine. Prefer docker system prune -a, which reclaims unused data while leaving named volumes intact.</p>
+<h3>Why do ls and du report different sizes for Docker.raw?</h3>
+<p>ls reports apparent size, which for a sparse file includes regions never written to disk. du reports blocks actually allocated. For sparse files only du is meaningful.</p>
+<div class="cta">
 <h3>See exactly what is on your own disk</h3>
 <p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
 <a class="btn" href="/#install">Install Dustloft</a>

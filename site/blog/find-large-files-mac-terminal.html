@@ -83,7 +83,14 @@ $ du -kxd 1 ~ 2>/dev/null | sort -rn | head -5
   9700000  /Users/you/.Trash</code></pre>
 <p>Two of the top five are hidden folders that <code>du -sh ~/*</code> would never have shown.</p>
 
-<p>If you would rather not do this by hand, <a href="/">Dustloft</a> runs the same measurements, groups the results by how recoverable each item is, and shows every path and size before anything is deleted.</p><div class="cta">
+<p>If you would rather not do this by hand, <a href="/">Dustloft</a> runs the same measurements, groups the results by how recoverable each item is, and shows every path and size before anything is deleted.</p><h2>Common questions</h2>
+<h3>How do I find what is taking up space on my Mac using Terminal?</h3>
+<p>Run du -kxd 1 ~ | sort -rn | head -20 to rank folders by size, then repeat on whichever is largest. Use mdfind with a kMDItemFSSize filter to list individual files over 1 GB.</p>
+<h3>Why does du -sh ~/* miss folders?</h3>
+<p>The shell glob does not match names beginning with a dot, so hidden folders such as ~/.cache, ~/.Trash and ~/.ollama are skipped silently. Use du -kxd 1 ~ instead.</p>
+<h3>Which disk should I check with df on macOS?</h3>
+<p>Check /System/Volumes/Data. On modern macOS your files live on the Data volume; checking / reports the read-only system volume.</p>
+<div class="cta">
 <h3>See exactly what is on your own disk</h3>
 <p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
 <a class="btn" href="/#install">Install Dustloft</a>

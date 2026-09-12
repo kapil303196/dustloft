@@ -61,6 +61,13 @@
 
 <h2>Where the rest of your space went</h2>
 <p>Purgeable is usually a smaller share of the problem than people expect. The bigger share sits in <a href="/blog/why-is-system-data-so-large-on-mac">what macOS labels System Data</a> — genuinely occupied storage with no interface to inspect it. If you want the walkthrough for clearing that safely, <a href="/blog/how-to-clear-system-data-mac">start here</a>.</p>
+<h2>Common questions</h2>
+<h3>Can a cleaning app free purgeable space on a Mac?</h3>
+<p>No. Purgeable space is managed by macOS itself and released when the system decides a write needs the room. Third-party applications have no supported way to trigger that release, so any tool advertising purgeable-space cleaning is overstating what it does.</p>
+<h3>Why does my Mac show free space that I cannot use?</h3>
+<p>Finder reports available space as free plus purgeable. A copy or install can appear to fail while that combined figure still looks healthy, because macOS has not yet released the purgeable portion. The space is real, but it arrives only when the system reclaims it.</p>
+<h3>How do I actually get the space back?</h3>
+<p>Reduce what is being held rather than trying to force a release: thin Time Machine local snapshots with tmutil, remove caches and build output that regenerate, and clear large files you no longer need. That shrinks the underlying storage rather than shuffling the label.</p>
 <div class="cta">
 <h3>See exactly what is on your own disk</h3>
 <p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>

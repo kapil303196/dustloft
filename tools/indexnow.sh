@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # Submit the sitemap's URLs to IndexNow (Bing, Yandex, Seznam, Naver).
 #
-#   tools/indexnow.sh --dry-run     # print the payload, send nothing
-#   tools/indexnow.sh               # actually submit
+#   tools/indexnow.sh               # print the payload, send nothing
+#   tools/indexnow.sh --submit      # actually submit
+#
+# Submitting is the default-off case on purpose: a mistyped command should not
+# announce the whole site to a search engine.
 #
 # The key is the IndexNow key file already published at the site root:
 #   site/<key>.txt   containing exactly <key>
@@ -25,9 +28,10 @@ HOST="dustloft.com"
 ENDPOINT="https://api.indexnow.org/indexnow"
 BATCH=1000          # IndexNow allows up to 10000 URLs per request.
 
-DRY_RUN=0
+DRY_RUN=1          # send nothing unless --submit is passed explicitly
 for arg in "$@"; do
   case "$arg" in
+    --submit|--live) DRY_RUN=0 ;;
     --dry-run|-n) DRY_RUN=1 ;;
     -h|--help) sed -n '2,18p' "$0"; exit 0 ;;
     *) echo "unknown option: $arg" >&2; exit 2 ;;
@@ -136,7 +140,7 @@ done
 
 if [ "$DRY_RUN" -eq 1 ]; then
   echo
-  echo "dry run only — nothing was sent."
+  echo "dry run only — nothing was sent. Pass --submit to send it."
   exit 0
 fi
 

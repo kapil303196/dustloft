@@ -67,7 +67,7 @@ echo
 
 if [ ! -t 0 ]; then
   echo "Not an interactive terminal — stopping before the IndexNow step."
-  echo "Run 'tools/indexnow.sh' by hand once the deploy is live."
+  echo "Run 'tools/indexnow.sh --submit' by hand once the deploy is live."
   exit 0
 fi
 
@@ -81,7 +81,7 @@ hr
 if [ "$DRY_RUN" -eq 1 ]; then
   "$REPO/tools/indexnow.sh" --dry-run
 else
-  "$REPO/tools/indexnow.sh"
+  "$REPO/tools/indexnow.sh" --submit
 fi
 
 echo

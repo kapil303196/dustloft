@@ -64,6 +64,13 @@
 
 <h2>The rest of the picture</h2>
 <p><a href="/blog/xcode-derived-data-simulators">Xcode leftovers</a> and <a href="/blog/docker-raw-taking-up-space-mac">Docker's disk image</a> are the other two that dominate developer machines, and <a href="/blog/git-repositories-taking-up-space">repository history</a> is worth understanding before you delete any project folder wholesale.</p>
+<h2>Common questions</h2>
+<h3>Is it safe to delete node_modules?</h3>
+<p>Yes. Running the project's install command restores it exactly. The only cost is the time and bandwidth of that reinstall, which is why stale copies in projects you no longer touch are the best candidates.</p>
+<h3>How do I find every node_modules folder on my Mac?</h3>
+<p>Search within your project directories rather than the whole disk: find ~/Projects -type d -name node_modules -prune -print. Scoping it avoids traversing Library and system paths, which is slow and returns nothing useful.</p>
+<h3>Does deleting build output break anything?</h3>
+<p>Not for your own projects, where the next build regenerates it. It does break things inside node_modules, because a dist or build folder in a dependency is the compiled package that gets imported, not build output you can recreate.</p>
 <div class="cta">
 <h3>See exactly what is on your own disk</h3>
 <p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>

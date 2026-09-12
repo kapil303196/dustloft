@@ -104,6 +104,15 @@
 
 <p>The client is one file — <a href="https://github.com/kapil303196/dustloft/blob/main/Sources/Dustloft/Metrics.swift">Sources/Dustloft/Metrics.swift</a> — and the payload is pinned by <a href="https://github.com/kapil303196/dustloft/blob/main/Tests/DustloftTests/MetricsTests.swift">a test that fails if a fourth field is ever added</a>. The server is two short files in the same repository. If this page and the code ever disagree, the code is what runs.</p>
 
+<h2>Common questions</h2>
+<h3>What does Dustloft send?</h3>
+<p>One line, sent when its byte total changes and once a day even when it has not, with three fields: a random identifier the app generated for itself, the total number of bytes that copy has reclaimed, and its version number. Nothing else.</p>
+<h3>Can Dustloft see my files?</h3>
+<p>It reads your disk to measure it, and none of that leaves the machine. No file name, no path and no directory listing is ever sent, and the log of what was removed is written to your own disk and uploaded nowhere.</p>
+<h3>How do I switch it off?</h3>
+<p>The card shown on first run has a Turn it off button, and the switch stays in the Overview footer afterwards. To disable it before the app is ever launched, run launchctl setenv DUSTLOFT_NO_METRICS 1. Turning it off stops it permanently; there is no final report.</p>
+<h3>Does the Dustloft website track visitors?</h3>
+<p>Yes, separately from the app. dustloft.com loads Microsoft Clarity, which records page usage and session replays and sets cookies, governed by Microsoft's privacy statement. It is website analytics and has nothing to do with the app: installing Dustloft does not opt you into it, and visiting the site sends nothing to the app's counter.</p>
 <div class="cta">
 <h3>See exactly what is on your own disk</h3>
 <p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>

@@ -62,6 +62,13 @@
 
 <h2>Where the rest of it is</h2>
 <p>Messaging media is one category of what macOS files under that unhelpful label. <a href="/blog/why-is-system-data-so-large-on-mac">The full breakdown is here</a>, and the <a href="/safety">safety model</a> explains which categories can be cleaned in bulk and which cannot. Group Containers sits one directory away from <code>~/Library/Caches</code>, which is the folder most advice points at and <a href="/blog/is-it-safe-to-delete-library-caches">rarely the one holding the gigabytes</a>.</p>
+<h2>Common questions</h2>
+<h3>Where does WhatsApp store files on a Mac?</h3>
+<p>Inside ~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/Message/Media. Group Containers is hidden from Finder by default, which is why the folder grows for years without anyone noticing it.</p>
+<h3>Is it safe to delete WhatsApp media on a Mac?</h3>
+<p>It frees real space but it is permanent. These are the actual photos and videos from your chats, not a cache, and nothing regenerates them unless the sender still has them and sends them again.</p>
+<h3>Does deleting media on my Mac delete it on my phone?</h3>
+<p>No. The Mac copy is separate from your phone's. Removing it locally does not touch your phone, and it does not delete anything for the people you were chatting with.</p>
 <div class="cta">
 <h3>See exactly what is on your own disk</h3>
 <p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
