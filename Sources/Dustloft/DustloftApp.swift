@@ -21,6 +21,7 @@ struct DustloftApp: App {
                 Button("Check for Updates…") {
                     NotificationCenter.default.post(name: .dustloftCheckUpdates, object: nil)
                 }
+                Button("Buy Me a Coffee…") { Coffee.open() }
             }
         }
     }

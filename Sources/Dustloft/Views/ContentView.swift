@@ -68,11 +68,15 @@ struct RootView: View {
                 }
             }
             .background(DS.bg)
+            // On the detail column, not the split view. Attached to the split
+            // view the bar ran under the sidebar too, and the scroll views in
+            // here were not told about it, so the end of every page sat
+            // behind it with no way to scroll it into view.
+            .safeAreaInset(edge: .bottom, spacing: 0) { actionBar }
         }
         .navigationTitle(currentTitle)
         .navigationSubtitle(currentSubtitle)
         .toolbar { toolbarContent }
-        .safeAreaInset(edge: .bottom) { actionBar }
         .sheet(isPresented: $showReview) {
             ReviewSheet(engine: engine, metrics: metrics,
                         isPresented: $showReview, scope: reviewScope)
@@ -383,6 +387,17 @@ struct RootView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
+        // Always in view, unlike the one on the results screen, which only
+        // someone who has already cleaned will see.
+        ToolbarItem(placement: .primaryAction) {
+            Button { Coffee.open() } label: {
+                HStack(spacing: DS.s1 + 2) {
+                    Image(systemName: "cup.and.saucer.fill").foregroundStyle(Coffee.hue)
+                    Text("Buy me a coffee")
+                }
+            }
+            .help("Dustloft is free. If it helped, you can support it on Buy Me a Coffee.")
+        }
         ToolbarItem(placement: .primaryAction) {
             Button {
                 Task { await engine.scan() }
