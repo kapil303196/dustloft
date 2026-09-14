@@ -48,6 +48,9 @@ header nav a{color:var(--ink2);text-decoration:none;padding-block:.35rem}
   header nav{margin-left:0;width:100%;gap:.4rem 1.1rem}
 }
 header nav a:hover{color:var(--amber)}
+header nav{align-items:center}
+header nav a.bmc{display:inline-flex;align-items:center;gap:.4rem;flex:none;padding:.32rem .75rem;border:1px solid var(--amber2);border-radius:99px;color:var(--amber);font-size:.8rem;font-weight:500;text-decoration:none;white-space:nowrap;transition:.15s}
+header nav a.bmc:hover{background:var(--amber);border-color:var(--amber);color:var(--bg)}
 article{padding:clamp(2.5rem,7vw,4.5rem) 0 4rem}
 h1{font-size:clamp(2rem,1.3rem + 2.6vw,3.1rem);font-weight:800;letter-spacing:-.028em;
   line-height:1.08;margin:0 0 1rem;text-wrap:balance}

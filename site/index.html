@@ -133,7 +133,12 @@ header{padding:1.5rem 0;border-bottom:1px solid var(--line)}
 .stars{display:inline-flex;align-items:center;gap:.38rem;padding:.32rem .68rem;border:1px solid var(--line);
   border-radius:99px;font-size:.8rem;transition:.15s}
 .stars:hover{border-color:var(--amber2);color:var(--amber)}
-@media(max-width:680px){.bar nav a:not(.stars){display:none}}
+.bar nav a.bmc{display:inline-flex;align-items:center;gap:.4rem;flex:none;padding:.32rem .75rem;border:1px solid var(--amber2);border-radius:99px;color:var(--amber);font-size:.8rem;font-weight:500;text-decoration:none;white-space:nowrap;transition:.15s}
+.bar nav a.bmc:hover{background:var(--amber);border-color:var(--amber);color:var(--bg)}
+@media(max-width:680px){.bar nav a:not(.stars):not(.bmc){display:none}}
+/* Brand, stars and the coffee button do not fit side by side on a narrow phone;
+   the coffee button is the one that stays. */
+@media(max-width:30rem){.bar nav .stars{display:none}}
 
 .hero{padding:clamp(3rem,8vw,6rem) 0 clamp(2rem,5vw,3rem)}
 .warn{display:inline-flex;align-items:center;gap:.5rem;color:var(--amber);font-weight:500;
@@ -472,6 +477,7 @@ footer a{color:var(--ink2)}
       <!-- min-width reserves the space the star count expands into, so the
            nav does not shift when the GitHub fetch lands. -->
       <span id="ghcount" style="display:inline-block;min-width:9ch">GitHub</span></a>
+    <a class="bmc" href="https://www.buymeacoffee.com/logicspark" target="_blank" rel="noopener"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg>Buy me a coffee</a>
   </nav>
 </div></header>
 
