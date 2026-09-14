@@ -49,8 +49,9 @@ header nav a{color:var(--ink2);text-decoration:none;padding-block:.35rem}
 }
 header nav a:hover{color:var(--amber)}
 header nav{align-items:center}
-header nav a.bmc{display:inline-flex;align-items:center;gap:.4rem;flex:none;padding:.32rem .75rem;border:1px solid var(--amber2);border-radius:99px;color:var(--amber);font-size:.8rem;font-weight:500;text-decoration:none;white-space:nowrap;transition:.15s}
-header nav a.bmc:hover{background:var(--amber);border-color:var(--amber);color:var(--bg)}
+header nav a.bmc{display:inline-flex;align-items:center;gap:.45rem;flex:none;padding:.34rem .8rem .34rem .7rem;background:#FFDD00;border-radius:99px;color:#0D0C22;font-size:.8rem;font-weight:600;text-decoration:none;white-space:nowrap;transition:.15s}
+header nav a.bmc img{display:block;height:16px;width:auto}
+header nav a.bmc:hover{background:#FFE74D;color:#0D0C22}
 article{padding:clamp(2.5rem,7vw,4.5rem) 0 4rem}
 h1{font-size:clamp(2rem,1.3rem + 2.6vw,3.1rem);font-weight:800;letter-spacing:-.028em;
   line-height:1.08;margin:0 0 1rem;text-wrap:balance}

@@ -405,7 +405,7 @@ struct RootView: View {
         ToolbarItem(placement: .primaryAction) {
             Button { Coffee.open() } label: {
                 HStack(spacing: DS.s1 + 2) {
-                    Image(systemName: "cup.and.saucer.fill").foregroundStyle(Coffee.hue)
+                    CoffeeTile()
                     Text("Buy me a coffee")
                 }
             }

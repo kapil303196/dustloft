@@ -133,8 +133,9 @@ header{padding:1.5rem 0;border-bottom:1px solid var(--line)}
 .stars{display:inline-flex;align-items:center;gap:.38rem;padding:.32rem .68rem;border:1px solid var(--line);
   border-radius:99px;font-size:.8rem;transition:.15s}
 .stars:hover{border-color:var(--amber2);color:var(--amber)}
-.bar nav a.bmc{display:inline-flex;align-items:center;gap:.4rem;flex:none;padding:.32rem .75rem;border:1px solid var(--amber2);border-radius:99px;color:var(--amber);font-size:.8rem;font-weight:500;text-decoration:none;white-space:nowrap;transition:.15s}
-.bar nav a.bmc:hover{background:var(--amber);border-color:var(--amber);color:var(--bg)}
+.bar nav a.bmc{display:inline-flex;align-items:center;gap:.45rem;flex:none;padding:.34rem .8rem .34rem .7rem;background:#FFDD00;border-radius:99px;color:#0D0C22;font-size:.8rem;font-weight:600;text-decoration:none;white-space:nowrap;transition:.15s}
+.bar nav a.bmc img{display:block;height:16px;width:auto}
+.bar nav a.bmc:hover{background:#FFE74D;color:#0D0C22}
 @media(max-width:680px){.bar nav a:not(.stars):not(.bmc){display:none}}
 /* Brand, stars and the coffee button do not fit side by side on a narrow phone;
    the coffee button is the one that stays. */
@@ -477,7 +478,7 @@ footer a{color:var(--ink2)}
       <!-- min-width reserves the space the star count expands into, so the
            nav does not shift when the GitHub fetch lands. -->
       <span id="ghcount" style="display:inline-block;min-width:9ch">GitHub</span></a>
-    <a class="bmc" href="https://www.buymeacoffee.com/logicspark" target="_blank" rel="noopener"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg>Buy me a coffee</a>
+    <a class="bmc" href="https://www.buymeacoffee.com/logicspark" target="_blank" rel="noopener"><img src="/img/bmc-cup.svg" alt="" width="11" height="16">Buy me a coffee</a>
   </nav>
 </div></header>
 

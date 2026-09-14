@@ -237,8 +237,36 @@ struct SecondaryButton: ButtonStyle {
 /// page's list of requests true. Opens the page in the browser on click.
 enum Coffee {
     static let url = URL(string: "https://www.buymeacoffee.com/logicspark")!
+    /// Buy Me a Coffee's brand yellow and ink.
     static let hue = Color(red: 1, green: 0.867, blue: 0)
+    static let ink = Color(red: 0.051, green: 0.047, blue: 0.133)
     static func open() { NSWorkspace.shared.open(url) }
+}
+
+/// The official cup, bundled by build.sh. A bare `swift build` has no bundle
+/// to find it in, so that falls back to a system symbol.
+struct CoffeeCup: View {
+    var height: CGFloat
+
+    var body: some View {
+        if let img = NSImage(named: "bmc-cup") {
+            Image(nsImage: img).resizable().interpolation(.high)
+                .aspectRatio(contentMode: .fit).frame(height: height)
+        } else {
+            Image(systemName: "cup.and.saucer.fill").font(.system(size: height * 0.8))
+        }
+    }
+}
+
+/// The cup on a yellow tile, so it reads on a light or a dark toolbar alike:
+/// its outline is near-black and disappears against a dark one on its own.
+struct CoffeeTile: View {
+    var body: some View {
+        CoffeeCup(height: 12)
+            .foregroundStyle(Coffee.ink)
+            .frame(width: 18, height: 18)
+            .background(Coffee.hue, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+    }
 }
 
 struct BuyMeACoffeeButton: View {
@@ -247,7 +275,7 @@ struct BuyMeACoffeeButton: View {
             Coffee.open()
         } label: {
             HStack(spacing: DS.s2) {
-                Image(systemName: "cup.and.saucer.fill")
+                CoffeeCup(height: 16)
                 Text("Buy me a coffee")
             }
         }
@@ -260,7 +288,7 @@ private struct CoffeeButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(DS.body().weight(.semibold))
-            .foregroundStyle(.black)
+            .foregroundStyle(Coffee.ink)
             .padding(.horizontal, DS.s4)
             .padding(.vertical, DS.s2 + 1)
             .background(Coffee.hue.opacity(configuration.isPressed ? 0.82 : 1),

@@ -32,6 +32,8 @@ mkdir -p "${BUNDLE}/Contents/MacOS" "${BUNDLE}/Contents/Resources"
 cp "${BIN}" "${BUNDLE}/Contents/MacOS/${APP}"
 cp "Resources/Info.plist" "${BUNDLE}/Contents/Info.plist"
 [ -f "Resources/${APP}.icns" ] && cp "Resources/${APP}.icns" "${BUNDLE}/Contents/Resources/"
+# Buy Me a Coffee's own cup, for the support buttons. NSImage(named:) finds it here.
+cp "Resources/bmc-cup.png" "${BUNDLE}/Contents/Resources/"
 
 # A stable identity matters: macOS ties Full Disk Access to the code signature,
 # so an ad-hoc signature (which changes every build) silently revokes it.
