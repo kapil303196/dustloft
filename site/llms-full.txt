@@ -6,7 +6,7 @@ Pages: 16
 
 # You’re about to pay for storage you already own.
 Source: https://dustloft.com/
-Updated: 2026-09-12
+Updated: 2026-09-14
 
 ⚠ Your Mac is not telling you the whole story
 
@@ -205,7 +205,7 @@ Almost nothing, and nothing about your files. Dustloft sends one anonymous line 
 
 # Guides
 Source: https://dustloft.com/blog/
-Updated: 2026-09-12
+Updated: 2026-09-14
 
 Practical, tested guides to macOS storage.
 
@@ -278,7 +278,7 @@ Dustloft measures every real consumer of space on your Mac and shows each item w
 
 # Docker.raw is taking up hundreds of GB on your Mac — here is why
 Source: https://dustloft.com/blog/docker-raw-taking-up-space-mac
-Updated: 2026-09-12
+Updated: 2026-09-14
 
 Technical · 5 min read · By [Kapil Upadhyay](https://github.com/kapil303196) at [Logicspark](https://logicspark.io) · Published 8 September 2026 · Updated 12 September 2026
 
@@ -356,7 +356,7 @@ Docker is rarely the only offender on a developer machine. [Dependencies and bui
 
 # How to find what is taking up space on your Mac using Terminal
 Source: https://dustloft.com/blog/find-large-files-mac-terminal
-Updated: 2026-09-12
+Updated: 2026-09-14
 
 Guide · 5 min read · By [Kapil Upadhyay](https://github.com/kapil303196) at [Logicspark](https://logicspark.io) · Published 8 September 2026 · Updated 12 September 2026
 
@@ -468,7 +468,7 @@ Once you can see the big folders, the usual suspects are [messaging media](https
 
 # Free CleanMyMac alternatives in 2026, compared honestly
 Source: https://dustloft.com/blog/free-cleanmymac-alternatives
-Updated: 2026-09-12
+Updated: 2026-09-14
 
 Comparison · 7 min read · By [Kapil Upadhyay](https://github.com/kapil303196) at [Logicspark](https://logicspark.io) · Published 8 September 2026 · Updated 12 September 2026
 
@@ -546,7 +546,7 @@ If safety is what you are comparing on, [Dustloft publishes its complete refusal
 
 # Git repositories are taking up space. Repack them, do not delete them
 Source: https://dustloft.com/blog/git-repositories-taking-up-space
-Updated: 2026-09-12
+Updated: 2026-09-14
 
 Guide · 6 min read · By [Kapil Upadhyay](https://github.com/kapil303196) at [Logicspark](https://logicspark.io) · Published 10 September 2026 · Updated 12 September 2026
 
@@ -624,7 +624,7 @@ Dustloft measures every real consumer of space on your Mac and shows each item w
 
 # How to clear System Data on a Mac without breaking anything
 Source: https://dustloft.com/blog/how-to-clear-system-data-mac
-Updated: 2026-09-12
+Updated: 2026-09-14
 
 Guide · 8 min read · By [Kapil Upadhyay](https://github.com/kapil303196) at [Logicspark](https://logicspark.io) · Published 8 September 2026 · Updated 12 September 2026
 
@@ -748,7 +748,7 @@ Two related references: [whether clearing ~/Library/Caches is worth it](https://
 
 # Is it safe to delete ~/Library/Caches? Mostly yes, and mostly pointless
 Source: https://dustloft.com/blog/is-it-safe-to-delete-library-caches
-Updated: 2026-09-12
+Updated: 2026-09-14
 
 Guide · 5 min read · By [Kapil Upadhyay](https://github.com/kapil303196) at [Logicspark](https://logicspark.io) · Published 10 September 2026 · Updated 12 September 2026
 
@@ -825,7 +825,7 @@ Dustloft measures every real consumer of space on your Mac and shows each item w
 
 # node_modules and build output: the 66 GB most developers never look at
 Source: https://dustloft.com/blog/node-modules-taking-up-space-mac
-Updated: 2026-09-12
+Updated: 2026-09-14
 
 Guide · 6 min read · By [Kapil Upadhyay](https://github.com/kapil303196) at [Logicspark](https://logicspark.io) · Published 10 September 2026 · Updated 12 September 2026
 
@@ -896,7 +896,7 @@ Dustloft measures every real consumer of space on your Mac and shows each item w
 
 # What is purgeable space on a Mac, and can you actually free it?
 Source: https://dustloft.com/blog/purgeable-space-mac
-Updated: 2026-09-12
+Updated: 2026-09-14
 
 Guide · 5 min read · By [Kapil Upadhyay](https://github.com/kapil303196) at [Logicspark](https://logicspark.io) · Published 10 September 2026 · Updated 12 September 2026
 
@@ -962,7 +962,7 @@ Dustloft measures every real consumer of space on your Mac and shows each item w
 
 # WhatsApp and Messages media: the 92 GB hiding in Group Containers
 Source: https://dustloft.com/blog/whatsapp-messages-media-mac
-Updated: 2026-09-12
+Updated: 2026-09-14
 
 Guide · 5 min read · By [Kapil Upadhyay](https://github.com/kapil303196) at [Logicspark](https://logicspark.io) · Published 10 September 2026 · Updated 12 September 2026
 
@@ -1033,7 +1033,7 @@ Dustloft measures every real consumer of space on your Mac and shows each item w
 
 # Why is System Data so large on your Mac?
 Source: https://dustloft.com/blog/why-is-system-data-so-large-on-mac
-Updated: 2026-09-12
+Updated: 2026-09-14
 
 Guide · 6 min read · By [Kapil Upadhyay](https://github.com/kapil303196) at [Logicspark](https://logicspark.io) · Published 8 September 2026 · Updated 12 September 2026
 
@@ -1113,7 +1113,7 @@ Dustloft measures every real consumer of space on your Mac and shows each item w
 
 # Xcode leftovers: DerivedData, simulators and runtimes you can safely remove
 Source: https://dustloft.com/blog/xcode-derived-data-simulators
-Updated: 2026-09-12
+Updated: 2026-09-14
 
 Guide · 6 min read · By [Kapil Upadhyay](https://github.com/kapil303196) at [Logicspark](https://logicspark.io) · Published 10 September 2026 · Updated 12 September 2026
 
@@ -1190,7 +1190,7 @@ Dustloft measures every real consumer of space on your Mac and shows each item w
 
 # What Dustloft refuses to do
 Source: https://dustloft.com/safety
-Updated: 2026-09-12
+Updated: 2026-09-14
 
 Safety · 6 min read · By [Kapil Upadhyay](https://github.com/kapil303196) at [Logicspark](https://logicspark.io) · Published 10 September 2026 · Updated 12 September 2026
 
@@ -1208,7 +1208,7 @@ Every item found is classified before it is ever shown to you, and the classific
 | --- | --- | --- |
 | **Regenerable** | Rebuilds itself the next time it is needed | Eligible for one-click cleaning |
 | **Needs admin** | Safe to remove, but macOS will ask for your password | Batched into a single administrator prompt |
-| **Permanent** | Nothing rebuilds it | Never bulk-selected. Each item confirmed on its own, then moved to the Trash rather than deleted — unless it is already in the Trash, where emptying really does delete it, and the confirmation says so |
+| **Permanent** | Nothing rebuilds it | Never bulk-selected. Each item confirmed on its own, then moved to the Trash rather than deleted |
 
 Quick clean touches the first tier only. It will never include something needing your judgement, which is what makes it safe to press without reading.
 
@@ -1289,7 +1289,7 @@ Dustloft measures every real consumer of space on your Mac and shows each item w
 
 # What Dustloft sends
 Source: https://dustloft.com/privacy
-Updated: 2026-09-12
+Updated: 2026-09-14
 
 Privacy · 3 min read · By [Kapil Upadhyay](https://github.com/kapil303196) at [Logicspark](https://logicspark.io) · Published 11 September 2026 · Updated 12 September 2026
 
@@ -1392,7 +1392,7 @@ Dustloft measures every real consumer of space on your Mac and shows each item w
 
 # Dustloft vs CleanMyMac: an honest comparison
 Source: https://dustloft.com/compare/cleanmymac
-Updated: 2026-09-12
+Updated: 2026-09-14
 
 Comparison · 6 min read · By [Kapil Upadhyay](https://github.com/kapil303196) at [Logicspark](https://logicspark.io) · Published 12 September 2026
 

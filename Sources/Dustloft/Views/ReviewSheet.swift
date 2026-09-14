@@ -353,6 +353,11 @@ struct ReviewSheet: View {
             Divider()
 
             HStack {
+                // Only after something actually worked: asking for a coffee
+                // over a list of failures reads badly.
+                if cleaner.outcomes.contains(where: { $0.ok }) {
+                    BuyMeACoffeeButton()
+                }
                 Spacer()
                 Button("Done") { isPresented = false }
                 .buttonStyle(PrimaryButton())

@@ -231,3 +231,38 @@ struct SecondaryButton: ButtonStyle {
             .contentShape(Rectangle())
     }
 }
+
+/// Drawn natively rather than loading Buy Me a Coffee's hosted PNG: the app
+/// makes no network request of its own for this, which keeps the privacy
+/// page's list of requests true. Opens the page in the browser on click.
+struct BuyMeACoffeeButton: View {
+    var body: some View {
+        Button {
+            if let url = URL(string: "https://www.buymeacoffee.com/logicspark") {
+                NSWorkspace.shared.open(url)
+            }
+        } label: {
+            HStack(spacing: DS.s2) {
+                Image(systemName: "cup.and.saucer.fill")
+                Text("Buy me a coffee")
+            }
+        }
+        .buttonStyle(CoffeeButtonStyle())
+        .help("Dustloft is free. If it helped, you can support it on Buy Me a Coffee.")
+    }
+}
+
+private struct CoffeeButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(DS.body().weight(.semibold))
+            .foregroundStyle(.black)
+            .padding(.horizontal, DS.s4)
+            .padding(.vertical, DS.s2 + 1)
+            .background(Color(red: 1, green: 0.867, blue: 0).opacity(configuration.isPressed ? 0.82 : 1),
+                        in: RoundedRectangle(cornerRadius: DS.rMd, style: .continuous))
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(DS.quick, value: configuration.isPressed)
+            .contentShape(Rectangle())
+    }
+}
