@@ -333,10 +333,14 @@ cleanly without it.
    `xcrun simctl runtime delete` is the supported route and should be preferred.
    This is untested here because Xcode is not installed on the machine it was
    written on.
-5. **In-app update does not verify the download.** It checks the HTTP status and
-   that the mounted image contains `Dustloft.app`, but does not check a signature
-   or checksum before replacing the installed bundle. Notarisation plus a
-   published checksum would close this properly.
+5. **In-app update verifies integrity, not publisher.** Before swapping, it runs
+   `codesign --verify --deep` on the unpacked bundle and confirms its version is
+   newer than the running one. That catches a truncated or altered bundle, but
+   releases are signed ad hoc, so it cannot prove the build came from this
+   repository. Its trust anchor is HTTPS to GitHub. Developer ID signing with a
+   pinned team identifier would close this properly. The same ad-hoc signature
+   changes with every release, which is why macOS may ask for Full Disk Access
+   again after an update.
 6. **`describe()` cost** — naming the largest subfolder inside an app runs a
    nested `du`, so it is limited to the twelve biggest apps. The rest show a
    generic label.

@@ -120,10 +120,15 @@ struct RootView: View {
             // twenty-five hour cycle; at fifteen minutes the drift is fifteen
             // minutes. reportIfNeeded is two defaults reads when throttled, so
             // asking four times an hour costs nothing worth measuring.
+            // The same beat asks GitHub for a release every six hours, so a
+            // copy left open for days still picks one up to install on quit.
+            var ticks = 0
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 900 * 1_000_000_000)
                 if Task.isCancelled { break }
                 metrics.reportIfNeeded()
+                ticks += 1
+                if ticks % 24 == 0 { await updater.check(silent: true) }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .dustloftCheckUpdates)) { _ in
@@ -255,6 +260,14 @@ struct RootView: View {
                     Button("Check for updates") { Task { await updater.check() } }
                         .buttonStyle(.link)
                         .font(DS.caption())
+                    Button(updater.autoInstall ? "Automatic updates: on" : "Automatic updates: off") {
+                        updater.autoInstall.toggle()
+                    }
+                    .buttonStyle(.link)
+                    .font(DS.caption())
+                    .help(updater.autoInstall
+                          ? "New versions download in the background and install when you quit. Click to stop."
+                          : "Updates are only installed when you click Update now. Click to install them automatically.")
                     MetricsFooterControl(metrics: metrics)
                     Spacer()
                 }

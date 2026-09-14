@@ -178,10 +178,17 @@ Dustloft asks for this on first run and explains why. Two things worth knowing:
 
 ## Updating
 
-Dustloft checks GitHub Releases on launch. When a newer build exists it offers
-**Update now**, which downloads the DMG, mounts it, replaces the installed app
-and restarts. **Check for Updates…** in the Dustloft menu does the same on
-demand, and the running version is shown at the bottom of the Overview.
+Dustloft updates itself. It checks GitHub Releases on launch and every six
+hours while open; when a newer build exists it downloads the DMG in the
+background, unpacks it, checks the bundle's code signature is intact, and
+swaps it in after you quit. Nothing interrupts what you are doing, and a
+banner offers **Restart now** if you would rather not wait.
+
+The background install never asks for a password. If your account cannot
+replace the installed copy — one put in `/Applications` with administrator
+rights, say — it leaves that to **Update now**, which can. Turn the whole thing
+off with **Automatic updates** at the bottom of the Overview, where the running
+version is shown. **Check for Updates…** in the Dustloft menu checks on demand.
 
 Every push to `main` builds a universal DMG in CI and publishes it as a release,
 so there is always something to update to.

@@ -72,6 +72,24 @@ final class DustloftTests: XCTestCase {
         XCTAssertFalse(Updater.isNewer("1.0", than: "1.0.0"))
     }
 
+    func test_backgroundUpdateStagesOnlyNewerReleases() {
+        XCTAssertTrue(Updater.shouldStage(enabled: true, latest: "v1.0.55", current: "1.0.54", alreadyStaged: nil))
+        XCTAssertFalse(Updater.shouldStage(enabled: false, latest: "v1.0.55", current: "1.0.54", alreadyStaged: nil))
+        XCTAssertFalse(Updater.shouldStage(enabled: true, latest: "v1.0.54", current: "1.0.54", alreadyStaged: nil))
+        XCTAssertFalse(Updater.shouldStage(enabled: true, latest: nil, current: "1.0.54", alreadyStaged: nil))
+        // Already holding that version, or a newer one: nothing to fetch.
+        XCTAssertFalse(Updater.shouldStage(enabled: true, latest: "v1.0.55", current: "1.0.54", alreadyStaged: "1.0.55"))
+        XCTAssertTrue(Updater.shouldStage(enabled: true, latest: "v1.0.56", current: "1.0.54", alreadyStaged: "1.0.55"))
+        // A local build was never stamped, and must not overwrite itself.
+        XCTAssertFalse(Updater.shouldStage(enabled: true, latest: "v1.0.55", current: "1.0.0", alreadyStaged: nil))
+    }
+
+    func test_installTargetIsTheRunningCopyUnlessItIsNotAnInstall() {
+        XCTAssertEqual(Updater.installTarget(running: "/Users/a/Applications/Dustloft.app"), "/Users/a/Applications/Dustloft.app")
+        XCTAssertEqual(Updater.installTarget(running: "/Volumes/Dustloft/Dustloft.app"), "/Applications/Dustloft.app")
+        XCTAssertEqual(Updater.installTarget(running: "/private/var/folders/x/AppTranslocation/y/d/Dustloft.app"), "/Applications/Dustloft.app")
+    }
+
     // MARK: exclusions — the rules that keep synced folders safe
 
     @MainActor

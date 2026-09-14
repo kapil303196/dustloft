@@ -198,7 +198,7 @@ Yes. Every release is a universal binary built in CI and verified with `lipo` to
 
 Does anything leave my Mac?
 
-Almost nothing, and nothing about your files. Dustloft sends one anonymous line when its reclaimed total changes, and once a day even when it has not — a random identifier belonging to that copy of the app, the total bytes it has reclaimed, and its version — so there is some idea of how many Macs it runs on and whether it has actually helped. No name, no email, no account, no file names, no paths. Switch it off in the app, or run `launchctl setenv DUSTLOFT_NO_METRICS 1` before first launch — a shell `export` will not do, because an app opened from the Dock inherits launchd's environment and not your shell's. The [privacy note](https://dustloft.com/privacy) shows the exact message. Its other network request is checking GitHub for a newer version; scanning happens entirely on your machine.
+Almost nothing, and nothing about your files. Dustloft sends one anonymous line when its reclaimed total changes, and once a day even when it has not — a random identifier belonging to that copy of the app, the total bytes it has reclaimed, and its version — so there is some idea of how many Macs it runs on and whether it has actually helped. No name, no email, no account, no file names, no paths. Switch it off in the app, or run `launchctl setenv DUSTLOFT_NO_METRICS 1` before first launch — a shell `export` will not do, because an app opened from the Dock inherits launchd's environment and not your shell's. The [privacy note](https://dustloft.com/privacy) shows the exact message. Its other network requests go to GitHub, to check for a newer version and download it; scanning happens entirely on your machine.
 
 
 ---
@@ -1291,7 +1291,7 @@ Dustloft measures every real consumer of space on your Mac and shows each item w
 Source: https://dustloft.com/privacy
 Updated: 2026-09-14
 
-Privacy · 3 min read · By [Kapil Upadhyay](https://github.com/kapil303196) at [Logicspark](https://logicspark.io) · Published 11 September 2026 · Updated 12 September 2026
+Privacy · 3 min read · By [Kapil Upadhyay](https://github.com/kapil303196) at [Logicspark](https://logicspark.io) · Published 11 September 2026 · Updated 14 September 2026
 
 **Short answer:** Dustloft sends one line — when its running total of reclaimed bytes changes, and once a day even when it has not — containing a random identifier, that byte total and a version number. Nothing about the contents of your disk ever leaves it — no file name, no path, no directory listing, no account, no email address. You can switch it off in the app, or before the app is ever launched. This website is a separate matter and [has its own section below](#website).
 
@@ -1355,9 +1355,9 @@ dustloft.com loads [Microsoft Clarity](https://learn.microsoft.com/en-us/clarity
 
 That is ordinary website analytics and it is worth saying plainly rather than burying: **the app's promises above do not extend to this website, and the website's analytics do not extend to the app.** Installing Dustloft does not opt you into Clarity; visiting this page does not send anything to the app's counter. Browser-level tracking protection, or any content blocker, stops Clarity here without affecting the app at all.
 
-## The other network request
+## The other network requests
 
-On launch, Dustloft asks the GitHub Releases API whether a newer version exists. That request goes to GitHub, not to us, and carries nothing but the request itself.
+On launch, and every six hours while it stays open, Dustloft asks the GitHub Releases API whether a newer version exists. When one does, it downloads that release's disk image from GitHub and installs it after you quit. Both requests go to GitHub, not to us, and carry nothing but the request itself. Switch the download off with *Automatic updates* at the bottom of the Overview; the check still happens, so the app can tell you a version is out.
 
 ## Do not take any of this on trust
 
