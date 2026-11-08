@@ -1,0 +1,92 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How to delete Time Machine local snapshots on a Mac</title>
+<meta name="description" content="Time Machine local snapshots sit inside System Data and purgeable space. How to list them with tmutil, delete or thin them safely, and stop them coming back.">
+<link rel="canonical" href="https://dustloft.com/blog/time-machine-local-snapshots-mac">
+<meta property="og:title" content="How to delete Time Machine local snapshots on a Mac"><meta property="og:description" content="Time Machine local snapshots sit inside System Data and purgeable space. How to list them with tmutil, delete or thin them safely, and stop them coming back.">
+<meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#141013">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<meta property="og:site_name" content="Dustloft">
+<meta property="og:locale" content="en_US">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<meta property="og:url" content="https://dustloft.com/blog/time-machine-local-snapshots-mac">
+<meta property="og:image" content="https://dustloft.com/img/overview.png">
+<meta name="twitter:image" content="https://dustloft.com/img/overview.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com/"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Time Machine local snapshots", "item": "https://dustloft.com/blog/time-machine-local-snapshots-mac"}]}</script>
+<link rel="icon" href="/img/mark-v3.png">
+<link rel="preload" href="/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/blog/_shared.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "How to delete Time Machine local snapshots on a Mac", "description": "Time Machine local snapshots sit inside System Data and purgeable space. How to list them with tmutil, delete or thin them safely, and stop them coming back.", "url": "https://dustloft.com/blog/time-machine-local-snapshots-mac", "image": "https://dustloft.com/img/overview.png", "author": {"@type": "Person", "name": "Kapil Upadhyay", "url": "https://github.com/kapil303196", "sameAs": ["https://github.com/kapil303196"], "worksFor": {"@id": "https://logicspark.io/#org"}}, "publisher": {"@id": "https://logicspark.io/#org"}, "datePublished": "2026-11-08", "dateModified": "2026-11-08", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://dustloft.com/blog/time-machine-local-snapshots-mac"}, "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Are Time Machine local snapshots part of System Data?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. macOS counts local snapshots under System Data in Storage settings, and also reports them as purgeable because it can delete them on its own when it needs room."}}, {"@type": "Question", "name": "Does deleting local snapshots delete my Time Machine backups?", "acceptedAnswer": {"@type": "Answer", "text": "No. tmutil deletelocalsnapshots only removes the copies kept on the internal disk. Backups on your external Time Machine drive or network volume are not touched."}}, {"@type": "Question", "name": "How do I delete all local snapshots at once?", "acceptedAnswer": {"@type": "Answer", "text": "Run sudo tmutil deletelocalsnapshots / in Terminal. Passing the mount point instead of a date removes every local Time Machine snapshot on that disk."}}, {"@type": "Question", "name": "Why do local snapshots keep coming back?", "acceptedAnswer": {"@type": "Answer", "text": "Time Machine creates them while automatic backups are switched on, and macOS also takes one before a software update. Each is kept for about 24 hours or until space is needed."}}]}</script>
+<script>
+(function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+})(window, document, "clarity", "script", "yfsb7st26m");
+</script>
+</head><body>
+<a class="skip" href="#main">Skip to content</a>
+<header><div class="wrap">
+<a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
+<nav><a href="/blog/">Guides</a><a href="/safety">Safety</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a><a class="bmc" href="https://www.buymeacoffee.com/logicspark" target="_blank" rel="noopener"><img src="/img/bmc-cup.svg" alt="" width="11" height="16">Buy me a coffee</a></nav>
+</div></header>
+<main id="main"><article><div class="wrap">
+<h1>How to delete Time Machine local snapshots on a Mac</h1>
+<p class="meta">Guide · 5 min read · By <a href="https://github.com/kapil303196" rel="author">Kapil Upadhyay</a> at <a href="https://logicspark.io">Logicspark</a> · Published <time datetime="2026-11-08">8 November 2026</time></p>
+<div class="answer"><p><strong>Short answer:</strong> list them with <code>tmutil listlocalsnapshots /</code>, then delete one with <code>sudo tmutil deletelocalsnapshots &lt;date&gt;</code> or all of them on the startup disk with <code>sudo tmutil deletelocalsnapshots /</code>. Your backups on the external Time Machine drive are not touched. macOS also removes them by itself after 24 hours or when space runs low.</p></div>
+<p>When Time Machine is switched on, macOS keeps <strong>local snapshots</strong> on the internal disk as well as backing up to your external drive. They let you restore a file while the backup disk is unplugged. They are counted inside <a href="/blog/why-is-system-data-so-large-on-mac">System Data</a> and, because macOS can drop them whenever it needs room, inside <a href="/blog/purgeable-space-mac">purgeable space</a> too. That is why the “System Data” bar in Settings can be tens of gigabytes larger the day after a big file shuffle.</p>
+
+<h2 id="list">Step 1 — See whether you have any</h2>
+<pre><code>tmutil listlocalsnapshots /</code></pre>
+<p>Each line is one snapshot, named with the date and time it was taken, for example <code>com.apple.TimeMachine.2026-11-08-101500.local</code>. To list only the dates, which is the form the delete command wants:</p>
+<pre><code>tmutil listlocalsnapshotdates /</code></pre>
+<p>On a 512 GB MacBook Pro (Mac16,8, 24 GB memory) running macOS 26.5.1, measured on 8 November 2026, the first command printed only the header <code>Snapshots for disk /:</code> and nothing beneath it — no local snapshots at all, because Time Machine was not set to back up automatically. If your list is empty too, snapshots are not what is filling your disk; go to <a href="/blog/how-to-clear-system-data-mac">the full System Data guide</a> instead.</p>
+
+<h2 id="delete">Step 2 — Delete one snapshot, or all of them</h2>
+<p>Delete a single snapshot by its date:</p>
+<pre><code>sudo tmutil deletelocalsnapshots 2026-11-08-101500</code></pre>
+<p>Delete every local snapshot on the startup disk at once — the <code>tmutil</code> manual page documents that passing a mount point instead of a date removes all of them on that disk:</p>
+<pre><code>sudo tmutil deletelocalsnapshots /</code></pre>
+<p>Run <code>tmutil listlocalsnapshots /</code> again afterwards to confirm the list is empty, then check the free space with <code>df -h /System/Volumes/Data</code>. Snapshots share blocks with your live files, so the space returned is only what the snapshots alone were holding; it can be anything from nothing to many gigabytes.</p>
+
+<h2 id="thin">Step 3 (alternative) — Thin instead of delete</h2>
+<p>If you only need a specific amount back, ask macOS to thin snapshots until it has reclaimed that much. The amount is in bytes and the last number is the urgency, from 1 to 4:</p>
+<pre><code># ask for 20 GB back, at the highest urgency
+sudo tmutil thinlocalsnapshots / 20000000000 4</code></pre>
+<p>This is the same mechanism macOS uses on its own when a write needs room, so it never removes anything Time Machine still depends on.</p>
+
+<h2 id="safe">Is it safe?</h2>
+<p>Yes. Local snapshots are a convenience copy. Your real backups live on the external Time Machine disk or network volume, and <code>deletelocalsnapshots</code> never touches those. What you lose is the ability to restore an older version of a file while that disk is disconnected. macOS keeps a local snapshot for 24 hours and also takes one before installing a software update, so expect a few to reappear.</p>
+
+<h2 id="stop">Stopping them from coming back</h2>
+<p>Local snapshots are made because automatic Time Machine backups are on. Turning automatic backups off in System Settings › General › Time Machine stops new ones, but it also stops your backups, and that is a bad trade on a machine with anything worth keeping. Leave Time Machine on and let macOS thin the snapshots when it needs the room. Delete them by hand only when you need the space now, for example to fit a large macOS update.</p>
+
+<div class="tscroll" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table><thead><tr><th>Command</th><th>What it does</th></tr></thead><tbody>
+<tr><td><code>tmutil listlocalsnapshots /</code></td><td>Lists every local snapshot on the startup disk</td></tr>
+<tr><td><code>tmutil listlocalsnapshotdates /</code></td><td>Lists just the dates, in the form <code>YYYY-MM-DD-HHMMSS</code></td></tr>
+<tr><td><code>sudo tmutil deletelocalsnapshots &lt;date&gt;</code></td><td>Deletes the snapshots for that date</td></tr>
+<tr><td><code>sudo tmutil deletelocalsnapshots /</code></td><td>Deletes every local snapshot on the startup disk</td></tr>
+<tr><td><code>sudo tmutil thinlocalsnapshots / &lt;bytes&gt; 4</code></td><td>Thins snapshots until that many bytes are reclaimed</td></tr>
+</tbody></table></div>
+<h2>Common questions</h2>
+<h3>Are Time Machine local snapshots part of System Data?</h3>
+<p>Yes. macOS counts local snapshots under System Data in Storage settings, and also reports them as purgeable because it can delete them on its own when it needs room.</p>
+<h3>Does deleting local snapshots delete my Time Machine backups?</h3>
+<p>No. tmutil deletelocalsnapshots only removes the copies kept on the internal disk. Backups on your external Time Machine drive or network volume are not touched.</p>
+<h3>How do I delete all local snapshots at once?</h3>
+<p>Run sudo tmutil deletelocalsnapshots / in Terminal. Passing the mount point instead of a date removes every local Time Machine snapshot on that disk.</p>
+<h3>Why do local snapshots keep coming back?</h3>
+<p>Time Machine creates them while automatic backups are switched on, and macOS also takes one before a software update. Each is kept for about 24 hours or until space is needed.</p>
+<div class="cta">
+<h3>See exactly what is on your own disk</h3>
+<p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
+<a class="btn" href="/#install">Install Dustloft</a>
+</div>
+</div><p>Related: <a href="/blog/purgeable-space-mac">what purgeable space really is</a>, and <a href="/blog/how-to-clear-system-data-mac">how to clear System Data safely</a>.</p></article></main>
+<footer><div class="wrap">Dustloft — MIT licensed. No ads, no accounts, no subscription. ·
+<a href="/">Home</a> · <a href="/blog/">All guides</a> ·
+<a href="https://github.com/kapil303196/dustloft">Source</a><br><br>
+Made with ♥ in India by <a href="https://logicspark.io">Logicspark</a><br><a href="https://www.buymeacoffee.com/logicspark" target="_blank" rel="noopener" style="display:inline-block;margin-top:1.2rem"><img src="/img/buy-me-a-coffee.png" alt="Buy Me a Coffee" width="217" height="60" loading="lazy" style="height:60px;width:217px;display:block"></a></div></footer>
+</body></html>

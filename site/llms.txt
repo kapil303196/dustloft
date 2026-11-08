@@ -9,25 +9,27 @@ before anything is removed. Made by Kapil Upadhyay at Logicspark. Latest release
 is v1.0.48.
 
 Every figure quoted across this site comes from one 512 GB MacBook Pro taken from
-20 GB free to 215 GB free in September 2026, and every Terminal command was run
-before it was published. Sizes are allocated size as reported by `du`, never
+20 GB free to 215 GB free in September 2026, except the three guides published
+8 November 2026, which state their own machine and date (a 512 GB MacBook Pro,
+Mac16,8, on macOS 26.5.1). Every Terminal command was run before it was published.
+Sizes are allocated size as reported by `du`, never
 apparent size as reported by `ls`.
 
 Install with one line:
 `curl -fsSL https://raw.githubusercontent.com/kapil303196/dustloft/main/install-online.sh | bash`
 
-Last reviewed 12 September 2026.
+Last reviewed 8 November 2026.
 
 ## Start here
 
 - [Dustloft home](https://dustloft.com/): What the app does, the six categories it found on a 494 GB drive that was 96% full, and the one-line installer.
-- [Guides index](https://dustloft.com/blog/): All eleven guides to macOS storage, plus the note explaining why the same disk is described as 512 GB, 494 GB and 460 GiB in different places.
+- [Guides index](https://dustloft.com/blog/): All fourteen guides to macOS storage, plus the note explaining why the same disk is described as 512 GB, 494 GB and 460 GiB in different places.
 - [Dustloft vs CleanMyMac](https://dustloft.com/compare/cleanmymac): An honest, dated feature and pricing comparison — prices checked 12 September 2026, every CleanMyMac claim sourced to MacPaw's own pages and left blank where it could not be verified. Published 12 September 2026.
 
 ## Guides
 
 - [Why is System Data so large on your Mac?](https://dustloft.com/blog/why-is-system-data-so-large-on-mac): The 220 GB of "System Data" on one 512 GB MacBook Pro broken into eight identifiable things, with the path and size of each. Published 8 September 2026.
-- [How to clear System Data on a Mac](https://dustloft.com/blog/how-to-clear-system-data-mac): Five measured steps with the exact Terminal commands, starting with the `du -sh ~/*` mistake that hid 55 GB of dotfolders. Published 8 September 2026.
+- [How to clear System Data on a Mac](https://dustloft.com/blog/how-to-clear-system-data-mac): Four quick wins in Settings, then five measured steps with the exact Terminal commands, starting with the `du -sh ~/*` mistake that hid 55 GB of dotfolders. Published 8 September 2026.
 - [Free CleanMyMac alternatives in 2026](https://dustloft.com/blog/free-cleanmymac-alternatives): Eight tools compared — six free, one paid, one subscription — with what each is genuinely good at. Published 8 September 2026.
 - [Docker.raw taking up space on Mac](https://dustloft.com/blog/docker-raw-taking-up-space-mac): One Docker.raw reported 494 GB while occupying 9.3 GB. Why `du` and `ls -lh` disagree on sparse files, and how `docker system prune -a` reclaims without touching named volumes. Published 8 September 2026.
 - [Find large files on Mac using Terminal](https://dustloft.com/blog/find-large-files-mac-terminal): The `du -kxd 1 ~`, `df -h /System/Volumes/Data` and `mdfind` commands that work, and the glob mistake that hid 55 GB across four dotfolders. Published 8 September 2026.
@@ -36,6 +38,9 @@ Last reviewed 12 September 2026.
 - [WhatsApp and Messages media on Mac](https://dustloft.com/blog/whatsapp-messages-media-mac): 92 GB in Group Containers on one Mac, more than dependencies, Docker and Xcode combined. It is data, not cache, and nothing regenerates it. Published 10 September 2026.
 - [node_modules and build output](https://dustloft.com/blog/node-modules-taking-up-space-mac): 46 GB of dependency folders plus 20 GB across 42 stale `.next` caches, and the one deletion — a `dist` inside `node_modules` — that quietly breaks a library. Published 10 September 2026.
 - [Xcode DerivedData, simulators and runtimes](https://dustloft.com/blog/xcode-derived-data-simulators): The four Xcode paths, which two need an administrator prompt, and the 13 GB of runtimes that survive deleting Xcode. Published 10 September 2026.
+- [Time Machine local snapshots](https://dustloft.com/blog/time-machine-local-snapshots-mac): List, delete and thin local snapshots with `tmutil`; `sudo tmutil deletelocalsnapshots /` removes all of them on the startup disk and never touches the external backup. Published 8 November 2026.
+- [Old iPhone backups on Mac](https://dustloft.com/blog/delete-iphone-backups-mac): Backups live in `~/Library/Application Support/MobileSync/Backup` and show under iOS Files in Storage settings. How to name each one and which are safe to delete. Published 8 November 2026.
+- [sleepimage, swap and /Library/Updates](https://dustloft.com/blog/sleepimage-swap-files-mac): Three System Data items not worth deleting by hand — `sleepimage` is recreated, swap lives on `/System/Volumes/VM` and clears on restart, and `/Library/Updates` is SIP-restricted. Published 8 November 2026.
 - [Git repositories taking up space](https://dustloft.com/blog/git-repositories-taking-up-space): One `.git` at 2.2 GB repacked with `git gc`; Dustloft only flags repositories over 100 MB and never offers deletion. A configured remote is not proof anything was pushed. Published 10 September 2026.
 
 ## Reference

@@ -1,0 +1,88 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How to find and delete old iPhone backups on a Mac</title>
+<meta name="description" content="Old iPhone and iPad backups live in ~/Library/Application Support/MobileSync and count as System Data. How to find them, see which device each belongs to, and delete them safely.">
+<link rel="canonical" href="https://dustloft.com/blog/delete-iphone-backups-mac">
+<meta property="og:title" content="How to find and delete old iPhone backups on a Mac"><meta property="og:description" content="Old iPhone and iPad backups live in ~/Library/Application Support/MobileSync and count as System Data. How to find them, see which device each belongs to, and delete them safely.">
+<meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#141013">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<meta property="og:site_name" content="Dustloft">
+<meta property="og:locale" content="en_US">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<meta property="og:url" content="https://dustloft.com/blog/delete-iphone-backups-mac">
+<meta property="og:image" content="https://dustloft.com/img/overview.png">
+<meta name="twitter:image" content="https://dustloft.com/img/overview.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com/"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "iPhone backups on Mac", "item": "https://dustloft.com/blog/delete-iphone-backups-mac"}]}</script>
+<link rel="icon" href="/img/mark-v3.png">
+<link rel="preload" href="/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/blog/_shared.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "How to find and delete old iPhone backups on a Mac", "description": "Old iPhone and iPad backups live in ~/Library/Application Support/MobileSync and count as System Data. How to find them, see which device each belongs to, and delete them safely.", "url": "https://dustloft.com/blog/delete-iphone-backups-mac", "image": "https://dustloft.com/img/overview.png", "author": {"@type": "Person", "name": "Kapil Upadhyay", "url": "https://github.com/kapil303196", "sameAs": ["https://github.com/kapil303196"], "worksFor": {"@id": "https://logicspark.io/#org"}}, "publisher": {"@id": "https://logicspark.io/#org"}, "datePublished": "2026-11-08", "dateModified": "2026-11-08", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://dustloft.com/blog/delete-iphone-backups-mac"}, "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Where are iPhone backups stored on a Mac?", "acceptedAnswer": {"@type": "Answer", "text": "In ~/Library/Application Support/MobileSync/Backup, one folder per device. The folder names are device identifiers; the device name is inside each folder's Info.plist."}}, {"@type": "Question", "name": "Are iPhone backups counted as System Data?", "acceptedAnswer": {"@type": "Answer", "text": "They appear under iOS Files in Storage settings, and on many macOS versions they are also part of the System Data figure. Either way they sit on the internal disk."}}, {"@type": "Question", "name": "Is it safe to delete old iPhone backups on a Mac?", "acceptedAnswer": {"@type": "Answer", "text": "It is safe for devices you no longer use, or when another copy exists in iCloud. If it is the only backup of a phone you still use, deleting it removes the only copy of that data."}}, {"@type": "Question", "name": "Why does Terminal say Operation not permitted for MobileSync?", "acceptedAnswer": {"@type": "Answer", "text": "macOS protects the backup folder. Give Terminal Full Disk Access in System Settings, Privacy and Security, or use the iOS Files list in Storage settings instead."}}]}</script>
+<script>
+(function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+})(window, document, "clarity", "script", "yfsb7st26m");
+</script>
+</head><body>
+<a class="skip" href="#main">Skip to content</a>
+<header><div class="wrap">
+<a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
+<nav><a href="/blog/">Guides</a><a href="/safety">Safety</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a><a class="bmc" href="https://www.buymeacoffee.com/logicspark" target="_blank" rel="noopener"><img src="/img/bmc-cup.svg" alt="" width="11" height="16">Buy me a coffee</a></nav>
+</div></header>
+<main id="main"><article><div class="wrap">
+<h1>How to find and delete old iPhone backups on a Mac</h1>
+<p class="meta">Guide · 5 min read · By <a href="https://github.com/kapil303196" rel="author">Kapil Upadhyay</a> at <a href="https://logicspark.io">Logicspark</a> · Published <time datetime="2026-11-08">8 November 2026</time></p>
+<div class="answer"><p><strong>Short answer:</strong> open System Settings › General › Storage, click the ⓘ next to <strong>iOS Files</strong>, and delete the backups of devices you no longer own. The files themselves live in <code>~/Library/Application Support/MobileSync/Backup</code>. Delete a backup only when it is not the sole copy of that device’s data.</p></div>
+<p>Every time you back up an iPhone or iPad to your Mac in Finder, a full copy of that device is written to your home folder. Replace the phone, and the old backup stays. Replace it again, and there are two. Each can be as large as everything on the phone except your photos library, and macOS counts all of it under <a href="/blog/why-is-system-data-so-large-on-mac">System Data</a>.</p>
+
+<h2 id="settings">Step 1 — The no-Terminal way</h2>
+<ol>
+<li>Open <strong>System Settings › General › Storage</strong>.</li>
+<li>Find the <strong>iOS Files</strong> row and click the <strong>ⓘ</strong> button next to it. The row only appears when at least one backup or iOS installer file exists.</li>
+<li>Each backup is listed with its device name, size and date. Select the old ones and click <strong>Delete</strong>.</li>
+</ol>
+<p>The same list is in Finder: connect any iPhone, select it in the sidebar, and click <strong>Manage Backups…</strong> on the General tab. There you can also delete backups of devices that are not connected.</p>
+
+<h2 id="terminal">Step 2 — Measure them in Terminal</h2>
+<pre><code>du -sh ~/Library/Application\ Support/MobileSync/Backup/* 2>/dev/null</code></pre>
+<p>If you see <code>Operation not permitted</code>, Terminal needs Full Disk Access (System Settings › Privacy &amp; Security › Full Disk Access), because macOS protects this folder. If you see <code>No such file or directory</code>, there are no local backups at all — that was the case on a 512 GB MacBook Pro (Mac16,8, 24 GB memory) running macOS 26.5.1, measured on 8 November 2026.</p>
+<p>The folder names are device identifiers, not names. To see which device each one belongs to:</p>
+<pre><code>for d in ~/Library/Application\ Support/MobileSync/Backup/*/; do
+  printf '%s  ' "$(du -sh "$d" | cut -f1)"
+  plutil -extract "Device Name" raw "$d/Info.plist" 2>/dev/null || echo "(no name)"
+done</code></pre>
+
+<h2 id="safe">Step 3 — Decide which ones are safe to delete</h2>
+<div class="tscroll" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table><thead><tr><th>Backup</th><th>Safe to delete?</th></tr></thead><tbody>
+<tr><td>A device you sold, lost or replaced, and you have moved to the new one</td><td>Usually yes</td></tr>
+<tr><td>Your current phone, when it also backs up to iCloud</td><td>Yes — the iCloud backup is a second copy</td></tr>
+<tr><td>Your current phone, when this is its only backup</td><td>No — it is the only copy of messages, app data and settings</td></tr>
+<tr><td>An encrypted backup you may need for Health or saved passwords</td><td>Only if a newer encrypted backup exists</td></tr>
+</tbody></table></div>
+<p>A backup is data, not cache. Nothing regenerates it, and once it is deleted the messages and app data inside it are gone unless another copy exists. Delete through Settings or Finder rather than dragging folders out of <code>MobileSync</code>, so that macOS removes the whole backup consistently. Dustloft lists device backups but treats them as permanent, the tier it never bulk-selects, for exactly this reason.</p>
+
+<h2 id="move">Keeping backups without the disk space</h2>
+<p>If you want local backups but not on the internal disk, switch the phone to back up to iCloud in Finder, or copy the <code>Backup</code> folder to an external drive before deleting it from the Mac. Moving the folder with a symbolic link works but is fragile: if the drive is unplugged during a backup, Finder fails without a clear error.</p>
+<h2>Common questions</h2>
+<h3>Where are iPhone backups stored on a Mac?</h3>
+<p>In ~/Library/Application Support/MobileSync/Backup, one folder per device. The folder names are device identifiers; the device name is inside each folder&#x27;s Info.plist.</p>
+<h3>Are iPhone backups counted as System Data?</h3>
+<p>They appear under iOS Files in Storage settings, and on many macOS versions they are also part of the System Data figure. Either way they sit on the internal disk.</p>
+<h3>Is it safe to delete old iPhone backups on a Mac?</h3>
+<p>It is safe for devices you no longer use, or when another copy exists in iCloud. If it is the only backup of a phone you still use, deleting it removes the only copy of that data.</p>
+<h3>Why does Terminal say Operation not permitted for MobileSync?</h3>
+<p>macOS protects the backup folder. Give Terminal Full Disk Access in System Settings, Privacy and Security, or use the iOS Files list in Storage settings instead.</p>
+<div class="cta">
+<h3>See exactly what is on your own disk</h3>
+<p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
+<a class="btn" href="/#install">Install Dustloft</a>
+</div>
+</div><p>Related: <a href="/blog/whatsapp-messages-media-mac">WhatsApp and Messages media</a>, the other large store of data that is not cache, and <a href="/blog/how-to-clear-system-data-mac">how to clear System Data safely</a>.</p></article></main>
+<footer><div class="wrap">Dustloft — MIT licensed. No ads, no accounts, no subscription. ·
+<a href="/">Home</a> · <a href="/blog/">All guides</a> ·
+<a href="https://github.com/kapil303196/dustloft">Source</a><br><br>
+Made with ♥ in India by <a href="https://logicspark.io">Logicspark</a><br><a href="https://www.buymeacoffee.com/logicspark" target="_blank" rel="noopener" style="display:inline-block;margin-top:1.2rem"><img src="/img/buy-me-a-coffee.png" alt="Buy Me a Coffee" width="217" height="60" loading="lazy" style="height:60px;width:217px;display:block"></a></div></footer>
+</body></html>

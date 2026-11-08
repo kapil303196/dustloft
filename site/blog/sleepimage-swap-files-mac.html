@@ -1,0 +1,85 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>sleepimage, swap files and /Library/Updates: System Data to leave alone</title>
+<meta name="description" content="Three System Data items that look deletable and should not be deleted by hand: /private/var/vm/sleepimage, swap files in /System/Volumes/VM and staged macOS updates in /Library/Updates.">
+<link rel="canonical" href="https://dustloft.com/blog/sleepimage-swap-files-mac">
+<meta property="og:title" content="sleepimage, swap files and /Library/Updates: System Data to leave alone"><meta property="og:description" content="Three System Data items that look deletable and should not be deleted by hand: /private/var/vm/sleepimage, swap files in /System/Volumes/VM and staged macOS updates in /Library/Updates.">
+<meta property="og:type" content="article"><meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#141013">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<meta property="og:site_name" content="Dustloft">
+<meta property="og:locale" content="en_US">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<meta property="og:url" content="https://dustloft.com/blog/sleepimage-swap-files-mac">
+<meta property="og:image" content="https://dustloft.com/img/overview.png">
+<meta name="twitter:image" content="https://dustloft.com/img/overview.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://dustloft.com/"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://dustloft.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "sleepimage, swap and update files", "item": "https://dustloft.com/blog/sleepimage-swap-files-mac"}]}</script>
+<link rel="icon" href="/img/mark-v3.png">
+<link rel="preload" href="/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/blog/_shared.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "sleepimage, swap files and /Library/Updates: System Data to leave alone", "description": "Three System Data items that look deletable and should not be deleted by hand: /private/var/vm/sleepimage, swap files in /System/Volumes/VM and staged macOS updates in /Library/Updates.", "url": "https://dustloft.com/blog/sleepimage-swap-files-mac", "image": "https://dustloft.com/img/overview.png", "author": {"@type": "Person", "name": "Kapil Upadhyay", "url": "https://github.com/kapil303196", "sameAs": ["https://github.com/kapil303196"], "worksFor": {"@id": "https://logicspark.io/#org"}}, "publisher": {"@id": "https://logicspark.io/#org"}, "datePublished": "2026-11-08", "dateModified": "2026-11-08", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://dustloft.com/blog/sleepimage-swap-files-mac"}, "isPartOf": {"@id": "https://dustloft.com/#website"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Can I delete sleepimage on a Mac?", "acceptedAnswer": {"@type": "Answer", "text": "You can, but macOS recreates it the next time the Mac sleeps, so nothing is gained. Stopping it needs hibernatemode 0, which loses open work if the battery runs out while the Mac is asleep."}}, {"@type": "Question", "name": "Where are swap files on macOS?", "acceptedAnswer": {"@type": "Answer", "text": "On their own APFS volume mounted at /System/Volumes/VM. sysctl vm.swapusage shows how much is in use. A restart clears them."}}, {"@type": "Question", "name": "Can I delete /Library/Updates?", "acceptedAnswer": {"@type": "Answer", "text": "No. The folder is protected by System Integrity Protection, so even sudo cannot remove files from it. Installing the pending update is what clears it."}}, {"@type": "Question", "name": "Does restarting a Mac reduce System Data?", "acceptedAnswer": {"@type": "Answer", "text": "A little. A restart clears swap files and some temporary files, which can free a few gigabytes on a Mac that has been under memory pressure. It does not touch caches, app data, backups or snapshots."}}]}</script>
+<script>
+(function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+})(window, document, "clarity", "script", "yfsb7st26m");
+</script>
+</head><body>
+<a class="skip" href="#main">Skip to content</a>
+<header><div class="wrap">
+<a class="brand" href="/"><img src="/img/mark-v3.png" alt="" width="27" height="27">Dustloft</a>
+<nav><a href="/blog/">Guides</a><a href="/safety">Safety</a><a href="/#install">Install</a><a href="https://github.com/kapil303196/dustloft">GitHub</a><a class="bmc" href="https://www.buymeacoffee.com/logicspark" target="_blank" rel="noopener"><img src="/img/bmc-cup.svg" alt="" width="11" height="16">Buy me a coffee</a></nav>
+</div></header>
+<main id="main"><article><div class="wrap">
+<h1>sleepimage, swap files and /Library/Updates: System Data to leave alone</h1>
+<p class="meta">Guide · 5 min read · By <a href="https://github.com/kapil303196" rel="author">Kapil Upadhyay</a> at <a href="https://logicspark.io">Logicspark</a> · Published <time datetime="2026-11-08">8 November 2026</time></p>
+<div class="answer"><p><strong>Short answer:</strong> leave all three alone. <code>sleepimage</code> is recreated the next time the Mac sleeps, swap files disappear on a restart, and <code>/Library/Updates</code> is protected by System Integrity Protection, so even <code>sudo rm</code> fails there. Restarting and installing or dismissing the pending update are the supported ways to shrink them.</p></div>
+<p>Search for ways to shrink System Data and these three paths come up constantly, often with a <code>sudo rm</code> attached. All three are real consumers of space, and none of them is worth deleting by hand. The figures below are from a 512 GB MacBook Pro (Mac16,8, 24 GB memory) running macOS 26.5.1, measured on 8 November 2026.</p>
+
+<div class="tscroll" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table><thead><tr><th>Path</th><th>Measured</th><th>What it is</th><th>How it shrinks</th></tr></thead><tbody>
+<tr><td><code>/private/var/vm/sleepimage</code></td><td>2.0 GB</td><td>Memory written to disk so the Mac survives running out of battery while asleep</td><td>It does not; it is reused</td></tr>
+<tr><td><code>/System/Volumes/VM</code></td><td>0 bytes</td><td>Swap files, used when memory runs short</td><td>Restart</td></tr>
+<tr><td><code>/Library/Updates</code></td><td>2.0 GB</td><td>Downloaded macOS and Rosetta updates waiting to install</td><td>Install the update</td></tr>
+</tbody></table></div>
+
+<h2 id="sleepimage">sleepimage</h2>
+<pre><code>ls -lh /private/var/vm/
+pmset -g | grep -E 'hibernatemode|hibernatefile'</code></pre>
+<p>On this Mac the file was 2.0 GB, with <code>hibernatemode 3</code>, the laptop default: memory stays powered while asleep, and is also written to <code>sleepimage</code> so nothing is lost if the battery dies. Note that it was 2.0 GB on a machine with 24 GB of memory, so the old rule that the file matches your RAM does not hold on Apple silicon.</p>
+<p>Deleting it gains nothing: macOS writes a new one the next time the Mac sleeps. The only way to stop it is <code>sudo pmset -a hibernatemode 0</code>, which means a Mac that runs flat while asleep loses everything that was open. For 2 GB, that is not a good trade on a laptop.</p>
+
+<h2 id="swap">Swap files</h2>
+<pre><code>sysctl vm.swapusage
+ls -lh /System/Volumes/VM</code></pre>
+<p>macOS keeps swap on its own APFS volume, <code>/System/Volumes/VM</code>, not in <code>/private/var/vm</code> as older guides say. On this Mac, <code>vm.swapusage</code> reported <code>total = 0.00M</code> and the volume was empty. Under memory pressure — a browser with hundreds of tabs, several Docker containers, a local AI model — swap can grow to many gigabytes. It is released when the pressure goes and cleared entirely on a restart. If swap is consistently large, quitting the application that is using the memory is the fix, not deleting the files.</p>
+
+<h2 id="updates">/Library/Updates</h2>
+<pre><code>du -sh /Library/Updates/*
+ls -ldO /Library/Updates</code></pre>
+<p>On this Mac the folder held 2.0 GB across four update packages, two of them 899 MB each. The second command shows the folder flagged <code>restricted</code>: it is protected by System Integrity Protection, which was enabled here, as it should be. Even an administrator cannot delete from it. That is deliberate — a half-deleted update is how a Mac ends up refusing to install the next one.</p>
+<p>The supported fix is to let the update finish. Install it from System Settings › General › Software Update, and macOS clears the staged files afterwards. If you have decided not to install a particular update, the downloaded files are removed when a newer update replaces it.</p>
+
+<h2 id="what-instead">What to do instead</h2>
+<p>These three together came to about 4 GB on this Mac. On the same disk, <code>~/Library/Application Support</code> held 30 GB and <code>~/Library/Caches</code> held 12 GB. If System Data is large, the space is almost always in your home folder, and <a href="/blog/how-to-clear-system-data-mac">the step-by-step guide</a> shows how to find it.</p>
+<h2>Common questions</h2>
+<h3>Can I delete sleepimage on a Mac?</h3>
+<p>You can, but macOS recreates it the next time the Mac sleeps, so nothing is gained. Stopping it needs hibernatemode 0, which loses open work if the battery runs out while the Mac is asleep.</p>
+<h3>Where are swap files on macOS?</h3>
+<p>On their own APFS volume mounted at /System/Volumes/VM. sysctl vm.swapusage shows how much is in use. A restart clears them.</p>
+<h3>Can I delete /Library/Updates?</h3>
+<p>No. The folder is protected by System Integrity Protection, so even sudo cannot remove files from it. Installing the pending update is what clears it.</p>
+<h3>Does restarting a Mac reduce System Data?</h3>
+<p>A little. A restart clears swap files and some temporary files, which can free a few gigabytes on a Mac that has been under memory pressure. It does not touch caches, app data, backups or snapshots.</p>
+<div class="cta">
+<h3>See exactly what is on your own disk</h3>
+<p>Dustloft measures every real consumer of space on your Mac and shows each item with its full path and size before anything is removed. Free, open source, no subscription.</p>
+<a class="btn" href="/#install">Install Dustloft</a>
+</div>
+</div><p>Related: <a href="/blog/time-machine-local-snapshots-mac">Time Machine local snapshots</a>, and <a href="/blog/why-is-system-data-so-large-on-mac">why System Data is so large</a>.</p></article></main>
+<footer><div class="wrap">Dustloft — MIT licensed. No ads, no accounts, no subscription. ·
+<a href="/">Home</a> · <a href="/blog/">All guides</a> ·
+<a href="https://github.com/kapil303196/dustloft">Source</a><br><br>
+Made with ♥ in India by <a href="https://logicspark.io">Logicspark</a><br><a href="https://www.buymeacoffee.com/logicspark" target="_blank" rel="noopener" style="display:inline-block;margin-top:1.2rem"><img src="/img/buy-me-a-coffee.png" alt="Buy Me a Coffee" width="217" height="60" loading="lazy" style="height:60px;width:217px;display:block"></a></div></footer>
+</body></html>

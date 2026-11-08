@@ -55,7 +55,7 @@
 
 <h2>What genuinely moves the number</h2>
 <p>Since you cannot force the release, the working approach is to shrink what is being held in the first place.</p>
-<p><strong>Thin local snapshots.</strong> These are the single largest purgeable contributor on most Macs. <code>tmutil listlocalsnapshots /</code> shows what exists. Thinning them frees whatever they were pinning, and your external Time Machine backups are untouched.</p>
+<p><strong>Thin local snapshots.</strong> These are the single largest purgeable contributor on most Macs. <code>tmutil listlocalsnapshots /</code> shows what exists. The <a href="/blog/time-machine-local-snapshots-mac">snapshot guide</a> has the delete and thin commands. Thinning them frees whatever they were pinning, and your external Time Machine backups are untouched.</p>
 <p><strong>Remove things that regenerate.</strong> Package caches, build output and dependency folders occupy ordinary non-purgeable space and come back on their own. Clearing them is the fastest honest win.</p>
 <p><strong>Stop treating the combined figure as free.</strong> If <code>df -h</code> and Finder disagree, trust <code>df -h</code> — and <a href="/blog/find-large-files-mac-terminal">point it at <code>/System/Volumes/Data</code></a>, because on modern macOS that is the volume your files are actually on.</p>
 
